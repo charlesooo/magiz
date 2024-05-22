@@ -1,0 +1,16 @@
+{
+  "name": "magiz",
+  "version": "1.0.0-beta",
+  "description": "To generate 3D building",
+  "homepage": "https://www.architech.fun",
+  "author": "周曦",
+  "dependencies": {
+    "mathjs": "^12.4.2",
+    "polylabel": "^1.1.0",
+    "three": "^0.164.0"
+  },
+  "devDependencies": {
+    "@types/polylabel": "^1.1.3",
+    "@types/three": "^0.164.0"
+  }
+}

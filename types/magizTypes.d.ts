@@ -1,0 +1,97 @@
+/** @hidden 边线整体缩放或偏移 */
+declare type scaleOrOffsetParams = {
+  scale: { x: number; y: number } | undefined
+  offset: { x: number; y: number } | undefined
+}
+
+/** web3D初始化和默认的参数类型 */
+type web3DOptionsType = {
+  /** 相机焦点坐标 */
+  cameraLookAt: [x: number, y: number, z: number]
+  /** 相机位置坐标 */
+  cameraPosition: [x: number, y: number, z: number]
+  /** 光影相关参数，每一项指定某一时间点直射光和环境光的颜色与强度 */
+  lightColor: {
+    hour: number
+    color: string
+    ambient: number
+    directional: number
+  }[]
+  /** 通过 querySelector(parentCSSID) 绑定canvas元素到Three.js */
+  parentCSSID: string
+  /** 太阳到原点的距离，用于计算直射光的起点坐标 */
+  sunDistance: number
+}
+
+/** 从平面生成建筑模型的参数 */
+declare type styleParamsType = {
+  /** 指定样式名称 */
+  style: string
+  /** 建筑高度 */
+  height: number
+  /** 建筑层高 */
+  floorHeight: number
+  /** 底标高 */
+  elevation: number
+  /** 随机数种子，0表示使用随机值 */
+  seed: number
+}
+
+/** @hidden 经过分类后的样式名称 */
+declare type styleOptionsType = {
+  /** 付费样式，须订阅 */
+  paid: string[]
+  /** 免费样式，始终可用 */
+  free: string[]
+}
+
+/** 请求解析样式所需的参数 */
+declare type parseRequestType = {
+  /** 建筑生成参数 */
+  styleParams: styleParamsType
+  /** 该坐标之后将经过旋转长边并平移到原点 */
+  loopPoints: [x: number, y: number][][]
+}
+
+/** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */
+declare type instancedDataType = {
+  /** 由16位矩阵构成的数组 */
+  matrices: number[][]
+  /** 颜色索引，对应 rawDataType.colorMap 中的序号（从数组选中一个序号，如包含了多个表示随机颜色） */
+  colors: number[]
+}
+
+/** 从平面生成模型的全部数据 */
+declare type rawDataType = {
+  /** 建筑生成参数 */
+  params: styleParamsType
+  /** 建筑模型的经济技术指标 (建筑高度保存在 params) */
+  info: {
+    /** 建筑面积 */
+    floorArea: number
+    /** 建筑层数 */
+    floors: number
+  }
+  /** 将中心重置到原点并将长边对齐X轴后的平面坐标点 */
+  points: [x: number, y: number][][]
+  /** 还原模型时原平面中心点坐标 */
+  center: [x: number, y: number]
+  /** 还原模型时绕Z轴旋转的弧度 */
+  rotate: number
+  /** 模型所用到的全部颜色值，用于索引和统一管理 */
+  colorMap: string[]
+
+  /** 由平面生成的推拉体块和坡屋顶的颜色和矩阵数据 */
+  floorData: {
+    block: instancedDataType
+    blockGlass: instancedDataType
+    sloping: instancedDataType
+    slopingGlass: instancedDataType
+  }
+
+  /** Box元素的颜色和矩阵数据 */
+  boxData: {
+    box: instancedDataType
+    boxGlass: instancedDataType
+  }
+}

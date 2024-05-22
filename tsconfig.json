@@ -1,0 +1,16 @@
+{
+  "include": [
+    "./**/*",
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "alwaysStrict": true,
+    "composite": true,
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "lib": [
+      "ESNext",
+      "DOM"
+    ]
+  }
+}
