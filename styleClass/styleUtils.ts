@@ -5,7 +5,7 @@ function mergeStyles(source: params.styles, a: params.styles[]): params.styles {
   const { preset, building } = source
 
   for (let i = 0; i < a.length; i++) {
-    const s = a[i]
+    const s = a[i] as params.styles
 
     // 提示被替换项
     for (const key in s.preset) {
@@ -21,8 +21,8 @@ function mergeStyles(source: params.styles, a: params.styles[]): params.styles {
 
   // 检查调用预设样式
   for (const name in building) {
-    const s = building[name].section
-    s.roof?.floor?.forEach((f) => {
+    const b = building[name] as params.style
+    b.section.roof?.floor?.forEach((f) => {
       f.preset?.forEach((p) => {
         if (p.name && !preset[p.name]) {
           console.error('无效的预设样式', p.name, '@', name)

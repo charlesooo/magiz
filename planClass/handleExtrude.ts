@@ -25,7 +25,7 @@ function handleExtrude(
       // 按 thickness 偏移后的边线生成有厚度墙面
       const moveY = thickness < 0 ? -0.5 : 0.5
       const moveZ = height < 0 ? -0.5 : 0.5
-      const saveAs = result.boxData['box' + (sampleColor.glass ? 'Glass' : '')]
+      const saveAs = result.boxData[sampleColor.glass ? 'boxGlass' : 'box']
       rays.forEach((loop) => {
         loop.forEach((ray) => {
           const boxMatrix = matrix.clone()
@@ -51,7 +51,7 @@ function handleExtrude(
       if (height < 0) matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
       matrix.premultiply(TEMP.makeScale(...scaleRatio, Math.abs(height)))
       applyTransform(extrudeParams, matrix).premultiply(TEMP.makeTranslation(0, 0, elevation))
-      const saveAs = result.floorData['block' + (sampleColor.glass ? 'Glass' : '')]
+      const saveAs = result.floorData[sampleColor.glass ? 'blockGlass' : 'block']
       saveAs.matrices.push(matrix.toArray())
       saveAs.colors.push(sampleColor.index)
     }

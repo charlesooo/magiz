@@ -1,5 +1,6 @@
 import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
+import { handleRaw } from './raw'
 import VIEW from './view'
 
 import type { temp } from '../types/temp'
@@ -23,6 +24,7 @@ const web3DOptions: web3DOptionsType = {
   cameraPosition: [-900, 600, 900],
   cameraLookAt: [0, 90, 0],
   sunDistance: 10000,
+  time: 10,
   lightColor: [
     { hour: 5, color: '#116', directional: 0, ambient: 0 },
     { hour: 6, color: '#f60', directional: 0.6, ambient: 0.2 },
@@ -89,7 +91,10 @@ export default class WEB3D {
 
     /////////////////// 场景初始化 ///////////////////
 
+    // 先初始化太阳位置才能设置时间
     this.sunPosition = new Vector3()
+    this.setTime(this.options.time)
+
     if (this.options.parentCSSID) {
       const dom = document.querySelector(this.options.parentCSSID)
       if (dom) this.parent = dom
@@ -130,7 +135,9 @@ export default class WEB3D {
       lightColor.find((l2, i) => {
         if (l2.hour > hour) {
           // 计算颜色与强度
-          const l1 = lightColor[(i === 0 ? lightColor.length : i) - 1]
+          const l1 = lightColor[
+            (i === 0 ? lightColor.length : i) - 1
+          ] as (typeof lightColor)[number]
           const ratio = (hour - l1.hour) / (l2.hour - l1.hour)
           color = new Color(l1.color).lerp(new Color(l2.color), ratio)
           directionalIntensity = l1.directional + (l2.directional - l1.directional) * ratio
@@ -181,12 +188,34 @@ export default class WEB3D {
   ) {
     playingOnly ? cleanView(this.playing) : this.views.forEach(cleanView)
   }
+  /** 清理场景并生成模型，返回总指标 */
+  refresh(data: rawDataType[], grayScale: boolean, showEdge: boolean) {
+    this.clean()
+    const info = { floorArea: 0, maxFloors: 0 }
+    let maxHeight = 0
+
+    // 生成建筑
+    data.forEach((rawData) => {
+      handleRaw(rawData, this.playing.scene, grayScale, showEdge)
+
+      // 计算指标
+      const { floors, floorArea } = rawData.info
+      info.floorArea += floorArea * floors
+      if (info.maxFloors < floors) info.maxFloors = floors
+      if (maxHeight < rawData.params.height) maxHeight = rawData.params.height
+    })
+
+    // 调整镜头
+    this.setCamera({ lookAt: [0, maxHeight / 2, 0] })
+
+    return info
+  }
 }
 
 function animate(web3D: WEB3D) {
   const c = web3D.playing
   web3D.renderer.render(c.scene, web3D.camera)
-  for (const f in c.animations) c.animations[f]()
+  for (const f in c.animations) (c.animations[f] as Function)()
 
   // 开发时的HMR导致多个渲染循环，须通过检查dom元素自动终止
   if (document.body.contains(web3D.renderer.domElement))

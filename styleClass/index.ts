@@ -45,7 +45,8 @@ export default class STYLES {
     const result: styleOptionsType = { paid: [], free: [] }
     const b = this.params.building
     for (const n in b) {
-      b[n].type === 'FREE' ? result.free.push(n) : result.paid.push(n)
+      const s = b[n] as params.style
+      s.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
     }
     return result
   }
@@ -96,6 +97,8 @@ export default class STYLES {
       parseSection(this, styleParams, elevation, bsh, bfh, seed, ss.bottom)
       parseSection(this, styleParams, elevation + bsh, msh, mfh, seed, ss.middle)
       parseSection(this, styleParams, elevation + height - rsh, rsh, rfh, seed, ss.roof, true)
+    } else {
+      console.warn('未找到建筑样式，返回空的解析结果')
     }
 
     return RESULT
@@ -234,12 +237,17 @@ function parseSection(
           try {
             // 如果缓存中有对应名称的样式
             if (styles.params.preset) {
+              /** 预设样式 */
               let p: (typeof styles.params.preset)[string] | undefined
               if (name) {
+                // 按名字指定预设样式
                 p = styles.params.preset[name]
               } else if (key) {
+                // 按关键词随机选择预设样式
                 const names = Object.keys(styles.params.preset).filter((n) => n.includes(key))
-                p = styles.params.preset[sample(names, seed)]
+                if (names.length > 0) {
+                  p = styles.params.preset[sample(names, seed) as string]
+                }
               }
 
               // 仅在预设参数范围内更新数值
@@ -266,11 +274,11 @@ function parseSection(
                   // 如果输入的参数中有color
                   if (color) {
                     for (const key in p.color) {
-                      GLOBAL.COLOR_PRESET[key] = color[key] || p.color[key]
+                      GLOBAL.COLOR_PRESET[key] = color[key] || (p.color[key] as string | string[])
                     }
                   } else {
                     for (const key in p.color) {
-                      GLOBAL.COLOR_PRESET[key] = p.color[key]
+                      GLOBAL.COLOR_PRESET[key] = p.color[key] as string | string[]
                     }
                   }
                 }
@@ -723,7 +731,8 @@ function replaceUnit(input: string, units?: parsed.unitType) {
     const keys = Object.keys(units).sort((a, b) => b.length - a.length)
     keys.forEach((k) => {
       input = input.replace(new RegExp(`\\d+(\\.\\d+)?${k}`, 'g'), (m) => {
-        return (Number(m.replace(k, '')) * units[k]).toString()
+        const u = units[k] as number
+        return (Number(m.replace(k, '')) * u).toString()
       })
     })
   }

@@ -26,7 +26,7 @@ function handleSlopingRoof(
       TEMP.makeTranslation(min.x - overhang, min.y - overhang, elevation)
     )
 
-    const saveAs = result.floorData['sloping' + (sampleColor.glass ? 'Glass' : '')]
+    const saveAs = result.floorData[sampleColor.glass ? 'slopingGlass' : 'sloping']
     saveAs.matrices.push(matrix.toArray())
     saveAs.colors.push(sampleColor.index)
   })

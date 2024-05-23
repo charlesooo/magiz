@@ -16,7 +16,7 @@ const orbitControlsOptions = {
 
   zoomToCursor: false,
   enableDamping: false,
-  enablePan: false
+  enablePan: false,
 }
 
 /** 添加镜头控制 */
@@ -67,7 +67,10 @@ function autoSaveCameraState(web3D: WEB3D, controls: OrbitControls) {
   controls.addEventListener('end', () => {
     window.localStorage.setItem(
       'cameraState',
-      web3D.camera.position.toArray().join() + ',' + controls.target.toArray().join()
+      JSON.stringify({
+        pos: web3D.camera.position.toArray(),
+        tgt: controls.target.toArray(),
+      })
     )
   })
 }
@@ -76,9 +79,9 @@ function autoSaveCameraState(web3D: WEB3D, controls: OrbitControls) {
 function loadCameraState(web3D: WEB3D, controls: OrbitControls) {
   const cameraState = window.localStorage.getItem('cameraState')
   if (cameraState) {
-    const a = cameraState.split(',').map(Number)
-    web3D.camera.position.set(a[0], a[1], a[2])
-    controls.target.set(a[3], a[4], a[5])
+    const a = JSON.parse(cameraState)
+    web3D.camera.position.set(...(a.pos as [number, number, number]))
+    controls.target.set(...(a.tgt as [number, number, number]))
   }
 }
 

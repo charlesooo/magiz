@@ -225,7 +225,7 @@ function pushSpacingData(
       .premultiply(placeMatrix)
 
     const c = sample(m.color, seed) || DEFAULT_COLOR
-    const saveAs = result['box' + (c.glass ? 'Glass' : '')]
+    const saveAs = result[c.glass ? 'boxGlass' : 'box']
     saveAs.matrices.push(newMatrix.toArray())
     saveAs.colors.push(c.index)
   })

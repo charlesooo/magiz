@@ -36,7 +36,7 @@ function offsetRays(
   return rays.map((loop) => {
     const points: Vector2[] = []
     loop.forEach((ray, i) => {
-      const previous = loop[i === 0 ? loop.length - 1 : i - 1]
+      const previous = loop[i === 0 ? loop.length - 1 : i - 1] as temp.ray
       const ray2: temp.ray = {
         start: previous.start,
         end: previous.end,
@@ -50,7 +50,7 @@ function offsetRays(
     })
 
     return points.map((start, j) => {
-      const end = points[j === points.length - 1 ? 0 : j + 1]
+      const end = points[j === points.length - 1 ? 0 : j + 1] as Vector2
       return { start, end, direction: end.clone().sub(start) }
     })
   })

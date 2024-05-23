@@ -17,13 +17,14 @@ function passControl(i: number, seed: SEED, control?: parsed.control) {
   return pass
 }
 
+/** 自增随机数种子 */
 class SEED {
   /** 递增值 */
   v: number
   /** 预设值，用于重置 */
   _v: number
   constructor(x?: number) {
-    this.v = this._v = x || randNum()
+    this.v = this._v = x || rand100()
   }
   /** 递增数值并返回 */
   get() {
@@ -31,7 +32,7 @@ class SEED {
   }
   /** 重置为指定数值，或随机值 */
   set(x?: number) {
-    this.v = this._v = x || randNum()
+    this.v = this._v = x || rand100()
   }
   /** 重置递增数值为原数值 */
   reset() {
@@ -39,6 +40,7 @@ class SEED {
   }
 }
 
-function randNum() {
+/** 生成一个100以内的随机整数 */
+function rand100() {
   return Math.round(Math.random() * Math.pow(10, 3))
 }

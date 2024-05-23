@@ -9,11 +9,14 @@ import { handleFacade } from './handleFacade'
 import { handleMatch, handleBoxInside, handleAdjunct } from './handleMatchRelated'
 import { scaleRays, offsetRays, rectClampRays } from './handleRays'
 import polylabel from 'polylabel'
+import STYLES from '../styleClass'
 
 import type { temp } from '../types/temp'
 
 /** 建筑平面类，包括用于生成模型的相关数据和方法 */
 export default class PLAN {
+  /** 每个平面对应一个随机数种子 */
+  seed: SEED
   /** 建筑模型生成的参数 */
   styleParams: styleParamsType
   /** 平面的面积 */
@@ -35,47 +38,54 @@ export default class PLAN {
   /** 创建建筑平面实例 */
   constructor(input: parseRequestType) {
     // Path,ShapeGeometry,ExtrudeGeometry 内部在创建时都会检查clockwise，但为了保证 pushRandomSquaresInside 计算正确，须提格式化
-    const inputPoints2D = input.loopPoints.map((loop) => loop.map((p2) => new Vector2(...p2)))
-    if (ShapeUtils.isClockWise(inputPoints2D[0])) inputPoints2D[0].reverse()
-    this.area = ShapeUtils.area(inputPoints2D[0])
-    for (let i = 1; i < inputPoints2D.length; i++) {
-      if (!ShapeUtils.isClockWise(inputPoints2D[i])) inputPoints2D[i].reverse()
-      this.area -= ShapeUtils.area(inputPoints2D[i])
+    const inputPoints2D = input.loops.map((loop) => loop.map((p2) => new Vector2(...p2)))
+    const outterLoop = inputPoints2D[0]
+    // 确保外圈至少包含3个点
+    if (outterLoop && outterLoop.length > 2) {
+      if (ShapeUtils.isClockWise(outterLoop)) outterLoop.reverse()
+      this.area = ShapeUtils.area(outterLoop)
+      for (let i = 1; i < inputPoints2D.length; i++) {
+        const loop = inputPoints2D[i] as Vector2[]
+        if (!ShapeUtils.isClockWise(loop)) loop.reverse()
+        this.area -= ShapeUtils.area(loop)
+      }
+
+      // 计算外边线的矢量，寻找外边线最长的那段
+      const longest = new Vector2()
+      outterLoop.forEach((current, i) => {
+        const next = outterLoop[i + 1 === outterLoop.length ? 0 : i + 1] as Vector2
+        const v = new Vector2().subVectors(next, current)
+        if (v.length() > longest.length()) longest.copy(v)
+      })
+
+      const origin = new Vector2(0, 0)
+      const radian = longest.angle()
+      const rawPoints = outterLoop.map((v) => v.toArray())
+      this.center = new Vector2(...polylabel([rawPoints]))
+
+      const relativePoints = inputPoints2D.map((loop) =>
+        loop.map((v2) => v2.sub(this.center).rotateAround(origin, -radian))
+      )
+
+      const { min, max } = getBounds(relativePoints[0] as Vector2[])
+      this.relative = {
+        radian,
+        bounds: { min, max },
+        size: { x: max.x - min.x, y: max.y - min.y },
+        rays: relativePoints.map((loop) =>
+          loop.map((start, i) => {
+            const end = loop[i + 1 === loop.length ? 0 : i + 1] as Vector2
+            const direction = end.clone().sub(start)
+            return { start, end, direction }
+          })
+        ),
+      }
+    } else {
+      throw 'ERROR: invalid input.loopPoints'
     }
 
-    // 计算外边线的矢量，寻找外边线最长的那段
-    const outer = inputPoints2D[0]
-    const longest = new Vector2()
-    outer.forEach((current, i) => {
-      const next = outer[i + 1 === outer.length ? 0 : i + 1]
-      const v = new Vector2().subVectors(next, current)
-      if (v.length() > longest.length()) longest.copy(v)
-    })
-
-    const origin = new Vector2(0, 0)
-    const radian = longest.angle()
-    const rawPoints = outer.map((v) => v.toArray())
-    this.center = new Vector2(...polylabel([rawPoints]))
-
-    const relativePoints = inputPoints2D.map((loop) =>
-      loop.map((v2) => v2.sub(this.center).rotateAround(origin, -radian))
-    )
-
-    const { min, max } = getBounds(relativePoints[0])
-    this.relative = {
-      radian,
-      bounds: { min, max },
-      size: { x: max.x - min.x, y: max.y - min.y },
-      rays: relativePoints.map((loop) =>
-        loop.map((start, i) => {
-          const end = loop[i + 1 === loop.length ? 0 : i + 1]
-          const direction = end.clone().sub(start)
-          return { start, end, direction }
-        })
-      ),
-    }
-
-    this.styleParams = input.styleParams || {
+    this.seed = new SEED()
+    this.styleParams = input.params || {
       style: '',
       height: 24,
       floorHeight: 3,
@@ -91,10 +101,11 @@ export default class PLAN {
     outerOnly: boolean,
     rotate?: number
   ): temp.ray[][] {
-    let rays = outerOnly ? [this.relative.rays[0]] : this.relative.rays
+    const outter = this.relative.rays[0] as temp.ray[]
+    let rays = outerOnly ? [outter] : this.relative.rays
 
     // 计算整体尺寸
-    const { min, max } = getBounds(rays[0].map((line) => line.start))
+    const { min, max } = getBounds(outter.map((line) => line.start))
     const size = { x: max.x - min.x, y: max.y - min.y }
 
     // 如果有scale，先整体缩放边线
@@ -105,7 +116,7 @@ export default class PLAN {
       if (p.offset) {
         rays = offsetRays(rays, size, p.offset)
       } else if (p.clamp) {
-        const bounds = getBounds(rays[0].map((line) => line.start))
+        const bounds = getBounds(outter.map((line) => line.start))
         const rects = getClampedRects(bounds, p.clamp)
         rays = rectClampRays(rays, rects)
       } else if (p.orient) {
@@ -130,7 +141,7 @@ export default class PLAN {
           case 'LONGEST':
             {
               // 找到最长的射线
-              const r = rays[0].reduce((a, b) =>
+              const r = outter.reduce((a, b) =>
                 a.direction.length() > b.direction.length() ? a : b
               )
               rays =
@@ -167,51 +178,57 @@ export default class PLAN {
 
     return rays
   }
-  /** 按Z轴向上计算生成建筑模型所需的JSON数据 */
-  toRawData(
-    /** 根据样式库中解析后的样式参数 */
-    styleParsed: parsed.result,
-    /** 全局更新的随机数种子，以确保不会重复 */
-    seed: SEED
-  ): rawDataType {
-    const result: rawDataType = {
-      info: { floorArea: this.area, floors: styleParsed.floorCount },
-      points: this.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
-      center: this.center.toArray(),
-      params: this.styleParams,
-      colorMap: styleParsed.colorMap,
-      rotate: this.relative.radian,
-      floorData: {
-        block: { matrices: [], colors: [] },
-        blockGlass: { matrices: [], colors: [] },
-        sloping: { matrices: [], colors: [] },
-        slopingGlass: { matrices: [], colors: [] },
-      },
-      boxData: {
-        box: { matrices: [], colors: [] },
-        boxGlass: { matrices: [], colors: [] },
-      },
-    }
-
-    styleParsed.classified.forEach((s) => {
-      // 保留包含内部孔洞的数据格式，但暂时只处理外边线
-      const rays: temp.ray[][] = this.getEdges(s.edgeParams, seed, true)
-
-      if (rays[0][0]) {
-        const bounds = getBounds(rays[0].map((r) => r.start))
-
-        handleExtrude(s.extrude, rays, result, seed, this.relative.size, s.edgeParams.scale)
-        handleFacade(s.facade, rays, result, seed)
-        handleMatch(s.match, rays, result, seed)
-        handleAdjunct(s.adjunct, rays, result, seed)
-        handleBoxInside(s.boxInside, rays, result, seed)
-        handleClampBox(s.clampBox, bounds, result, seed)
-        handleSlopingRoof(s.slopingRoof, bounds, result, seed)
-      }
-    })
-
-    return result
+  /** 按样式库生成建筑模型 */
+  generate(styles: STYLES): rawDataType {
+    const data = toRawData(this, styles.parseStyle(this.styleParams, this.seed))
+    return data
   }
+}
+
+/** 按Z轴向上计算生成建筑模型所需的JSON数据 */
+function toRawData(
+  plan: PLAN,
+  /** 根据样式库中解析后的样式参数 */
+  styleParsed: parsed.result
+): rawDataType {
+  const result: rawDataType = {
+    info: { floorArea: plan.area, floors: styleParsed.floorCount },
+    points: plan.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
+    center: plan.center.toArray(),
+    params: plan.styleParams,
+    colorMap: styleParsed.colorMap,
+    rotate: plan.relative.radian,
+    floorData: {
+      block: { matrices: [], colors: [] },
+      blockGlass: { matrices: [], colors: [] },
+      sloping: { matrices: [], colors: [] },
+      slopingGlass: { matrices: [], colors: [] },
+    },
+    boxData: {
+      box: { matrices: [], colors: [] },
+      boxGlass: { matrices: [], colors: [] },
+    },
+  }
+
+  const seed = plan.seed
+  styleParsed.classified.forEach((s) => {
+    // 保留包含内部孔洞的数据格式，但暂时只处理外边线
+    const rays = plan.getEdges(s.edgeParams, seed, true)
+
+    if (rays[0] && rays[0].length > 0) {
+      const bounds = getBounds(rays[0].map((r) => r.start))
+
+      handleExtrude(s.extrude, rays, result, seed, plan.relative.size, s.edgeParams.scale)
+      handleFacade(s.facade, rays, result, seed)
+      handleMatch(s.match, rays, result, seed)
+      handleAdjunct(s.adjunct, rays, result, seed)
+      handleBoxInside(s.boxInside, rays, result, seed)
+      handleClampBox(s.clampBox, bounds, result, seed)
+      handleSlopingRoof(s.slopingRoof, bounds, result, seed)
+    }
+  })
+
+  return result
 }
 
 /** 根据参数返回偏移后的定界框 */

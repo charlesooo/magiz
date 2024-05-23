@@ -22,7 +22,7 @@ function handleClampBox(
     matrix.premultiply(TEMP.makeScale(max.x - min.x, max.y - min.y, Math.abs(height)))
     applyTransform(clampParams, matrix).premultiply(TEMP.makeTranslation(min.x, min.y, elevation))
 
-    const saveAs = result.boxData['box' + (sampleColor.glass ? 'Glass' : '')]
+    const saveAs = result.boxData[sampleColor.glass ? 'boxGlass' : 'box']
     saveAs.matrices.push(matrix.toArray())
     saveAs.colors.push(sampleColor.index)
   })

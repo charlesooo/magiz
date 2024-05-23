@@ -63,8 +63,9 @@ function getScaleRatio(
 
 /** 根据点积计算定界框的最小点和最大点 */
 function getBounds(points2D: Vector2[]) {
-  const min = points2D[0].clone(),
-    max = points2D[0].clone()
+  const pt = points2D[0] as Vector2
+  const min = pt.clone()
+  const max = pt.clone()
   points2D.forEach((v2) => {
     const { x, y } = v2
     x < min.x ? (min.x = x) : x > max.x ? (max.x = x) : 0
@@ -77,8 +78,8 @@ function getBounds(points2D: Vector2[]) {
 function isClockwise(points: [number, number][]) {
   let sum = 0
   for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i]
-    const b = points[i + 1]
+    const a = points[i] as [number, number]
+    const b = points[i + 1] as [number, number]
     sum += (b[0] - a[0]) * (b[1] + a[1])
   }
   return sum > 0
@@ -245,10 +246,8 @@ function isPerpendicular(v1: Vector2, v2: Vector2): boolean {
 function isPointInPolygon(point: Vector2, polygon: Vector2[]): boolean {
   let inside = false
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x,
-      yi = polygon[i].y
-    const xj = polygon[j].x,
-      yj = polygon[j].y
+    const { x: xi, y: yi } = polygon[i] as Vector2
+    const { x: xj, y: yj } = polygon[j] as Vector2
     const intersect =
       yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi
     if (intersect) inside = !inside
@@ -290,7 +289,9 @@ function sweepPolygonLines(
   // 保证成对
   if (a.length % 2 === 0)
     for (let i = 0; i < a.length; i += 2) {
-      result.push([a[i], a[i + 1]])
+      const a1 = a[i] as Vector2
+      const a2 = a[i + 1] as Vector2
+      result.push([a1, a2])
     }
   return result
 
@@ -298,8 +299,7 @@ function sweepPolygonLines(
   function pointAt(y: number, line: temp.line): Vector2 | undefined {
     const { x: sx, y: sy } = line.start
     const { x: ex, y: ey } = line.end
-    const rangeY = [sy, ey].sort((a, b) => a - b)
-    if (rangeY[0] < y && y < rangeY[1]) {
+    if (sy < ey ? sy < y && y < ey : ey < y && y < sy) {
       const k = (ey - sy) / (ex - sx)
       const x = (y - sy) / k + sx
       return new Vector2(x, y)
@@ -314,7 +314,7 @@ function matchPolygonLinesAlongX(
   match: parsed.boxFlex[],
   elevation: number,
   sandwich: boolean
-): temp.match[] {
+) {
   const result: temp.match[] = []
   const bounds = getBounds(lines.map((line) => line.start))
   let Y = bounds.min.y
@@ -343,7 +343,7 @@ function matchPolygonLinesAlongX(
     }
 
     // 推送首位到末位
-    if (sandwich) {
+    if (sandwich && matchData[0]) {
       pushMatchData(matchData[0])
     }
   }
@@ -374,8 +374,8 @@ function matchPolygonLinesAlongX(
     data.transform?.forEach((t) => {
       if ('moveX' in t) {
         cws.forEach((cw) => {
-          cw.center[0] += t.moveX
-          cw.center[1] += t.moveY
+          cw.center.x += t.moveX
+          cw.center.y += t.moveY
         })
       }
     })

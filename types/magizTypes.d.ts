@@ -21,6 +21,8 @@ type web3DOptionsType = {
   parentCSSID: string
   /** 太阳到原点的距离，用于计算直射光的起点坐标 */
   sunDistance: number
+  /** 通过时间设置光影 */
+  time: number
 }
 
 /** 从平面生成建筑模型的参数 */
@@ -48,9 +50,9 @@ declare type styleOptionsType = {
 /** 请求解析样式所需的参数 */
 declare type parseRequestType = {
   /** 建筑生成参数 */
-  styleParams: styleParamsType
+  params: styleParamsType
   /** 该坐标之后将经过旋转长边并平移到原点 */
-  loopPoints: [x: number, y: number][][]
+  loops: [x: number, y: number][][]
 }
 
 /** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */

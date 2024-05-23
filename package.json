@@ -1,9 +1,15 @@
 {
   "name": "magiz",
   "version": "1.0.0-beta",
-  "description": "To generate 3D building",
-  "homepage": "https://www.architech.fun",
+  "license": "GPL-3.0-or-later",
   "author": "周曦",
+  "description": "a light weight building 3D model generator",
+  "homepage": "https://www.architech.fun",
+  "keywords": [
+    "architecture",
+    "cityPlanning"
+  ],
+  "main": "index.ts",
   "dependencies": {
     "mathjs": "^12.4.2",
     "polylabel": "^1.1.0",
@@ -11,6 +17,10 @@
   },
   "devDependencies": {
     "@types/polylabel": "^1.1.3",
-    "@types/three": "^0.164.0"
+    "@types/three": "^0.164.0",
+    "esbuild": "0.21.3"
+  },
+  "scripts": {
+    "dist": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --sourcemap --watch --minify --outfile=dist/magiz.min.js"
   }
 }

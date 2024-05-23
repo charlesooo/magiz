@@ -16,7 +16,7 @@ import {
   ExtrudeGeometry,
   InstancedMesh,
   Scene,
-  BufferAttribute
+  BufferAttribute,
 } from 'three'
 
 export { handleRaw, glassMaterial }
@@ -28,7 +28,7 @@ const glassParams = {
   depthWrite: false,
   polygonOffset: true,
   polygonOffsetUnits: 1,
-  polygonOffsetFactor: 0.1
+  polygonOffsetFactor: 0.1,
 }
 
 const boxGeom = new BoxGeometry()
@@ -45,7 +45,11 @@ function handleRaw(input: rawDataType, scene: Scene, grayscale: boolean, showEdg
   const v2Points = input.points.map((loop) => loop.map((p2) => new Vector2(...p2)))
   const colors: [name: string, color: Color][] = []
   if (grayscale) {
-    const c = [0, 1].map((i) => new Color(input.colorMap[i].split(/ +/)[0]))
+    const c = [0, 1].map((i) => {
+      // 必然包含两个默认的材质颜色值
+      const c = input.colorMap[i] as string
+      return new Color(c.split(/ +/)[0])
+    }) as [Color, Color]
     input.colorMap.forEach((x) => colors.push([x, x.includes('G') ? c[1] : c[0]]))
   } else {
     input.colorMap.forEach((x) => colors.push([x, new Color(x.split(/ +/)[0])]))
@@ -110,7 +114,9 @@ function handleRaw(input: rawDataType, scene: Scene, grayscale: boolean, showEdg
 
     data.matrices.forEach((m, i) => {
       tempMatrix.fromArray(m)
-      instance.setColorAt(i, colors[data.colors[i]][1])
+      // 样式解析后的颜色索引必然对应
+      const c = colors[data.colors[i] as number] as [name: string, color: Color]
+      instance.setColorAt(i, c[1])
       instance.setMatrixAt(i, tempMatrix)
 
       if (showEdge) {
@@ -160,7 +166,7 @@ function getSlopingRoofGeometry(indentRatio: number = 0.2) {
     ...c4,
     ...c3,
     ...p2,
-    ...c2
+    ...c2,
   ])
 
   return geometry.setAttribute('position', new BufferAttribute(vertices, 3))
