@@ -2,30 +2,30 @@ import { Vector2, Matrix3 } from 'three'
 import { lineInsideRect, offsetRay, rayIntersectRay } from './handleMath'
 import type { temp } from '../types/temp'
 
-export { scaleRays, offsetRays, rectClampRays }
+export { offsetRays, rectClampRays }
 
 /** 按比例整体缩放边线，返回新的rays */
-function scaleRays(
-  rays: temp.ray[][],
-  ratio: [x: number, y: number],
-  rotate?: number
-): temp.ray[][] {
-  const matrix = new Matrix3().makeScale(...ratio)
-  if (rotate) matrix.premultiply(new Matrix3().makeRotation(rotate))
-  return rays.map((loop) =>
-    loop.map((ray) => {
-      const start = ray.start.clone().applyMatrix3(matrix)
-      const end = ray.end.clone().applyMatrix3(matrix)
-      return { start, end, direction: end.clone().sub(start) }
-    })
-  )
-}
+// function scaleRays(
+//   rays: temp.ray[][],
+//   ratio: [x: number, y: number],
+//   rotate?: number
+// ): temp.ray[][] {
+//   const matrix = new Matrix3().makeScale(...ratio)
+//   if (rotate) matrix.premultiply(new Matrix3().makeRotation(rotate))
+//   return rays.map((loop) =>
+//     loop.map((ray) => {
+//       const start = ray.start.clone().applyMatrix3(matrix)
+//       const end = ray.end.clone().applyMatrix3(matrix)
+//       return { start, end, direction: end.clone().sub(start) }
+//     })
+//   )
+// }
 
 /** 偏移边线，返回新的rays */
 function offsetRays(
   rays: temp.ray[][],
   size: { x: number; y: number },
-  params: parsed.scaleOrOffsetType,
+  params: { x: number; y: number; asRatio: boolean },
   rotate?: number
 ): temp.ray[][] {
   const matrix = rotate ? new Matrix3().makeRotation(rotate) : undefined

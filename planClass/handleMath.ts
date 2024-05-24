@@ -10,7 +10,6 @@ export {
   sample,
   shuffleArray,
   randomBetween,
-  getScaleRatio,
   getBounds,
   getMatchRatioAndCount,
   isClockwise,
@@ -49,17 +48,17 @@ function randomBetween(seed: SEED, a: number, b: number, step?: number) {
 }
 
 /** 根据偏移的距离计算缩放比例，默认返回 [1, 1] */
-function getScaleRatio(
-  size: { x: number; y: number },
-  scale: parsed.scaleOrOffsetType | undefined
-): [scaleX: number, scaleY: number] {
-  if (scale) {
-    const { x, y } = size
-    return scale.asRatio
-      ? [1 - 2 * scale.x, 1 - 2 * scale.y]
-      : [(x - 2 * scale.x) / x, (y - 2 * scale.y) / y]
-  } else return [1, 1]
-}
+// function getScaleRatio(
+//   size: { x: number; y: number },
+//   scale: parsed.scaleOrOffsetType | undefined
+// ): [scaleX: number, scaleY: number] {
+//   if (scale) {
+//     const { x, y } = size
+//     return scale.asRatio
+//       ? [1 - 2 * scale.x, 1 - 2 * scale.y]
+//       : [(x - 2 * scale.x) / x, (y - 2 * scale.y) / y]
+//   } else return [1, 1]
+// }
 
 /** 根据点积计算定界框的最小点和最大点 */
 function getBounds(points2D: Vector2[]) {
@@ -311,51 +310,44 @@ function sweepPolygonLines(
 /** 根据输入的match参数，添加标高并按拟合缩放数值，返回计算结果。根据 steps 组合沿Y轴计算交点。返回的 pairs 为每个step中线的交点，Y值相同 */
 function matchPolygonLinesAlongX(
   lines: temp.line[],
-  match: parsed.boxFlex[],
+  flexBoxes: parsed.boxFlex[],
   elevation: number,
   sandwich: boolean
 ) {
   const result: temp.match[] = []
   const bounds = getBounds(lines.map((line) => line.start))
-  let Y = bounds.min.y
+  /** 计算过程中当前的Y坐标 */
+  let currentY = bounds.min.y
 
   // 将spacing按总长度拟合，以正好覆盖范围
   const distance = bounds.max.y - bounds.min.y
-  const matchData = match.map((boxMatch) => Object.assign({ elevation }, boxMatch))
-  const depths = matchData.map((d) => d.depth)
+  const flexData = flexBoxes.map((flexBox) => Object.assign({ elevation }, flexBox))
+  const depths = flexData.map((d) => d.depth)
   const rc = getMatchRatioAndCount(depths, distance, sandwich ? depths[0] : 0)
   if (rc) {
     // 按拟合比例缩放间距
-    matchData.forEach((d) => (d.depth *= rc.ratio))
-
-    // 提前将 transform 中的 moveZ 添加到 elevation，pushMatchData 中不再重复计算
-    matchData.forEach((data) => {
-      data.transform.forEach((t) => {
-        if ('moveZ' in t) data.elevation += t.moveZ
-      })
-    })
+    flexData.forEach((data) => (data.depth *= rc.ratio))
 
     for (let i = 0; i < rc.count; i++) {
       // if (!order) shuffleArray(matchData)
-      matchData.forEach((data) => {
-        pushMatchData(data)
-      })
+      flexData.forEach(pushMatchData)
     }
 
     // 推送首位到末位
-    if (sandwich && matchData[0]) {
-      pushMatchData(matchData[0])
+    if (sandwich && flexData[0]) {
+      pushMatchData(flexData[0])
     }
   }
 
   return result
 
   /** 调用公共变量Y，将拟合结果推送到result */
-  function pushMatchData(data: (typeof matchData)[0]) {
+  function pushMatchData(data: (typeof flexData)[0]) {
+    // 先移动当前Y坐标到计算的中点位置
     const s = data.depth / 2
-    Y += s
+    currentY += s
     // 计算中点和总宽。sweepPolygonLines 排除在端点的情况，须在中线处拟合
-    const cws = sweepPolygonLines(Y, lines).map((pair) => {
+    const pairs = sweepPolygonLines(currentY, lines).map((pair) => {
       const [p1, p2] = pair
       return {
         center: {
@@ -368,20 +360,20 @@ function matchPolygonLinesAlongX(
 
     // 根据 extend 调整结果
     if (data.extend) {
-      cws.forEach((cw) => (cw.width += data.extend))
+      pairs.forEach((pair) => (pair.width += data.extend))
     }
     // 根据 tansform 中的位移调整结果，暂不考虑旋转
     data.transform?.forEach((t) => {
       if ('moveX' in t) {
-        cws.forEach((cw) => {
-          cw.center.x += t.moveX
-          cw.center.y += t.moveY
+        pairs.forEach((pair) => {
+          pair.center.x += t.moveX
+          pair.center.y += t.moveY
         })
       }
     })
 
-    result.push(Object.assign({ pairs: cws }, data))
-    Y += s
+    result.push(Object.assign({ pairs }, data))
+    currentY += s
   }
 }
 

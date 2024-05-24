@@ -1,6 +1,5 @@
 declare namespace parsed {
   type paddingType = { start: number; middle: number; end: number; asRatio: boolean }
-  type scaleOrOffsetType = { x: number; y: number; asRatio: boolean }
   type transformType =
     | { rotateX: number }
     | { rotateY: number }
@@ -58,10 +57,9 @@ declare namespace parsed {
 
   /** 解析params.floor与边线相关的参数 */
   type handleEdgesType = {
-    scale: scaleOrOffsetType | undefined
     set:
       | {
-          offset: scaleOrOffsetType | undefined
+          offset: { x: number; y: number; asRatio: boolean } | undefined
           clamp: parsed.clampRangeType | undefined
           orient: params.alongType | undefined
         }[]

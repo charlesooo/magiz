@@ -21,6 +21,7 @@
     "esbuild": "0.21.3"
   },
   "scripts": {
+    "check": "tsc --noEmit",
     "dist": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --sourcemap --watch --minify --outfile=dist/magiz.min.js"
   }
 }

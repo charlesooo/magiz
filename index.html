@@ -7,46 +7,41 @@
   <title>Document</title>
   <style>
     html,
-    body {
+    body,
+    #magiz {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
     }
   </style>
 </head>
 
 <body>
-  <canvas id="magiz"></canvas>
+  <div id="magiz"> </div>
+
   <script type="module">
+    ////////////////////////// CONTROLS /////////////////////////
+
+    const style = 'S4'
+    const height = 50
+    const grayScale = false
+    const showEdge = true
+    const devStyles = !true
+
+    ////////////////////////// CONTROLS /////////////////////////
+
     import { styles, PLAN, STYLES, WEB3D } from './dist/magiz.min.js'
-    import { requests } from './csR2.mjs'
+    import { requests } from './cs.mjs'
 
     // 初始化场景
-    const web3D = new WEB3D(document.querySelector('#magiz'))
+    const web3D = new WEB3D('#magiz')
 
-    // // 创建建筑平面
-    // const plan = new PLAN({
-    //   params: {
-    //     style: 'Random',
-    //     height: 24,
-    //     floorHeight: 3,
-    //     elevation: 0,
-    //     seed: 0
-    //   },
-    //   loops: [
-    //     [[0, 0], [80, 0], [80, 30], [0, 30]]
-    //   ]
-    // })
+    if (devStyles) {
 
-    // // 从平面按样式库生成建筑模型数据
-    // const data = plan.generate(styles)
-
-    // // 用数据更新场景
-    // web3D.refresh([data], true, true)
-
-    const data = []
-    requests.length = 100
-    requests.forEach(req => {
-      const [style, height, floorHeight] = req[0]
-      const r = {
+      // 创建建筑平面
+      const plan = new PLAN({
         params: {
           style,
           height,
@@ -54,14 +49,36 @@
           elevation: 0,
           seed: 0
         },
-        loops: req[1]
-      }
-      const plan = new PLAN(r)
-      data.push(plan.generate(styles))
-    });
+        loops: [
+          [[0, 0], [80, 0], [80, 30], [0, 30]]
+        ]
+      })
 
-    web3D.refresh(data, true, true)
+      // 从平面按样式库生成建筑模型数据
+      const data = plan.generate(styles)
 
+      // 用数据更新场景
+      web3D.refresh([data], { grayScale, showEdge })
+    } else {
+      const data = []
+      requests.forEach(req => {
+        const [style, height, floorHeight] = req[0]
+        const r = {
+          params: {
+            style,
+            height,
+            floorHeight: 3,
+            elevation: 0,
+            seed: 0
+          },
+          loops: req[1]
+        }
+        const plan = new PLAN(r)
+        data.push(plan.generate(styles))
+      });
+
+      web3D.refresh(data, { grayScale, showEdge, inplace: true })
+    }
   </script>
 </body>
 

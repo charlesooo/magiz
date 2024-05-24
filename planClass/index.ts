@@ -1,13 +1,12 @@
 import { Vector2, Matrix3 } from 'three'
 import { ShapeUtils } from 'three/src/extras/ShapeUtils.js'
 import { SEED } from './handleUtils'
-import { rand, getScaleRatio, getBounds, isAlongAxis } from './handleMath'
-import { handleExtrude } from './handleExtrude'
+import { rand, getBounds, isAlongAxis } from './handleMath'
 import { handleSlopingRoof } from './handleSlopingRoof'
 import { handleClampBox } from './handleClampBox'
 import { handleFacade } from './handleFacade'
-import { handleMatch, handleBoxInside, handleAdjunct } from './handleMatchRelated'
-import { scaleRays, offsetRays, rectClampRays } from './handleRays'
+import { handleMatch, handleBoxInside, handleAdjunct, handleExtrude } from './handleMatchRelated'
+import { offsetRays, rectClampRays } from './handleRays'
 import polylabel from 'polylabel'
 import STYLES from '../styleClass'
 
@@ -37,6 +36,8 @@ export default class PLAN {
 
   /** 创建建筑平面实例 */
   constructor(input: parseRequestType) {
+    //
+
     // Path,ShapeGeometry,ExtrudeGeometry 内部在创建时都会检查clockwise，但为了保证 pushRandomSquaresInside 计算正确，须提格式化
     const inputPoints2D = input.loops.map((loop) => loop.map((p2) => new Vector2(...p2)))
     const outterLoop = inputPoints2D[0]
@@ -109,7 +110,7 @@ export default class PLAN {
     const size = { x: max.x - min.x, y: max.y - min.y }
 
     // 如果有scale，先整体缩放边线
-    if (params.scale) rays = scaleRays(rays, getScaleRatio(size, params.scale))
+    // if (params.scale) rays = scaleRays(rays, getScaleRatio(size, params.scale))
 
     // 再处理边线
     params.set?.forEach((p) => {
@@ -198,15 +199,11 @@ function toRawData(
     params: plan.styleParams,
     colorMap: styleParsed.colorMap,
     rotate: plan.relative.radian,
-    floorData: {
-      block: { matrices: [], colors: [] },
-      blockGlass: { matrices: [], colors: [] },
-      sloping: { matrices: [], colors: [] },
-      slopingGlass: { matrices: [], colors: [] },
-    },
-    boxData: {
+    data: {
       box: { matrices: [], colors: [] },
       boxGlass: { matrices: [], colors: [] },
+      sloping: { matrices: [], colors: [] },
+      slopingGlass: { matrices: [], colors: [] },
     },
   }
 
@@ -218,11 +215,11 @@ function toRawData(
     if (rays[0] && rays[0].length > 0) {
       const bounds = getBounds(rays[0].map((r) => r.start))
 
-      handleExtrude(s.extrude, rays, result, seed, plan.relative.size, s.edgeParams.scale)
       handleFacade(s.facade, rays, result, seed)
-      handleMatch(s.match, rays, result, seed)
-      handleAdjunct(s.adjunct, rays, result, seed)
+      handleExtrude(s.extrude, rays, result, seed, 4)
       handleBoxInside(s.boxInside, rays, result, seed)
+      handleAdjunct(s.adjunct, rays, result, seed)
+      handleMatch(s.match, rays, result, seed)
       handleClampBox(s.clampBox, bounds, result, seed)
       handleSlopingRoof(s.slopingRoof, bounds, result, seed)
     }

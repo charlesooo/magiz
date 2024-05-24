@@ -19,7 +19,7 @@ function handleFacade(
   seed: SEED
 ) {
   parsed.forEach((facadeParams) => {
-    handleBoxes(result.boxData, handlePadding(rays, facadeParams.padding), facadeParams, seed)
+    handleBoxes(result.data, handlePadding(rays, facadeParams.padding), facadeParams, seed)
   })
 }
 
@@ -81,7 +81,7 @@ function handlePadding(rays: temp.ray[][], padding?: parsed.paddingType): temp.s
 
 /** 如果有 divide，计算在偏移区内的点阵数据 */
 function handleBoxes(
-  result: rawDataType['boxData'],
+  result: rawDataType['data'],
   lineData: temp.splitted[][],
   partPared: parsed.facade,
   seed: SEED
@@ -117,7 +117,7 @@ function handleBoxes(
 /** 在给定的起点、方向、距离内，按间距返回点阵。考虑美观，间距都按参数的近似值。moveZ 在之后结合标高一起计算。如果ray不存在则跳过 */
 function pushDividePoints(
   boxArray: parsed.boxArray,
-  result: rawDataType['boxData'],
+  result: rawDataType['data'],
   elevation: number,
   seed: SEED,
   ray?: temp.ray
@@ -180,7 +180,7 @@ function pushDividePoints(
 function pushData(
   data: spacingDataType[],
   count: number,
-  result: rawDataType['boxData'],
+  result: rawDataType['data'],
   elevation: number,
   direction: Vector2,
   startPoint: Vector2,
@@ -216,7 +216,7 @@ function pushSpacingData(
   distance: number,
   placeMatrix: Matrix4,
   seed: SEED,
-  result: rawDataType['boxData']
+  result: rawDataType['data']
 ) {
   data.model?.forEach((m) => {
     const newMatrix = m.matrix

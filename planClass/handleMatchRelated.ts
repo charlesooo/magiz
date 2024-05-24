@@ -12,7 +12,159 @@ import { passControl, SEED } from './handleUtils'
 
 import type { temp } from '../types/temp'
 
-export { handleBoxInside, handleAdjunct, handleMatch }
+export { handleMatch, handleBoxInside, handleAdjunct, handleExtrude }
+
+// TODO: handleExtrude 可缓存计算结果以减少重复计算
+
+/** 首尾对齐的结果进行合并 */
+function simplifyMatchData(matchData: temp.match[]) {
+  const result: temp.match[] = []
+  let x = matchData[0]
+  if (x) {
+    result.push(x)
+    // 第一个推送到结果，再比较之后的数据
+    for (let i = 1; i < matchData.length; i++) {
+      const current = matchData[i] as temp.match
+      if (current.pairs.length !== x.pairs.length) {
+        // 拟合结果的数量发生变化，修改目标设为当前并推送到结果
+        x = current
+        result.push(x)
+      } else {
+        // 拟合结果的数量相同，寻找当前的和目标的不同点
+        const difference = x.pairs.find((xp, n) => {
+          const cp = current.pairs[n]
+          // 宽度和X坐标的差别超过阈值
+          return cp && Math.abs(xp.width - cp.width) < 1 && Math.abs(xp.center.x - cp.center.x) < 1
+            ? false
+            : true
+        })
+        if (difference) {
+          // 差别超过阈值，修改目标设为当前并推送到结果
+          x = current
+          result.push(x)
+        } else {
+          // 没有差别时更新修改目标
+          x.depth += current.depth
+          x.height = (x.height + current.height) / 2
+          x.elevation = (x.elevation + current.elevation) / 2
+          const moveY = current.depth / 2
+          x.pairs.forEach((pair) => {
+            pair.center.y += moveY
+          })
+        }
+      }
+    }
+  }
+  return result
+}
+
+/** 将 parsed.match 转为纯数据保存到结果 */
+function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawDataType, seed: SEED) {
+  parsed.forEach((matchParsed) => {
+    // 根据参数旋转平面再进行拟合
+    const { along, flexes, elevation, sandwich } = matchParsed
+    const { newRays, radian } = rotateLinesAlong(rays.flat(), seed, along)
+
+    const matchData = simplifyMatchData(
+      matchPolygonLinesAlongX(newRays, flexes, elevation, sandwich)
+    )
+    if (!matchData) return
+
+    /** 拟合结果的总深度（） */
+    let total = 0
+    matchData.forEach((data) => (total += data.depth))
+
+    let tStart = 0
+    let tEnd = total
+    let bStart = 0
+    let bEnd = total
+    const paddingT = matchParsed.top?.padding
+    const paddingB = matchParsed.bottom?.padding
+    if (paddingB || paddingT) {
+      if (paddingT) {
+        tStart = total * paddingT.start
+        tEnd = total * (1 - paddingT.end)
+      }
+      if (paddingB) {
+        bStart = total * paddingB.start
+        bEnd = total * (1 - paddingB.end)
+      }
+    }
+
+    /** 顶部padding后的序号范围 */
+    const tRange = tEnd - tStart
+    /** 底部padding后的序号范围 */
+    const bRange = bEnd - bStart
+    /** 用于 padding */
+    let current = 0
+
+    matchData.forEach((data, i) => {
+      if (passControl(i, seed, matchParsed.control)) {
+        const { depth, pairs } = data
+        let { height, elevation } = data
+
+        // 处理height为负的情况
+        let moveH = 0
+        if (height < 0) {
+          moveH = height
+          height = -height
+        }
+
+        // 非占位
+        if (height > 0) {
+          current += depth / 2
+
+          // 调整顶部形态
+          if (matchParsed.top && tRange > 0) {
+            const { like, ratio } = matchParsed.top
+
+            if (tStart < current && current < tEnd) {
+              const v =
+                like === 'HILL'
+                  ? 1 - Math.sin(((current - tStart) / tRange) * Math.PI)
+                  : like === 'VALLEY'
+                  ? Math.sin(((current - tStart) / tRange) * Math.PI)
+                  : rand(seed)
+              height *= 1 - ratio * v
+            }
+          }
+
+          // 调整底部形态
+          if (matchParsed.bottom && bRange > 0) {
+            const { like, ratio } = matchParsed.bottom
+            if (bStart < current && current < bEnd) {
+              const v =
+                like === 'TUNNEL' ? Math.sin(((current - bStart) / bRange) * Math.PI) : rand(seed)
+              const n = height * ratio * v
+              elevation += n
+              height -= n
+            }
+          }
+
+          current += depth / 2
+          const restoreMatrix = new Matrix4().makeRotationZ(-radian)
+
+          // pair 为每个step代表中线的交点
+          pairs.forEach((pair) => {
+            // 随机颜色须每个单独sample
+            const color = sample(data.color, seed) || DEFAULT_COLOR
+            const matrix = applyTransform(data, new Matrix4().makeScale(pair.width, depth, height))
+              .premultiply(
+                TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
+              )
+              .premultiply(restoreMatrix)
+
+            const saveAs: instancedDataType = result.data[color.glass ? 'boxGlass' : 'box']
+            saveAs.matrices.push(matrix.toArray())
+            saveAs.colors.push(color.index)
+          })
+        } else {
+          current += depth
+        }
+      }
+    })
+  })
+}
 
 function handleBoxInside(
   parsed: parsed.boxInside[],
@@ -106,7 +258,7 @@ function handleBoxInside(
               .premultiply(TEMP.makeRotationZ(-radian))
 
             const color = sample(data.color, seed) || DEFAULT_COLOR
-            const saveAs: instancedDataType = result.boxData[color.glass ? 'boxGlass' : 'box']
+            const saveAs: instancedDataType = result.data[color.glass ? 'boxGlass' : 'box']
             saveAs.matrices.push(matrix.toArray())
             saveAs.colors.push(color.index)
           }
@@ -137,118 +289,12 @@ function handleAdjunct(
           applyTransform(box, matrix).premultiply(
             TEMP.makeTranslation(point.x, point.y, elevation)
           )
-          const saveAs: instancedDataType = result.boxData[color.glass ? 'boxGlass' : 'box']
+          const saveAs: instancedDataType = result.data[color.glass ? 'boxGlass' : 'box']
           saveAs.matrices.push(matrix.toArray())
           saveAs.colors.push(color.index)
         })
       }
     }
-  })
-}
-
-/** 将 parsed.match 转为纯数据保存到结果 */
-function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawDataType, seed: SEED) {
-  parsed.forEach((matchParsed) => {
-    // 根据参数旋转平面再进行拟合
-    const { along, flexes, elevation, sandwich } = matchParsed
-    const { newRays, radian } = rotateLinesAlong(rays.flat(), seed, along)
-
-    const matchData = matchPolygonLinesAlongX(newRays, flexes, elevation, sandwich)
-    if (!matchData) return
-
-    /** 拟合结果的总深度（） */
-    let total = 0
-    matchData.forEach((data) => (total += data.depth))
-
-    let tStart = 0
-    let tEnd = total
-    let bStart = 0
-    let bEnd = total
-    const paddingT = matchParsed.top?.padding
-    const paddingB = matchParsed.bottom?.padding
-    if (paddingB || paddingT) {
-      if (paddingT) {
-        tStart = total * paddingT.start
-        tEnd = total * (1 - paddingT.end)
-      }
-      if (paddingB) {
-        bStart = total * paddingB.start
-        bEnd = total * (1 - paddingB.end)
-      }
-    }
-
-    /** 顶部padding后的序号范围 */
-    const tRange = tEnd - tStart
-    /** 底部padding后的序号范围 */
-    const bRange = bEnd - bStart
-    /** 用于 padding */
-    let current = 0
-
-    matchData.forEach((data, i) => {
-      if (passControl(i, seed, matchParsed.control)) {
-        const { depth, pairs } = data
-        let { height, elevation } = data
-
-        // 处理height为负的情况
-        let moveH = 0
-        if (height < 0) {
-          moveH = height
-          height = -height
-        }
-
-        // 非占位
-        if (height > 0) {
-          current += depth / 2
-
-          // 调整顶部形态
-          if (matchParsed.top && tRange > 0) {
-            const { like, ratio } = matchParsed.top
-
-            if (tStart < current && current < tEnd) {
-              const v =
-                like === 'HILL'
-                  ? 1 - Math.sin(((current - tStart) / tRange) * Math.PI)
-                  : like === 'VALLEY'
-                  ? Math.sin(((current - tStart) / tRange) * Math.PI)
-                  : rand(seed)
-              height *= 1 - ratio * v
-            }
-          }
-
-          // 调整底部形态
-          if (matchParsed.bottom && bRange > 0) {
-            const { like, ratio } = matchParsed.bottom
-            if (bStart < current && current < bEnd) {
-              const v =
-                like === 'TUNNEL' ? Math.sin(((current - bStart) / bRange) * Math.PI) : rand(seed)
-              const n = height * ratio * v
-              elevation += n
-              height -= n
-            }
-          }
-
-          current += depth / 2
-          const restoreMatrix = new Matrix4().makeRotationZ(-radian)
-
-          // pair 为每个step代表中线的交点
-          pairs.forEach((pair) => {
-            // 随机颜色须每个单独sample
-            const color = sample(data.color, seed) || DEFAULT_COLOR
-            const matrix = applyTransform(data, new Matrix4().makeScale(pair.width, depth, height))
-              .premultiply(
-                TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
-              )
-              .premultiply(restoreMatrix)
-
-            const saveAs: instancedDataType = result.boxData[color.glass ? 'boxGlass' : 'box']
-            saveAs.matrices.push(matrix.toArray())
-            saveAs.colors.push(color.index)
-          })
-        } else {
-          current += depth
-        }
-      }
-    })
   })
 }
 
@@ -345,4 +391,59 @@ function matching(
       }
     })
   }
+}
+
+/** 平面多边形用box拟合以轻量化模型 */
+function handleExtrude(
+  parsed: parsed.extrude[],
+  rays: temp.ray[][],
+  result: rawDataType,
+  seed: SEED,
+  /** 用box拟合挤出平面的块厚度 */
+  depth: number
+) {
+  parsed.forEach((extrudeParams) => {
+    const { color, transform, height, thickness, elevation } = extrudeParams
+    const sampleColor = sample(color, seed) || DEFAULT_COLOR
+    const matrix = new Matrix4()
+
+    if (thickness) {
+      // 按偏移后的边线用box构成围墙
+      const moveY = thickness < 0 ? -0.5 : 0.5
+      const moveZ = height < 0 ? -0.5 : 0.5
+      const saveAs = result.data[sampleColor.glass ? 'boxGlass' : 'box']
+      rays.forEach((loop) => {
+        loop.forEach((ray) => {
+          const boxMatrix = matrix.clone()
+          boxMatrix
+            .premultiply(TEMP.makeTranslation(0.5, moveY, moveZ))
+            .premultiply(
+              TEMP.makeScale(ray.direction.length(), Math.abs(thickness), Math.abs(height))
+            )
+            .premultiply(TEMP.makeRotationZ(ray.direction.angle()))
+
+          applyTransform(extrudeParams, boxMatrix).premultiply(
+            TEMP.makeTranslation(ray.start.x, ray.start.y, elevation)
+          )
+
+          saveAs.matrices.push(boxMatrix.toArray())
+          saveAs.colors.push(sampleColor.index)
+        })
+      })
+    } else {
+      // 按偏移后的边线用box拟合挤出平面
+      const parsedMatchParams: parsed.match[] = [
+        {
+          along: 'WIDTH',
+          flexes: [{ extend: 0, depth, height, transform, color }],
+          elevation,
+          sandwich: false,
+          top: undefined,
+          bottom: undefined,
+          control: undefined,
+        },
+      ]
+      handleMatch(parsedMatchParams, rays, result, seed)
+    }
+  })
 }

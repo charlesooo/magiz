@@ -133,11 +133,11 @@ declare namespace params {
 
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
 
-  /** 挤出平面而成的 extrude 元素 */
+  /** 用box拟合挤出的平面 */
   type extrude = status & {
     /** 挤出的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
     height: ns
-    /** 设置厚度时生成围墙 */
+    /** 有厚度时用box构成围墙，反之用box拟合挤出平面 */
     thickness?: ns
     /** 仅在该段的底部生成一次 */
     once?: boolean
@@ -243,9 +243,6 @@ declare namespace params {
     floorRange?: floorRangeType[]
 
     ///////// 边线相关修改须前置，以便extrude、facade等抽象为预设 /////////
-
-    /** 整体缩放边线，先于setEdges，未设置 thickness 的 extrude 仅受其影响，默认不按比例  */
-    scaleEdges?: scaleOrOffsetType
 
     /** 根据参数组合修改边线，每条按 offset|clamp|orient 的顺序，仅有一项生效 */
     setEdges?: {

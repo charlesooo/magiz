@@ -17,12 +17,19 @@ type web3DOptionsType = {
     ambient: number
     directional: number
   }[]
-  /** 通过 querySelector(parentCSSID) 绑定canvas元素到Three.js */
-  parentCSSID: string
   /** 太阳到原点的距离，用于计算直射光的起点坐标 */
   sunDistance: number
   /** 通过时间设置光影 */
   time: number
+}
+
+type web3DRefreshOptionsType = {
+  /** 生成白模 */
+  grayScale: boolean
+  /** 生成边线 */
+  showEdge: boolean
+  /** 模型按原位生成 */
+  inplace: boolean
 }
 
 /** 从平面生成建筑模型的参数 */
@@ -47,12 +54,14 @@ declare type styleOptionsType = {
   free: string[]
 }
 
-/** 请求解析样式所需的参数 */
+/** 请求解析样式所需的参数，须注意多边形坐标的不能首尾重复 */
 declare type parseRequestType = {
   /** 建筑生成参数 */
   params: styleParamsType
-  /** 该坐标之后将经过旋转长边并平移到原点 */
+  /** 平面可以是任意多边形，之后将长边对齐X轴并平移到原点，并用矩形拟合 */
   loops: [x: number, y: number][][]
+  /** 平面也可以直接指定矩形组合，之后将长边对齐X轴并平移到原点 */
+  rects?: [x: number, y: number][][]
 }
 
 /** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */
@@ -74,26 +83,23 @@ declare type rawDataType = {
     /** 建筑层数 */
     floors: number
   }
+
   /** 将中心重置到原点并将长边对齐X轴后的平面坐标点 */
   points: [x: number, y: number][][]
+
   /** 还原模型时原平面中心点坐标 */
   center: [x: number, y: number]
   /** 还原模型时绕Z轴旋转的弧度 */
   rotate: number
+
   /** 模型所用到的全部颜色值，用于索引和统一管理 */
   colorMap: string[]
 
-  /** 由平面生成的推拉体块和坡屋顶的颜色和矩阵数据 */
-  floorData: {
-    block: instancedDataType
-    blockGlass: instancedDataType
-    sloping: instancedDataType
-    slopingGlass: instancedDataType
-  }
-
-  /** Box元素的颜色和矩阵数据 */
-  boxData: {
+  /** instancedMesh元素的颜色和矩阵数据 */
+  data: {
     box: instancedDataType
     boxGlass: instancedDataType
+    sloping: instancedDataType
+    slopingGlass: instancedDataType
   }
 }

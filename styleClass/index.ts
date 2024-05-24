@@ -290,7 +290,6 @@ function parseSection(
                   if (floorParams.floorControl) fp.floorControl = floorParams.floorControl
                   if (floorParams.floorNumber) fp.floorNumber = floorParams.floorNumber
                   if (floorParams.floorRange) fp.floorRange = floorParams.floorRange
-                  if (floorParams.scaleEdges) fp.scaleEdges = floorParams.scaleEdges
                   if (floorParams.setEdges) fp.setEdges = floorParams.setEdges
 
                   parseFloor(floorCount, floorHeight, sectionHeight, sectionElevation, fp, seed)
@@ -417,7 +416,6 @@ function limitFloorRange(
 /** 解析 params.floor 中边线相关的参数 */
 function parseEdgeParams(params: params.floor): parsed.handleEdgesType {
   return {
-    scale: parseOffsetOrScale(params.scaleEdges),
     set: params.setEdges?.map((setEdges) => {
       const { offset, clamp, orient } = setEdges
       return {
@@ -430,9 +428,7 @@ function parseEdgeParams(params: params.floor): parsed.handleEdgesType {
 }
 
 /** 解析偏移边线参数 */
-function parseOffsetOrScale(
-  params?: params.scaleOrOffsetType
-): parsed.scaleOrOffsetType | undefined {
+function parseOffsetOrScale(params?: params.scaleOrOffsetType) {
   if (params) {
     if (typeof params === 'object') {
       return {

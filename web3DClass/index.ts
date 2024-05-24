@@ -20,7 +20,6 @@ import type { temp } from '../types/temp'
 // https://threejs.org/docs/#examples/zh/utils/SceneUtils
 
 const web3DOptions: web3DOptionsType = {
-  parentCSSID: '',
   cameraPosition: [-900, 600, 900],
   cameraLookAt: [0, 90, 0],
   sunDistance: 10000,
@@ -53,8 +52,8 @@ export default class WEB3D {
   sunPosition: Vector3
   /** 工具实例的参数 */
   options: web3DOptionsType
-  /** 绑定canvas元素用于Three.js渲染场景 */
-  parent?: Element
+  /** 绑定DOM元素，并生成用于Three.js渲染场景的canvas元素 */
+  parent: Element
   /** 绑定材质用于镜面材质的环境反射效果 */
   envTexture?: Texture
   /** 控制controls的镜头须实例化一个矢量 */
@@ -69,24 +68,30 @@ export default class WEB3D {
 
   /** 创建管理工具实例 */
   constructor(
-    /** 绑定canvas元素用于Three.js渲染场景 */
-    canvas: HTMLCanvasElement,
+    /** 通过querySelector绑定DOM并生成canvas元素 */
+    parentCSSID: string,
     /** 初始化工具实例的参数 */
     options?: Partial<web3DOptionsType>
   ) {
     // 初始化参数，须最先设置 Z 轴方向
     // Object3D.DEFAULT_UP = new Vector3(0, 0, 1)
+    const dom = document.querySelector(parentCSSID)
+    if (!dom) throw 'ERROR: invalid parentCSSID'
+    const canvas = document.createElement('canvas')
+    dom.appendChild(canvas)
+    this.parent = dom
+
     this.options = Object.assign(web3DOptions, options)
     const renderer = (this.renderer = new WebGLRenderer({
       // logarithmicDepthBuffer: true,
       antialias: true,
-      canvas: canvas,
+      canvas,
     }))
 
     renderer.setPixelRatio(window.devicePixelRatio)
 
     this.views = [(this.playing = new VIEW(this))]
-    this.camera = new PerspectiveCamera(45, 1, 1, 10000000)
+    this.camera = new PerspectiveCamera(45, 1, 1, 1000000000000)
     this.constrols = addOrbitControls(this, { zoomToCursor: false, enablePan: false })
 
     /////////////////// 场景初始化 ///////////////////
@@ -95,12 +100,8 @@ export default class WEB3D {
     this.sunPosition = new Vector3()
     this.setTime(this.options.time)
 
-    if (this.options.parentCSSID) {
-      const dom = document.querySelector(this.options.parentCSSID)
-      if (dom) this.parent = dom
-    }
-    window.addEventListener('resize', () => this.resizeScene())
     this.resizeScene()
+    window.addEventListener('resize', () => this.resizeScene())
 
     /////////////////// ANIMATIONS ///////////////////
     // 按需渲染会增加很多代码合复杂性！
@@ -174,11 +175,9 @@ export default class WEB3D {
   }
   /** 按绑定的DOM设置render和camera尺寸 */
   resizeScene() {
-    const p = this.parent
-    const w = p ? p.clientWidth : window.innerWidth
-    const h = p ? p.clientHeight : window.innerHeight
-    this.renderer.setSize(w, h)
-    this.camera.aspect = w / h
+    const { innerWidth, innerHeight } = window
+    this.renderer.setSize(innerWidth, innerHeight)
+    this.camera.aspect = innerWidth / innerHeight
     this.camera.updateProjectionMatrix()
   }
   /** 清理场景中除设置了 userData.ignored 以外的全部对象 */
@@ -189,14 +188,14 @@ export default class WEB3D {
     playingOnly ? cleanView(this.playing) : this.views.forEach(cleanView)
   }
   /** 清理场景并生成模型，返回总指标 */
-  refresh(data: rawDataType[], grayScale: boolean, showEdge: boolean) {
+  refresh(data: rawDataType[], options?: Partial<web3DRefreshOptionsType>) {
     this.clean()
     const info = { floorArea: 0, maxFloors: 0 }
     let maxHeight = 0
 
     // 生成建筑
     data.forEach((rawData) => {
-      handleRaw(rawData, this.playing.scene, grayScale, showEdge)
+      handleRaw(rawData, this.playing.scene, options)
 
       // 计算指标
       const { floors, floorArea } = rawData.info
@@ -204,6 +203,8 @@ export default class WEB3D {
       if (info.maxFloors < floors) info.maxFloors = floors
       if (maxHeight < rawData.params.height) maxHeight = rawData.params.height
     })
+
+    // console.log('info:', this.renderer.info.render, this.playing)
 
     // 调整镜头
     this.setCamera({ lookAt: [0, maxHeight / 2, 0] })
