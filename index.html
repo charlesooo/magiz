@@ -32,8 +32,13 @@
 
     ////////////////////////// CONTROLS /////////////////////////
 
+    import Stats from './node_modules/three/examples/jsm/libs/stats.module.js'
     import { styles, PLAN, STYLES, WEB3D } from './dist/magiz.min.js'
     import { requests } from './cs.mjs'
+
+    // 系统监视
+    const stats = new Stats();
+    document.body.appendChild(stats.dom);
 
     // 初始化场景
     const web3D = new WEB3D('#magiz')
@@ -78,6 +83,8 @@
       });
 
       web3D.refresh(data, { grayScale, showEdge, inplace: true })
+
+      web3D.playing.animations.updateStats = () => { stats.update() }
     }
   </script>
 </body>

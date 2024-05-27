@@ -1,4 +1,4 @@
-import { Vector2, Matrix4, Material, BufferGeometry } from 'three'
+import { Vector2, Matrix4, Material, BufferGeometry, Color } from 'three'
 
 /** 计算过程数据 */
 export namespace temp {
@@ -49,5 +49,20 @@ export namespace temp {
     children?: disposableType[]
     material?: Material
     geometry?: BufferGeometry
+  }
+
+  type rawInstanceData = { color: Color[]; matrix: Matrix4[] }
+
+  type rawInstanceDataResult = {
+    instance: {
+      box: rawInstanceData
+      boxGlass: rawInstanceData
+      sloping: rawInstanceData
+      slopingGlass: rawInstanceData
+    }
+    edge: {
+      boxMatrix: number[]
+      slopingMatrix: number[]
+    }
   }
 }

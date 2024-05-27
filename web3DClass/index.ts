@@ -1,6 +1,6 @@
 import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
-import { handleRaw } from './raw'
+import { handleRaw, globalTime } from './raw'
 import VIEW from './view'
 
 import type { temp } from '../types/temp'
@@ -194,17 +194,17 @@ export default class WEB3D {
     let maxHeight = 0
 
     // 生成建筑
-    data.forEach((rawData) => {
-      handleRaw(rawData, this.playing.scene, options)
+    handleRaw(data, this.playing.scene, options)
 
-      // 计算指标
+    // 计算指标
+    data.forEach((rawData) => {
       const { floors, floorArea } = rawData.info
       info.floorArea += floorArea * floors
       if (info.maxFloors < floors) info.maxFloors = floors
       if (maxHeight < rawData.params.height) maxHeight = rawData.params.height
     })
 
-    // console.log('info:', this.renderer.info.render, this.playing)
+    console.log('info:', this.renderer.info.render, this.playing)
 
     // 调整镜头
     this.setCamera({ lookAt: [0, maxHeight / 2, 0] })
@@ -217,6 +217,8 @@ function animate(web3D: WEB3D) {
   const c = web3D.playing
   web3D.renderer.render(c.scene, web3D.camera)
   for (const f in c.animations) (c.animations[f] as Function)()
+
+  globalTime.value++
 
   // 开发时的HMR导致多个渲染循环，须通过检查dom元素自动终止
   if (document.body.contains(web3D.renderer.domElement))

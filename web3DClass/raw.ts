@@ -1,5 +1,6 @@
 import {
   DoubleSide,
+  Vector3,
   Matrix4,
   Group,
   Color,
@@ -12,15 +13,14 @@ import {
   BoxGeometry,
   InstancedMesh,
   Scene,
-  ShaderMaterial,
-  WebGLRenderer,
   InstancedBufferGeometry,
   InstancedBufferAttribute,
   BufferAttribute,
-  WebGLProgramParametersWithUniforms,
 } from 'three'
+import type { temp } from 'types/temp'
+import { setMovingShader, setMovingEdgeShader } from './movingShader'
 
-export { handleRaw, glassMaterial }
+export { handleRaw, glassMaterial, globalTime }
 
 const glassParams = {
   side: DoubleSide,
@@ -33,136 +33,146 @@ const glassParams = {
 }
 
 const boxGeom = new BoxGeometry()
+const slopingGeom = getSlopingRoofGeometry()
 const material = new MeshLambertMaterial()
 const glassMaterial = new MeshStandardMaterial(glassParams)
 const twoSideMaterial = new MeshLambertMaterial({ side: 2 })
-const lineMaterial = new LineBasicMaterial({ color: '#333' })
+const lineMaterial = new LineBasicMaterial({ color: '#000' })
+
+const globalTime = { value: 0 }
+const movingVect = new Vector3(2, 0, 0)
+
+setMovingShader(material, globalTime, movingVect)
+setMovingShader(glassMaterial, globalTime, movingVect)
+setMovingEdgeShader(lineMaterial, globalTime, movingVect)
 
 /** 将 Magiz 解析的 rawDataType 转为 Three.js 对象 */
-function handleRaw(input: rawDataType, scene: Scene, options?: Partial<web3DRefreshOptionsType>) {
+function handleRaw(
+  input: rawDataType[],
+  scene: Scene,
+  options?: Partial<web3DRefreshOptionsType>
+) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
-  const building = new Group().rotateX(-Math.PI / 2)
-  const colors: [name: string, color: Color][] = []
-
-  // 白模风格
-  if (options?.grayScale) {
-    // 必然包含两个默认的材质颜色值
-    const c = [0, 1].map((i) => {
-      const c = input.colorMap[i] as string
-      return new Color(c.split(/ +/)[0])
-    }) as [Color, Color]
-    input.colorMap.forEach((x) => colors.push([x, x.includes('G') ? c[1] : c[0]]))
-  } else {
-    input.colorMap.forEach((x) => colors.push([x, new Color(x.split(/ +/)[0])]))
-  }
-
-  // 生成模型元素
-  let instanceType: keyof rawDataType['data']
+  const buildings = new Group().rotateX(-Math.PI / 2)
+  const colors: { [name: string]: Color } = {}
   const showEdge = options?.showEdge || false
   const grayScale = options?.grayScale || false
+  const inplace = options?.inplace || false
   const tempMatrix = new Matrix4()
-  const restoreParams = options?.inplace
-    ? {
-        center: input.center,
-        rotate: input.rotate,
-      }
-    : undefined
-
-  for (instanceType in input.data) {
-    const g = instanceType.includes('box') ? boxGeom : getSlopingRoofGeometry()
-    const m = instanceType.includes('Glass')
-      ? glassMaterial
-      : instanceType.includes('box')
-      ? material
-      : twoSideMaterial
-
-    addInstance(
-      building,
-      input.data[instanceType],
-      colors,
-      g,
-      m,
-      grayScale,
-      showEdge,
-      tempMatrix,
-      restoreParams
-    )
+  const result: temp.rawInstanceDataResult = {
+    instance: {
+      box: { color: [], matrix: [] },
+      boxGlass: { color: [], matrix: [] },
+      sloping: { color: [], matrix: [] },
+      slopingGlass: { color: [], matrix: [] },
+    },
+    edge: { boxMatrix: [], slopingMatrix: [] },
   }
 
-  scene.add(building)
-}
+  // 模型元素类型
+  let instanceType: keyof rawDataType['data']
 
-/** 设置instancedMesh的matrix与color */
-function addInstance(
-  building: Group,
-  data: instancedDataType,
-  colors: [name: string, color: Color][],
-  geom: BufferGeometry,
-  material: MeshLambertMaterial | MeshStandardMaterial,
-  grayScale: boolean,
-  showEdge: boolean,
-  tempMatrix: Matrix4,
-  /** 还原模型到原坐标和旋转角度 */
-  restoreParams?: {
-    center: [x: number, y: number]
-    rotate: number
-  }
-) {
-  const matrix = new Matrix4()
-  const count = data.matrices.length
-  const instance = new InstancedMesh(geom, material, count)
-  const edgeMatrixes: number[] = []
+  // 整合输入的rawData到 result
+  input.forEach((rawData) => {
+    const restoreParams = inplace ? { center: rawData.center, rotate: rawData.rotate } : undefined
+    for (instanceType in rawData.data) {
+      const inputData = rawData.data[instanceType]
+      const saveAs = result.instance[instanceType]
 
-  data.matrices.forEach((m, i) => {
-    matrix.fromArray(m)
+      inputData.matrices.forEach((m, i) => {
+        const matrix = new Matrix4().fromArray(m)
 
-    // 还原位置和旋转
-    if (restoreParams) {
-      matrix
-        .premultiply(tempMatrix.makeRotationZ(restoreParams.rotate))
-        .premultiply(tempMatrix.makeTranslation(...restoreParams.center, 0))
-    }
+        // 还原位置和旋转
+        if (restoreParams) {
+          matrix
+            .premultiply(tempMatrix.makeRotationZ(restoreParams.rotate))
+            .premultiply(tempMatrix.makeTranslation(...restoreParams.center, 0))
+        }
 
-    if (!grayScale) {
-      // 样式解析后的颜色索引必然对应
-      const c = colors[data.colors[i] as number] as [name: string, color: Color]
-      instance.setColorAt(i, c[1])
-    }
-    instance.setMatrixAt(i, matrix)
+        // 保存边线数据
+        if (showEdge) {
+          result.edge[instanceType.includes('box') ? 'boxMatrix' : 'slopingMatrix'].push(
+            ...matrix.toArray()
+          )
+        }
 
-    // if (showEdge) {
-    //   const eg = new EdgesGeometry(geom).applyMatrix4(matrix)
-    //   building.add(new LineSegments(eg, lineMaterial))
-    // }
+        // 保存矩阵数据
+        saveAs.matrix.push(matrix)
 
-    if (showEdge) {
-      edgeMatrixes.push(...matrix.toArray())
+        // 断言是因为样式解析后的颜色索引必然对应
+        let c = rawData.colorMap[inputData.colors[i] as number] as string
+        if (grayScale) {
+          c = rawData.colorMap[c.includes('G') ? 1 : 0] as string
+        }
+        let color = colors[c]
+        if (!color) {
+          color = new Color(c.replace(/ *G$/, ''))
+          colors[c] = color
+        }
+        saveAs.color.push(color)
+      })
     }
   })
 
-  if (showEdge) {
-    const eg = new EdgesGeometry(geom)
-    const eibg = new InstancedBufferGeometry()
-    eibg.instanceCount = data.matrices.length
-    eibg.setAttribute('position', eg.getAttribute('position'))
-    eibg.setAttribute('matrix', new InstancedBufferAttribute(new Float32Array(edgeMatrixes), 16))
+  // 根据 result 生成体块
+  addInstanceData(buildings, result.instance.box, boxGeom, material)
+  addInstanceData(buildings, result.instance.boxGlass, boxGeom, glassMaterial)
+  addInstanceData(buildings, result.instance.sloping, slopingGeom, twoSideMaterial)
+  addInstanceData(buildings, result.instance.slopingGlass, slopingGeom, glassMaterial)
 
-    const em2 = new LineBasicMaterial({ color: '#666' })
-
-    em2.onBeforeCompile = (shader) => {
-      shader.vertexShader = `
-      attribute mat4 matrix;
-
-      void main() {
-        gl_Position = projectionMatrix * modelViewMatrix * matrix * vec4( position, 1.0 );
-      }
-      `
-    }
-    building.add(new LineSegments(eibg, em2))
+  // 根据 result 生成边线
+  const { boxMatrix, slopingMatrix } = result.edge
+  if (boxMatrix.length > 0) {
+    const ibg = getEdgeIBG(boxGeom)
+    buildings.add(getInstancedLineSegments(ibg, boxMatrix, lineMaterial))
+  }
+  if (slopingMatrix.length > 0) {
+    const ibg = getEdgeIBG(getSlopingRoofGeometry())
+    buildings.add(getInstancedLineSegments(ibg, slopingMatrix, lineMaterial))
   }
 
-  instance.castShadow = instance.receiveShadow = true
-  building.add(instance)
+  // 添加模型到场景
+  buildings.name = 'buildings'
+  scene.add(buildings)
+}
+
+/** 初始化用于渲染边线的 InstancedBufferGeometry */
+function getEdgeIBG(geom: BufferGeometry) {
+  const eg = new EdgesGeometry(geom)
+  const eibg = new InstancedBufferGeometry()
+  eibg.setAttribute('position', eg.getAttribute('position'))
+  eg.dispose()
+  return eibg
+}
+
+function getInstancedLineSegments(
+  ibg: InstancedBufferGeometry,
+  matrixData: number[],
+  edgeShaderMaterial: LineBasicMaterial
+) {
+  ibg.setAttribute('matrix', new InstancedBufferAttribute(new Float32Array(matrixData), 16))
+  ibg.instanceCount = matrixData.length / 16
+  const ls = new LineSegments(ibg, edgeShaderMaterial)
+  ls.frustumCulled = false
+  return ls
+}
+
+/** 设置instancedMesh的matrix与color */
+function addInstanceData(
+  buildings: Group,
+  data: temp.rawInstanceData,
+  geom: BufferGeometry,
+  material: MeshLambertMaterial | MeshStandardMaterial
+) {
+  if (data.matrix.length > 0) {
+    const i = new InstancedMesh(geom, material, data.matrix.length)
+    data.matrix.forEach((m, n) => {
+      i.setMatrixAt(n, m)
+      i.setColorAt(n, data.color[n] as Color)
+    })
+    i.castShadow = i.receiveShadow = true
+    buildings.add(i)
+  }
 }
 
 /** 将平面点转为高度为1的 ExtrudeGeometry */
