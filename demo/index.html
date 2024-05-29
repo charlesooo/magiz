@@ -15,11 +15,49 @@
       height: 100%;
       overflow: hidden;
     }
+
+    #magiz {
+      opacity: 0.5;
+    }
+
+    .title {
+      width: 100%;
+      height: 60%;
+      position: fixed;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      text-transform: uppercase;
+      font-size: 120px;
+      pointer-events: none;
+    }
+
+    #text {
+      background: linear-gradient(to left, #80fd4e, #fbd786, #ff474d);
+      animation: gradient 3.0s ease infinite alternate;
+      background-clip: text;
+      background-size: 200% 100%;
+      color: transparent;
+    }
+
+    @keyframes gradient {
+      0% {
+        background-position: 0% 0;
+      }
+
+      100% {
+        background-position: 100% 0;
+      }
+    }
   </style>
 </head>
 
 <body>
   <div id="magiz"> </div>
+  <b id="back" class="title" style="transform: translate(12px, 12px);"> Infinite City </b>
+  <b id="text" class="title"> Infinite City </b>
 
   <script type="module">
     ////////////////////////// CONTROLS /////////////////////////
@@ -32,8 +70,8 @@
 
     ////////////////////////// CONTROLS /////////////////////////
 
-    import Stats from './node_modules/three/examples/jsm/libs/stats.module.js'
-    import { styles, PLAN, STYLES, WEB3D } from './dist/magiz.min.js'
+    import Stats from '../node_modules/three/examples/jsm/libs/stats.module.js'
+    import { styles, PLAN, STYLES, WEB3D } from '../dist/magiz.min.js'
     import { requests } from './cs.mjs'
 
     // 系统监视
@@ -84,8 +122,27 @@
 
       web3D.refresh(data, { grayScale, showEdge, inplace: true })
 
+      web3D.playing.addGround(3000, './map.jpg', 1)
       web3D.playing.animations.updateStats = () => { stats.update() }
     }
+  </script>
+
+  <script>
+    const centerRatio = [0.5, 0.3]
+    const back = document.getElementById('back')
+    window.addEventListener('mousemove', e => {
+      const { innerWidth, innerHeight } = window
+      const center = {
+        x: centerRatio[0] * innerWidth,
+        y: centerRatio[1] * innerHeight
+      }
+      const { clientX, clientY } = e
+      const r = {
+        x: clientX < center.x ? (center.x - clientX) / center.x : (center.x - clientX) / (innerWidth - center.x),
+        y: clientY < center.y ? (center.y - clientY) / center.y : (center.y - clientY) / (innerHeight - center.y)
+      }
+      back.style.transform = `translate(${12 * r.x}px, ${12 * r.y}px)`
+    })
   </script>
 </body>
 

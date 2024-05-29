@@ -1,6 +1,7 @@
 import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
-import { handleRaw, globalTime } from './raw'
+import { globalTime } from './movingMaterials'
+import { handleRaw } from './raw'
 import VIEW from './view'
 
 import type { temp } from '../types/temp'
@@ -27,9 +28,9 @@ const web3DOptions: web3DOptionsType = {
   lightColor: [
     { hour: 5, color: '#116', directional: 0, ambient: 0 },
     { hour: 6, color: '#f60', directional: 0.6, ambient: 0.2 },
-    { hour: 9, color: '#fff', directional: 6, ambient: 1 },
-    { hour: 12, color: '#fff', directional: 9, ambient: 1 },
-    { hour: 16, color: '#fff', directional: 6, ambient: 1 },
+    { hour: 9, color: '#fff', directional: 2, ambient: 0.6 },
+    { hour: 12, color: '#fff', directional: 2, ambient: 0.6 },
+    { hour: 16, color: '#fff', directional: 2, ambient: 0.6 },
     { hour: 18, color: '#d33', directional: 0.6, ambient: 0.2 },
     { hour: 19, color: '#116', directional: 0.1, ambient: 0.1 },
     { hour: 24, color: '#000', directional: 0, ambient: 0 },
@@ -91,7 +92,7 @@ export default class WEB3D {
     renderer.setPixelRatio(window.devicePixelRatio)
 
     this.views = [(this.playing = new VIEW(this))]
-    this.camera = new PerspectiveCamera(45, 1, 1, 1000000000000)
+    this.camera = new PerspectiveCamera(45, 1, 1, 1000000000)
     this.constrols = addOrbitControls(this, { zoomToCursor: false, enablePan: false })
 
     /////////////////// 场景初始化 ///////////////////

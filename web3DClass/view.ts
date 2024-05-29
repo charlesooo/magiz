@@ -4,11 +4,14 @@ import {
   DirectionalLight,
   DirectionalLightHelper,
   AmbientLight,
-  MeshLambertMaterial,
+  MeshBasicMaterial,
   PlaneGeometry,
   Mesh,
   PCFSoftShadowMap,
-  Fog
+  TextureLoader,
+  Fog,
+  Texture,
+  RepeatWrapping,
 } from 'three'
 import WEB3D from '.'
 
@@ -30,17 +33,18 @@ export default class VIEW {
   }
   /** 场景中的动画函数 */
   animations: { [name: string]: () => void }
-  /** 场景中建筑模型相关的元素 */
-  meshes: Group
-  /** 场景中的其它元素（如Helpers） */
-  others: Group
+  /** 场景中不被自动清理的的元素（如光、地面、Helpers） */
+  ignored: Group
+  /** 场景中地面相关数据 */
+  ground?: {
+    texture: Texture
+    size: number
+  }
 
   constructor(parent: WEB3D) {
     this.parent = parent
     this.scene = new Scene()
-    this.others = new Group()
-    this.meshes = new Group()
-    this.meshes.name = 'updated'
+    this.ignored = new Group()
     this.animations = {}
 
     // 阴影设置案例 https://threejs.org/docs/index.html?q=DirectionalLight#api/en/lights/shadows/DirectionalLightShadow
@@ -51,7 +55,7 @@ export default class VIEW {
     // const hemisphere = new HemisphereLight('#fff', '#bbb', 1)
     const directional = new DirectionalLight()
     this.lights = { directional, ambient }
-    this.others.userData.ignored = true
+    this.ignored.userData.ignored = true
 
     const helper = new DirectionalLightHelper(directional)
 
@@ -62,8 +66,8 @@ export default class VIEW {
     // Mesh.renderOrder
 
     // https://threejs.org/docs/#api/zh/lights/DirectionalLight.target
-    this.others.add(ambient, directional, directional.target, helper)
-    this.scene.add(this.meshes, this.others)
+    this.ignored.add(ambient, directional, directional.target, helper)
+    this.scene.add(this.ignored)
 
     if (shadowArea) {
       const { width, height } = shadowArea
@@ -80,20 +84,50 @@ export default class VIEW {
     }
   }
   /** 添加指定大小的地面 */
-  addGround(size: number) {
-    const plane = new Mesh(
-      new PlaneGeometry(size, size).rotateX(xRadian),
-      new MeshLambertMaterial({
-        color: '#aaa',
-        polygonOffset: true,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 0.1
-      })
-    )
-    plane.userData.ignored = true
+  addGround(size: number, pictureURL: string, uvMoving = 0) {
+    const planeMaterial = new MeshBasicMaterial({
+      color: '#eee',
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 0.1,
+    })
+    const planeGeom = new PlaneGeometry(size, size).rotateX(xRadian)
+    const plane = new Mesh(planeGeom, planeMaterial)
     plane.renderOrder = -1
-    plane.receiveShadow = plane.castShadow = true
-    this.scene.add(plane)
+    plane.receiveShadow = true
+    this.ignored.add(plane)
+
+    if (pictureURL) {
+      new TextureLoader().load(
+        pictureURL,
+        (texture) => {
+          this.ground = { texture, size }
+          planeMaterial.map = texture
+          planeMaterial.needsUpdate = true
+          if (uvMoving) {
+            texture.wrapS = texture.wrapT = RepeatWrapping
+            const speed = uvMoving / size
+            this.animations.uvMovingX = () => {
+              texture.offset.x += -speed
+            }
+          }
+        },
+        (err) => console.error('TextureLoader error', pictureURL, err)
+      )
+    }
+  }
+
+  setPlaneUvMovingX(x: number) {
+    if (this.ground) {
+      const { texture, size } = this.ground
+      const u = x / size
+      // 0,1,1,1,0,0,1,0
+      this.animations.uvMovingX = () => {
+        console.log(texture.offset.x)
+
+        texture.offset.x += x
+      }
+    }
   }
 
   /** 添加雾气效果 */

@@ -1,6 +1,4 @@
 import {
-  DoubleSide,
-  Vector3,
   Matrix4,
   Group,
   Color,
@@ -18,33 +16,12 @@ import {
   BufferAttribute,
 } from 'three'
 import type { temp } from 'types/temp'
-import { setMovingShader, setMovingEdgeShader } from './movingShader'
+import { material, glassMaterial, twoSideMaterial, lineMaterial } from './movingMaterials'
 
-export { handleRaw, glassMaterial, globalTime }
-
-const glassParams = {
-  side: DoubleSide,
-  opacity: 0.6,
-  transparent: true,
-  depthWrite: false,
-  polygonOffset: true,
-  polygonOffsetUnits: 1,
-  polygonOffsetFactor: 0.1,
-}
+export { handleRaw, glassMaterial }
 
 const boxGeom = new BoxGeometry()
 const slopingGeom = getSlopingRoofGeometry()
-const material = new MeshLambertMaterial()
-const glassMaterial = new MeshStandardMaterial(glassParams)
-const twoSideMaterial = new MeshLambertMaterial({ side: 2 })
-const lineMaterial = new LineBasicMaterial({ color: '#000' })
-
-const globalTime = { value: 0 }
-const movingVect = new Vector3(2, 0, 0)
-
-setMovingShader(material, globalTime, movingVect)
-setMovingShader(glassMaterial, globalTime, movingVect)
-setMovingEdgeShader(lineMaterial, globalTime, movingVect)
 
 /** 将 Magiz 解析的 rawDataType 转为 Three.js 对象 */
 function handleRaw(
@@ -175,15 +152,6 @@ function addInstanceData(
   }
 }
 
-/** 将平面点转为高度为1的 ExtrudeGeometry */
-// function toExtrudedGeometry(v2Points: Vector2[][]) {
-//   const shape = new Shape(v2Points[0])
-//   for (let i = 1; i < v2Points.length; i++) {
-//     shape.holes.push(new Path(v2Points[i]))
-//   }
-//   return new ExtrudeGeometry(shape, { bevelEnabled: false })
-// }
-
 /** 生成尺寸为 1x1x1 ，最小点为原点，顶部缩进 indentRatio 的坡屋顶 */
 function getSlopingRoofGeometry(indentRatio: number = 0.2) {
   const geometry = new BufferGeometry()
@@ -216,3 +184,12 @@ function getSlopingRoofGeometry(indentRatio: number = 0.2) {
 
   return geometry.setAttribute('position', new BufferAttribute(vertices, 3))
 }
+
+/** 将平面点转为高度为1的 ExtrudeGeometry */
+// function toExtrudedGeometry(v2Points: Vector2[][]) {
+//   const shape = new Shape(v2Points[0])
+//   for (let i = 1; i < v2Points.length; i++) {
+//     shape.holes.push(new Path(v2Points[i]))
+//   }
+//   return new ExtrudeGeometry(shape, { bevelEnabled: false })
+// }
