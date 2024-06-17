@@ -5,145 +5,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <style>
-    html,
-    body,
-    #magiz {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    #magiz {
-      opacity: 0.5;
-    }
-
-    .title {
-      width: 100%;
-      height: 60%;
-      position: fixed;
-      top: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      text-transform: uppercase;
-      font-size: 120px;
-      pointer-events: none;
-    }
-
-    #text {
-      background: linear-gradient(to left, #80fd4e, #fbd786, #ff474d);
-      animation: gradient 3.0s ease infinite alternate;
-      background-clip: text;
-      background-size: 200% 100%;
-      color: transparent;
-    }
-
-    @keyframes gradient {
-      0% {
-        background-position: 0% 0;
-      }
-
-      100% {
-        background-position: 100% 0;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="index.css">
 </head>
 
 <body>
   <div id="magiz"> </div>
   <b id="back" class="title" style="transform: translate(12px, 12px);"> Infinite City </b>
   <b id="text" class="title"> Infinite City </b>
+  <div id="music">
+    <audio src="really.mp3" controls></audio>
+    <canvas></canvas>
+  </div>
 
-  <script type="module">
-    ////////////////////////// CONTROLS /////////////////////////
-
-    const style = 'S4'
-    const height = 50
-    const grayScale = false
-    const showEdge = true
-    const devStyles = !true
-
-    ////////////////////////// CONTROLS /////////////////////////
-
-    import Stats from '../node_modules/three/examples/jsm/libs/stats.module.js'
-    import { styles, PLAN, STYLES, WEB3D } from '../dist/magiz.module.min.js'
-    import { requests } from './cs.mjs'
-
-    // 系统监视
-    const stats = new Stats();
-    document.body.appendChild(stats.dom);
-
-    // 初始化场景
-    const web3D = new WEB3D('#magiz')
-
-    if (devStyles) {
-
-      // 创建建筑平面
-      const plan = new PLAN({
-        params: {
-          style,
-          height,
-          floorHeight: 3,
-          elevation: 0,
-          seed: 0
-        },
-        loops: [
-          [[0, 0], [80, 0], [80, 30], [0, 30]]
-        ]
-      })
-
-      // 从平面按样式库生成建筑模型数据
-      const data = plan.generate(styles)
-
-      // 用数据更新场景
-      web3D.refresh([data], { grayScale, showEdge })
-    } else {
-      const data = []
-      requests.forEach(req => {
-        const [style, height, floorHeight] = req[0]
-        const r = {
-          params: {
-            style,
-            height,
-            floorHeight: 3,
-            elevation: 0,
-            seed: 0
-          },
-          loops: req[1]
-        }
-        const plan = new PLAN(r)
-        data.push(plan.generate(styles))
-      });
-
-      web3D.refresh(data, { grayScale, showEdge, inplace: true })
-
-      web3D.playing.addGround(3000, './map.jpg', 1)
-      web3D.playing.animations.updateStats = () => { stats.update() }
-    }
-  </script>
-
-  <script>
-    const centerRatio = [0.5, 0.3]
-    const back = document.getElementById('back')
-    window.addEventListener('mousemove', e => {
-      const { innerWidth, innerHeight } = window
-      const center = {
-        x: centerRatio[0] * innerWidth,
-        y: centerRatio[1] * innerHeight
-      }
-      const { clientX, clientY } = e
-      const r = {
-        x: clientX < center.x ? (center.x - clientX) / center.x : (center.x - clientX) / (innerWidth - center.x),
-        y: clientY < center.y ? (center.y - clientY) / center.y : (center.y - clientY) / (innerHeight - center.y)
-      }
-      back.style.transform = `translate(${12 * r.x}px, ${12 * r.y}px)`
-    })
-  </script>
+  <script type="module" src="index.mjs"> </script>
+  <script type="module" src="audio.mjs"> </script>
 </body>
 
 </html>
