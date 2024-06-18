@@ -1,6 +1,12 @@
 import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
-import { globalTime } from './movingMaterials'
+import {
+  globalTime,
+  basicMaterialVects,
+  glassMaterialVects,
+  lineMaterialVects,
+  uniformVectorType,
+} from './movingMaterials'
 import { handleRaw } from './raw'
 import VIEW from './view'
 
@@ -66,6 +72,11 @@ export default class WEB3D {
     positon: [x: number, y: number, z: number]
     lookAt: [x: number, y: number, z: number]
   }
+  materialVects?: {
+    basic: uniformVectorType
+    glass: uniformVectorType
+    line: uniformVectorType
+  }
 
   /** 创建管理工具实例 */
   constructor(
@@ -94,6 +105,11 @@ export default class WEB3D {
     this.views = [(this.playing = new VIEW(this))]
     this.camera = new PerspectiveCamera(45, 1, 1, 1000000000)
     this.constrols = addOrbitControls(this, { zoomToCursor: false, enablePan: false })
+    this.materialVects = {
+      basic: basicMaterialVects,
+      glass: glassMaterialVects,
+      line: lineMaterialVects,
+    }
 
     /////////////////// 场景初始化 ///////////////////
 

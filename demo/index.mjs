@@ -71,6 +71,109 @@ if (devStyles) {
   }
 }
 
+////////////////////////// AUDIO /////////////////////////
+
+const audio = document.querySelector('#music audio')
+const canvas = document.querySelector('#music canvas')
+const ctx = canvas.getContext('2d')
+
+// 设置初始化状态
+let isInit = false
+
+const audioCtx = new AudioContext()
+const analyser = audioCtx.createAnalyser()
+analyser.fftSize = 32
+const data = new Uint8Array(analyser.frequencyBinCount)
+
+// 绑定播放事件
+audio.onplay = () => {
+  if (isInit) return
+  const source = audioCtx.createMediaElementSource(audio)
+  source.connect(analyser)
+  analyser.connect(audioCtx.destination)
+  draw()
+  isInit = true
+}
+
+const ratioEl = document.querySelector('#ratio')
+
+// 绘制内容
+function draw() {
+  requestAnimationFrame(draw)
+  // 清空画布
+  const { width, height } = canvas
+  ctx.clearRect(0, 0, width, height)
+  if (!isInit) return
+  // 把分析器节点的数据更新到data中
+  analyser.getByteFrequencyData(data)
+  const len = data.length
+  const barWidth = width / len
+  // 每一个方块的高度
+  const blockHeight = 8
+
+  for (let i = 0; i < data.length; i++) {
+    // 拿到本列的数值
+    const _data = data[i]
+
+    /////////////////// 控制模型颜色 ////////////////////
+
+    if (i === 0) {
+      web3D.materialVects.basic.v4.value.x = _data
+      ratioEl.innerHTML = _data
+    }
+
+    /////////////////// 控制模型颜色 ////////////////////
+
+    const barHeight = (_data / 255) * height
+    const x = i * barWidth
+    const blockCount = Math.round(barHeight / 10)
+    for (let number = 0; number < blockCount; number++) {
+      ctx.fillStyle = gradient[number]
+      const y = height - blockHeight * number
+      drawRoundedRect(x, y, barWidth - 1, blockHeight - 1, 2)
+    }
+  }
+}
+
+function drawRoundedRect(x, y, width, height, radius) {
+  if (height === 0) return
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + width - radius, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+  ctx.lineTo(x + width, y + height - radius)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+  ctx.lineTo(x + radius, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.fill()
+}
+
+function generateGradient(baseColor, count) {
+  let hsl = baseColor.match(/hsla?\((\d+),\s*(\d+%),\s*(\d+%),\s*([\d.]+)\)/)
+  let h = parseInt(hsl[1], 10) // Hue
+  let s = parseInt(hsl[2], 10) // Saturation
+  let l = parseInt(hsl[3], 10) // Lightness
+
+  // 在色盘上按照数量均分，获取每个均分点的颜色
+  let stepH = 360 / count
+  // 提高每个等级的亮度
+  let stepL = 100 / (count + 1)
+
+  let gradientColors = []
+  for (let i = 0; i < count; i++) {
+    gradientColors.push(`hsl(${h + i * stepH}, ${s}%, ${l + i * stepL}%)`)
+  }
+
+  return gradientColors
+}
+
+let baseColor = 'hsla(240, 100%, 50%, 1)' // 蓝色
+let gradient = generateGradient(baseColor, 200) // 200种颜色
+
+////////////////////////// MOUSE /////////////////////////
+
 const centerRatio = [0.5, 0.3]
 const back = document.getElementById('back')
 if (back) {
@@ -92,5 +195,20 @@ if (back) {
           : (center.y - clientY) / (innerHeight - center.y),
     }
     back.style.transform = `translate(${12 * r.x}px, ${12 * r.y}px)`
+
+    /////////////////// 控制模型颜色 ////////////////////
+
+    const v = r.x / 6 + 0.3
+    // web3D.materialVects.basic.v2.value.x = -v
+    // web3D.materialVects.basic.v2.value.y = v
+    // // web3D.materialVects.basic.v2.value.z = v / 2
+    // web3D.materialVects.glass.v2.value.x = -v
+    // web3D.materialVects.glass.v2.value.y = v
+    // web3D.materialVects.basic.v2.value.z = v / 2
+    // web3D.materialVects.basic.v4.value.y = v + 0.2
+    // web3D.materialVects.basic.v4.value.z = v + 0.5
+    ratioEl.innerHTML = v
+
+    /////////////////// 控制模型颜色 ////////////////////
   })
 }
