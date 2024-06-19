@@ -9,7 +9,7 @@ const devStyles = !true
 ////////////////////////// CONTROLS /////////////////////////
 
 import Stats from '../node_modules/three/examples/jsm/libs/stats.module.js'
-import { styles, PLAN, STYLES, WEB3D } from '../dist/magiz.module.min.js'
+import { styles, PLAN, WEB3D } from '../dist/magiz.module.min.js'
 import { requests } from './cs.mjs'
 
 // 系统监视
@@ -73,67 +73,100 @@ if (devStyles) {
 
 ////////////////////////// AUDIO /////////////////////////
 
-const audio = document.querySelector('#music audio')
-const canvas = document.querySelector('#music canvas')
-const ctx = canvas.getContext('2d')
-
-// 设置初始化状态
-let isInit = false
-
-const audioCtx = new AudioContext()
-const analyser = audioCtx.createAnalyser()
-analyser.fftSize = 32
-const data = new Uint8Array(analyser.frequencyBinCount)
-
-// 绑定播放事件
-audio.onplay = () => {
-  if (isInit) return
-  const source = audioCtx.createMediaElementSource(audio)
-  source.connect(analyser)
-  analyser.connect(audioCtx.destination)
-  draw()
-  isInit = true
-}
-
+let ratio = 1
+let key = 0.2
+const rythm = new Rythm()
 const ratioEl = document.querySelector('#ratio')
-
-// 绘制内容
-function draw() {
-  requestAnimationFrame(draw)
-  // 清空画布
-  const { width, height } = canvas
-  ctx.clearRect(0, 0, width, height)
-  if (!isInit) return
-  // 把分析器节点的数据更新到data中
-  analyser.getByteFrequencyData(data)
-  const len = data.length
-  const barWidth = width / len
-  // 每一个方块的高度
-  const blockHeight = 8
-
-  for (let i = 0; i < data.length; i++) {
-    // 拿到本列的数值
-    const _data = data[i]
-
-    /////////////////// 控制模型颜色 ////////////////////
-
-    if (i === 0) {
-      web3D.materialVects.basic.v4.value.x = _data
-      ratioEl.innerHTML = _data
-    }
-
-    /////////////////// 控制模型颜色 ////////////////////
-
-    const barHeight = (_data / 255) * height
-    const x = i * barWidth
-    const blockCount = Math.round(barHeight / 10)
-    for (let number = 0; number < blockCount; number++) {
-      ctx.fillStyle = gradient[number]
-      const y = height - blockHeight * number
-      drawRoundedRect(x, y, barWidth - 1, blockHeight - 1, 2)
-    }
-  }
+const danceType = {
+  dance: (elem, v, options = { max: 1.1, min: 0.9 }) => {
+    ratioEl.innerHTML = v.toFixed(1)
+    ratio = v > key ? v - key : 0
+    web3D.materialVects.basic.v4.value.x = -4.67 + ratio
+    web3D.materialVects.glass.v4.value.x = -4.67 + ratio
+    elem.style.transform = `scale(${options.min + (options.max - options.min) * v})`
+  },
+  reset: (elem) => {
+    elem.style.transform = ''
+  },
 }
+rythm.addRythm('cyberDance', danceType, 600, 100)
+rythm.setMusic('really.mp3')
+
+rythm.start()
+
+// const audio = document.querySelector('#music audio')
+// const canvas = document.querySelector('#music canvas')
+// const ctx = canvas.getContext('2d')
+// const ratioEl = document.querySelector('#ratio')
+
+// // 设置初始化状态
+// let isInit = false
+
+// const audioCtx = new AudioContext()
+// const analyser = audioCtx.createAnalyser()
+// analyser.fftSize = 32
+// const data = new Uint8Array(analyser.frequencyBinCount)
+
+// // 绑定播放事件
+// audio.onplay = () => {
+//   if (isInit) return
+//   const source = audioCtx.createMediaElementSource(audio)
+//   source.connect(analyser)
+//   analyser.connect(audioCtx.destination)
+//   draw()
+//   isInit = true
+// }
+
+// const freq = { max: -Infinity, up: 0, down: 0 }
+
+// // 绘制内容
+// function draw() {
+//   requestAnimationFrame(draw)
+//   // 清空画布
+//   const { width, height } = canvas
+//   ctx.clearRect(0, 0, width, height)
+//   if (!isInit) return
+//   // 把分析器节点的数据更新到data中
+//   analyser.getByteFrequencyData(data)
+//   const len = data.length
+//   const barWidth = width / len
+//   // 每一个方块的高度
+//   const blockHeight = 8
+
+//   for (let i = 0; i < data.length; i++) {
+//     // 拿到本列的数值
+//     const _data = data[i]
+//     const barHeight = (_data / 255) * height
+//     const x = i * barWidth
+//     const blockCount = Math.round(barHeight / 10)
+//     for (let number = 0; number < blockCount; number++) {
+//       const y = height - blockHeight * number
+//       drawRoundedRect(x, y, barWidth - 1, blockHeight - 1, 2)
+//     }
+//   }
+
+//   /////////////////// 控制模型颜色 ////////////////////
+
+//   let v = 0
+//   const d = data[Math.round(data.length * 0.7)]
+
+//   if (d > freq.max) {
+//     freq.max = d
+//     freq.up = Math.round(d * 0.9)
+//     freq.down = Math.round(d * 0.2)
+//   }
+
+//   if (d > freq.up) {
+//     v = 1
+//   } else if (d < freq.down) {
+//     v = 0
+//   } else {
+//     v = 0.5
+//   }
+//   ratioEl.innerHTML = `${v} = ${d} (${freq.down}..${freq.up}) / ${data.length}`
+
+//   /////////////////// 控制模型颜色 ////////////////////
+// }
 
 function drawRoundedRect(x, y, width, height, radius) {
   if (height === 0) return
@@ -149,28 +182,6 @@ function drawRoundedRect(x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y, x + radius, y)
   ctx.fill()
 }
-
-function generateGradient(baseColor, count) {
-  let hsl = baseColor.match(/hsla?\((\d+),\s*(\d+%),\s*(\d+%),\s*([\d.]+)\)/)
-  let h = parseInt(hsl[1], 10) // Hue
-  let s = parseInt(hsl[2], 10) // Saturation
-  let l = parseInt(hsl[3], 10) // Lightness
-
-  // 在色盘上按照数量均分，获取每个均分点的颜色
-  let stepH = 360 / count
-  // 提高每个等级的亮度
-  let stepL = 100 / (count + 1)
-
-  let gradientColors = []
-  for (let i = 0; i < count; i++) {
-    gradientColors.push(`hsl(${h + i * stepH}, ${s}%, ${l + i * stepL}%)`)
-  }
-
-  return gradientColors
-}
-
-let baseColor = 'hsla(240, 100%, 50%, 1)' // 蓝色
-let gradient = generateGradient(baseColor, 200) // 200种颜色
 
 ////////////////////////// MOUSE /////////////////////////
 
@@ -207,7 +218,7 @@ if (back) {
     // web3D.materialVects.basic.v2.value.z = v / 2
     // web3D.materialVects.basic.v4.value.y = v + 0.2
     // web3D.materialVects.basic.v4.value.z = v + 0.5
-    ratioEl.innerHTML = v
+    // ratioEl.innerHTML = v
 
     /////////////////// 控制模型颜色 ////////////////////
   })

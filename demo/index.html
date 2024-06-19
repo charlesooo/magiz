@@ -6,19 +6,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
   <link rel="stylesheet" href="index.css">
+  <script src="./rythm.min.js"></script>
 </head>
 
 <body>
   <div id="magiz"> </div>
-  <b id="back" class="title" style="transform: translate(12px, 12px);"> Infinite City </b>
-  <b id="text" class="title"> Infinite City </b>
-  <div id="music">
-    <audio src="really.mp3" controls></audio>
-    <canvas></canvas>
+  <!-- <b id="back" class="title" style="transform: translate(12px, 12px);"> Infinite City </b> -->
+
+  <svg id="mask">
+    <mask id="myMask">
+      <!-- 白色像素下的所有内容都将可见 -->
+      <rect x="0" y="0" width="1000" height="1000" fill="white" />
+
+      <!-- 黑色像素下的所有内容都将不可见 -->
+      <path
+            d="M10,35 A20,20,0,0,1,50,35 A20,20,0,0,1,90,35 Q90,65,50,95 Q10,65,10,35 Z"
+            fill="black" />
+    </mask>
+
+    <rect fill="orange" mask="url(#myMask)" />
+  </svg>
+
+  <div id="music" style="display: flex;align-items: center;">
+    <!-- <audio src="really.mp3" controls></audio>
+    <canvas height="54" width="120"></canvas> -->
     <span id="ratio">?</span>
   </div>
 
   <script type="module" src="index.mjs"> </script>
+  <script>
+    const svgEl = document.querySelector('svg')
+    const rectEl = document.querySelector('rect')
+    function resizeSVG() {
+      const { innerWidth, innerHeight } = window
+      svgEl.viewBox = `0 0 ${innerWidth} ${innerHeight}`
+      rectEl.setAttribute('width', innerWidth)
+      rectEl.setAttribute('height', innerHeight)
+    }
+    window.addEventListener('resize', resizeSVG)
+    resizeSVG()
+  </script>
 </body>
 
 </html>

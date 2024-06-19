@@ -13,6 +13,7 @@
   "dependencies": {
     "mathjs": "^12.4.2",
     "polylabel": "^1.1.0",
+    "rythm.js": "^2.2.5",
     "three": "^0.164.0"
   },
   "devDependencies": {

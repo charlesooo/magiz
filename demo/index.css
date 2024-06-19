@@ -26,12 +26,11 @@ body,
   pointer-events: none;
 }
 
-#text {
-  background     : linear-gradient(to left, #80fd4e, #fbd786, #ff474d);
-  animation      : gradient 3.0s ease infinite alternate;
-  background-clip: text;
-  background-size: 200% 100%;
-  color          : transparent;
+#mask {
+  position: fixed;
+  top     : 0;
+  width   : 100%;
+  height  : 100%;
 }
 
 @keyframes gradient {
