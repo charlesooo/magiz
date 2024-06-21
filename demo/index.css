@@ -48,3 +48,16 @@ body,
   bottom  : 12px;
   left    : 12px;
 }
+
+#mask {
+  position: fixed;
+  top     : 0;
+  width   : 100%;
+  height  : 100%;
+}
+
+#ui {
+  position: fixed;
+  bottom  : 12px;
+  left    : 12px;
+}

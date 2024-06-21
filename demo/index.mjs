@@ -76,13 +76,11 @@ if (devStyles) {
 let ratio = 1
 let key = 0.2
 const rythm = new Rythm()
-const ratioEl = document.querySelector('#ratio')
 const danceType = {
-  dance: (elem, v, options = { max: 1.1, min: 0.9 }) => {
-    ratioEl.innerHTML = v.toFixed(1)
-    ratio = v > key ? v - key : 0
-    web3D.materialVects.basic.v4.value.x = -4.67 + ratio
-    web3D.materialVects.glass.v4.value.x = -4.67 + ratio
+  dance: (elem, v, options = { max: 1.1, min: 1 }) => {
+    // ratio = v > key ? v - key : 0
+    // web3D.materialVects.basic.v4.value.x = -4.67 + ratio
+    // web3D.materialVects.glass.v4.value.x = -4.67 + ratio
     elem.style.transform = `scale(${options.min + (options.max - options.min) * v})`
   },
   reset: (elem) => {
@@ -90,14 +88,28 @@ const danceType = {
   },
 }
 rythm.addRythm('cyberDance', danceType, 600, 100)
-rythm.setMusic('really.mp3')
+// rythm.setMusic('really.mp3')
+// rythm.start()
 
-rythm.start()
+////////////////////////// ANIME /////////////////////////
 
+// anime({
+//   targets: ['#rect1'],
+//   easing: 'linear',
+//   rotate: '1turn',
+//   loop: true,
+// })
+
+// setTimeout(() => {
+//   document.querySelector('#mask image')?.classList.add('show')
+// }, 1000)
+
+// setTimeout(() => {
+//   rythm.start()
+// }, 3000)
 // const audio = document.querySelector('#music audio')
 // const canvas = document.querySelector('#music canvas')
 // const ctx = canvas.getContext('2d')
-// const ratioEl = document.querySelector('#ratio')
 
 // // 设置初始化状态
 // let isInit = false
@@ -163,7 +175,6 @@ rythm.start()
 //   } else {
 //     v = 0.5
 //   }
-//   ratioEl.innerHTML = `${v} = ${d} (${freq.down}..${freq.up}) / ${data.length}`
 
 //   /////////////////// 控制模型颜色 ////////////////////
 // }
@@ -218,7 +229,6 @@ if (back) {
     // web3D.materialVects.basic.v2.value.z = v / 2
     // web3D.materialVects.basic.v4.value.y = v + 0.2
     // web3D.materialVects.basic.v4.value.z = v + 0.5
-    // ratioEl.innerHTML = v
 
     /////////////////// 控制模型颜色 ////////////////////
   })
