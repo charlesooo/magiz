@@ -60,8 +60,6 @@ declare type parseRequestType = {
   params: styleParamsType
   /** 平面可以是任意多边形，之后将长边对齐X轴并平移到原点，并用矩形拟合 */
   loops: [x: number, y: number][][]
-  /** 平面也可以直接指定矩形组合，之后将长边对齐X轴并平移到原点 */
-  rects?: [x: number, y: number][][]
 }
 
 /** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */

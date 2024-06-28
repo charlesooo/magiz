@@ -1,12 +1,6 @@
 import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
-import {
-  globalTime,
-  basicMaterialVects,
-  glassMaterialVects,
-  lineMaterialVects,
-  uniformVectorType,
-} from './movingMaterials'
+// import { globalTime } from './movingMaterials'
 import { handleRaw } from './raw'
 import VIEW from './view'
 
@@ -72,22 +66,15 @@ export default class WEB3D {
     positon: [x: number, y: number, z: number]
     lookAt: [x: number, y: number, z: number]
   }
-  materialVects?: {
-    basic: uniformVectorType
-    glass: uniformVectorType
-    line: uniformVectorType
-  }
 
   /** 创建管理工具实例 */
   constructor(
-    /** 通过querySelector绑定DOM并生成canvas元素 */
-    parentCSSID: string,
+    /** 通过querySelector绑定Canvas到Div */
+    DivID: string,
     /** 初始化工具实例的参数 */
     options?: Partial<web3DOptionsType>
   ) {
-    // 初始化参数，须最先设置 Z 轴方向
-    // Object3D.DEFAULT_UP = new Vector3(0, 0, 1)
-    const dom = document.querySelector(parentCSSID)
+    const dom = document.querySelector(DivID)
     if (!dom) throw 'ERROR: invalid parentCSSID'
     const canvas = document.createElement('canvas')
     dom.appendChild(canvas)
@@ -105,11 +92,6 @@ export default class WEB3D {
     this.views = [(this.playing = new VIEW(this))]
     this.camera = new PerspectiveCamera(45, 1, 1, 1000000000)
     this.constrols = addOrbitControls(this, { zoomToCursor: false, enablePan: false })
-    this.materialVects = {
-      basic: basicMaterialVects,
-      glass: glassMaterialVects,
-      line: lineMaterialVects,
-    }
 
     /////////////////// 场景初始化 ///////////////////
 
@@ -221,7 +203,7 @@ export default class WEB3D {
       if (maxHeight < rawData.params.height) maxHeight = rawData.params.height
     })
 
-    console.log('info:', this.renderer.info.render, this.playing)
+    // console.log('info:', this.renderer.info.render, this.playing)
 
     // 调整镜头
     this.setCamera({ lookAt: [0, maxHeight / 2, 0] })
@@ -235,7 +217,7 @@ function animate(web3D: WEB3D) {
   web3D.renderer.render(c.scene, web3D.camera)
   for (const f in c.animations) (c.animations[f] as Function)()
 
-  globalTime.value++
+  // globalTime.value++
 
   // 开发时的HMR导致多个渲染循环，须通过检查dom元素自动终止
   if (document.body.contains(web3D.renderer.domElement))

@@ -1,4 +1,6 @@
-declare namespace parsed {
+import type { styleParams } from './style'
+
+export namespace styleParsed {
   type paddingType = { start: number; middle: number; end: number; asRatio: boolean }
   type transformType =
     | { rotateX: number }
@@ -34,7 +36,7 @@ declare namespace parsed {
   }
 
   type boxArray = {
-    area: params.paddingAreaType
+    area: styleParams.paddingAreaType
     spacing:
       | {
           space: number
@@ -55,13 +57,13 @@ declare namespace parsed {
     lastWidth: number
   }
 
-  /** 解析params.floor与边线相关的参数 */
+  /** 解析styleParams.floor与边线相关的参数 */
   type handleEdgesType = {
     set:
       | {
           offset: { x: number; y: number; asRatio: boolean } | undefined
-          clamp: parsed.clampRangeType | undefined
-          orient: params.alongType | undefined
+          clamp: clampRangeType | undefined
+          orient: styleParams.alongType | undefined
         }[]
       | undefined
   }
@@ -90,19 +92,19 @@ declare namespace parsed {
   }
 
   type match = {
-    along: params.alongType | undefined
+    along: styleParams.alongType | undefined
     flexes: boxFlex[]
     top:
       | {
           ratio: number
-          like: params.topLikeType
+          like: styleParams.topLikeType
           padding: paddingType | undefined
         }
       | undefined
     bottom:
       | {
           ratio: number
-          like: params.bottomLikeType
+          like: styleParams.bottomLikeType
           padding: paddingType | undefined
         }
       | undefined
@@ -117,13 +119,13 @@ declare namespace parsed {
     widthRatio: [min: number, max: number]
     depthRatio: [min: number, max: number]
     heightRatio: [min: number, max: number]
-    along: params.alongType | undefined
+    along: styleParams.alongType | undefined
     elevation: number
   }
 
   type adjunct = {
     boxes: box[]
-    place: params.randomPlaceType
+    place: styleParams.randomPlaceType
     count: number
     elevation: number
   }

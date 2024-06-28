@@ -84,7 +84,13 @@ export default class VIEW {
     }
   }
   /** 添加指定大小的地面 */
-  addGround(size: number, pictureURL: string, uvMoving = 0) {
+  addGround(
+    size: number,
+    params?: {
+      pictureURL: string
+      uvMoving: number
+    }
+  ) {
     const planeMaterial = new MeshBasicMaterial({
       color: '#eee',
       polygonOffset: true,
@@ -97,22 +103,22 @@ export default class VIEW {
     plane.receiveShadow = true
     this.ignored.add(plane)
 
-    if (pictureURL) {
+    if (params) {
       new TextureLoader().load(
-        pictureURL,
+        params.pictureURL,
         (texture) => {
           this.ground = { texture, size }
           planeMaterial.map = texture
           planeMaterial.needsUpdate = true
-          if (uvMoving) {
+          if (params.uvMoving) {
             texture.wrapS = texture.wrapT = RepeatWrapping
-            const speed = uvMoving / size
+            const speed = params.uvMoving / size
             this.animations.uvMovingX = () => {
               texture.offset.x += -speed
             }
           }
         },
-        (err) => console.error('TextureLoader error', pictureURL, err)
+        (err) => console.error('TextureLoader error', params.pictureURL, err)
       )
     }
   }

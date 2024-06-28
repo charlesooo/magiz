@@ -1,7 +1,9 @@
 import { evaluate } from 'mathjs'
 import { SEED, passControl } from '../planClass/handleUtils'
-import { mergeStyles } from './styleUtils'
 import { sample } from '../planClass/handleMath'
+
+import type { styleParams } from 'types/style'
+import type { styleParsed } from 'types/stylesParsed'
 
 /** 解析时全局缓存的字典 */
 const GLOBAL: {
@@ -15,37 +17,45 @@ const GLOBAL: {
 }
 
 /** 解析时全局临时缓存的结果 */
-const RESULT: parsed.result = { colorMap: [], floorCount: 0, classified: [] }
+const RESULT: styleParsed.result = { colorMap: [], floorCount: 0, classified: [] }
 
 /** 用于管理多个样式文件的样式库类 */
 export default class STYLES {
+  /** 样式参数备份，方便调试时重生成 */
+  json: string
   /** 整合后的样式参数 */
-  params: params.styles
+  data: styleParams.styles
 
   /** 创建样式库实例，输入的样式将自动整合 */
   constructor(
     /** 输入多个样式参数并整合 */
-    ...styles: params.styles[]
+    ...styles: styleParams.styles[]
   ) {
-    this.params = {
-      info: 'v24.4 copyright 2024 周曦',
-      preset: {},
-      building: {},
-    }
-    this.merge(...styles)
+    this.data = { preset: {}, building: {} }
+    this.json = ''
+    this.merge(styles)
   }
 
   /** 合并样式参数（会提示被替换的项） */
-  merge(...a: params.styles[]): params.styles {
-    return mergeStyles(this.params, a)
+  merge(a: styleParams.styles[]): styleParams.styles {
+    mergeStyles(this.data, a)
+    this.json = JSON.stringify(this.data)
+    return this.data
+  }
+
+  /** 读取的调试文件与初始化时的样式参数合并 */
+  mergeTest(s: styleParams.styles) {
+    this.data = JSON.parse(this.json)
+    Object.assign(this.data.preset, s.preset)
+    Object.assign(this.data.building, s.building)
   }
 
   /** @ignore 按是否免费返回分类后的样式名称 */
   getOptions(): styleOptionsType {
     const result: styleOptionsType = { paid: [], free: [] }
-    const b = this.params.building
+    const b = this.data.building
     for (const n in b) {
-      const s = b[n] as params.style
+      const s = b[n] as styleParams.style
       s.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
     }
     return result
@@ -57,7 +67,7 @@ export default class STYLES {
     styleParams: styleParamsType,
     /** 全局随机种子 */
     seed: SEED
-  ): parsed.result {
+  ): styleParsed.result {
     RESULT.colorMap = ['#eee', '#bdf G']
     RESULT.floorCount = 0
     RESULT.classified = []
@@ -70,7 +80,7 @@ export default class STYLES {
     // 设置随机数种子
     seed.set(Number(styleParams.seed) || Math.round(Math.random() * 100000))
 
-    const selected = this.params.building[styleParams.style]
+    const selected = this.data.building[styleParams.style]
     if (selected) {
       /** 内部全局变量，保存解析公式所需的单位 */
       GLOBAL.UNITS = Object.assign({ BH: height }, selected.unit)
@@ -107,8 +117,47 @@ export default class STYLES {
 
 //////////////////////////////////////////////////////////
 
-/** 解析包含 params.status 的参数 */
-function parseStatus<MORE>(status: params.status, data: MORE): parsed.status & MORE {
+/** 合并样式参数，并提示被替换的项 */
+function mergeStyles(source: styleParams.styles, a: styleParams.styles[]): styleParams.styles {
+  const { preset, building } = source
+
+  for (let i = 0; i < a.length; i++) {
+    const s = a[i] as styleParams.styles
+
+    // 提示被替换项
+    for (const key in s.preset) {
+      if (preset[key]) console.log(`preset:${key} is replaceed`)
+    }
+    for (const key in s.building) {
+      if (building[key]) console.log(`building:${key} is replaceed`)
+    }
+
+    Object.assign(building, s.building)
+    Object.assign(preset, s.preset)
+  }
+
+  // 检查调用预设样式
+  for (const name in building) {
+    const b = building[name] as styleParams.style
+    b.section.roof?.floor?.forEach((f) => {
+      f.preset?.forEach((p) => {
+        if (p.name && !preset[p.name]) {
+          console.error('无效的预设样式', p.name, '@', name)
+        }
+        const k = p.key
+        if (k) {
+          const keys = Object.keys(preset).filter((n) => n.includes(k))
+          if (keys.length === 0) console.error('无效的样式名关键词', p.key)
+        }
+      })
+    })
+  }
+
+  return source
+}
+
+/** 解析包含 styleParams.status 的参数 */
+function parseStatus<MORE>(status: styleParams.status, data: MORE): styleParsed.status & MORE {
   let colors: string[] = []
   const c = status.color
   if (c) {
@@ -169,7 +218,9 @@ function parseStatus<MORE>(status: params.status, data: MORE): parsed.status & M
 }
 
 /** 解析 (box|boxFlex)[]  */
-function parseBoxGroup(model: (params.box | params.boxFlex)[]): (parsed.box | parsed.boxFlex)[] {
+function parseBoxGroup(
+  model: (styleParams.box | styleParams.boxFlex)[]
+): (styleParsed.box | styleParsed.boxFlex)[] {
   return model.map((b) => {
     return 'x' in b
       ? parseStatus(b, {
@@ -186,7 +237,7 @@ function parseBoxGroup(model: (params.box | params.boxFlex)[]): (parsed.box | pa
 }
 
 /** 解析 box[] */
-function parseBoxes(boxes: params.box[]): parsed.box[] {
+function parseBoxes(boxes: styleParams.box[]): styleParsed.box[] {
   return boxes.map((b) =>
     parseStatus(b, {
       x: parse(b.x),
@@ -197,7 +248,7 @@ function parseBoxes(boxes: params.box[]): parsed.box[] {
 }
 
 /** 解析 boxFlex[] */
-function parseBoxFlex(boxFlex: params.boxFlex): parsed.boxFlex {
+function parseBoxFlex(boxFlex: styleParams.boxFlex): styleParsed.boxFlex {
   return parseStatus(boxFlex, {
     depth: parse(boxFlex.depth),
     height: parse(boxFlex.height),
@@ -213,7 +264,7 @@ function parseSection(
   sectionHeight: number,
   floorHeight: number,
   seed: SEED,
-  section?: params.section,
+  section?: styleParams.section,
   isRoof?: boolean
 ) {
   if (section) {
@@ -236,17 +287,17 @@ function parseSection(
           const { name, key, unit, color } = floorPresetParams
           try {
             // 如果缓存中有对应名称的样式
-            if (styles.params.preset) {
+            if (styles.data.preset) {
               /** 预设样式 */
-              let p: (typeof styles.params.preset)[string] | undefined
+              let p: (typeof styles.data.preset)[string] | undefined
               if (name) {
                 // 按名字指定预设样式
-                p = styles.params.preset[name]
+                p = styles.data.preset[name]
               } else if (key) {
                 // 按关键词随机选择预设样式
-                const names = Object.keys(styles.params.preset).filter((n) => n.includes(key))
+                const names = Object.keys(styles.data.preset).filter((n) => n.includes(key))
                 if (names.length > 0) {
-                  p = styles.params.preset[sample(names, seed) as string]
+                  p = styles.data.preset[sample(names, seed) as string]
                 }
               }
 
@@ -318,7 +369,7 @@ function parseFloor(
   /** 段高 */
   sectionHeight: number,
   sectionElevation: number,
-  floorParams: params.floor,
+  floorParams: styleParams.floor,
   seed: SEED
 ) {
   const control = parseControl(floorParams.floorControl)
@@ -326,7 +377,7 @@ function parseFloor(
 
   const edgesJSON = JSON.stringify(edgeParams)
   const found = RESULT.classified.find((s) => s.edgesJSON === edgesJSON)
-  const saveAs: parsed.resultClassified = found || {
+  const saveAs: styleParsed.resultClassified = found || {
     edgeParams,
     edgesJSON,
     extrude: [],
@@ -371,8 +422,8 @@ function parseFloor(
 function limitFloorRange(
   bottomFloor: number,
   topFloor: number,
-  count: params.floor['floorNumber'],
-  range: params.floor['floorRange']
+  count: styleParams.floor['floorNumber'],
+  range: styleParams.floor['floorRange']
 ) {
   const result: [bottom: number, top: number][] = []
 
@@ -413,8 +464,8 @@ function limitFloorRange(
   return result
 }
 
-/** 解析 params.floor 中边线相关的参数 */
-function parseEdgeParams(params: params.floor): parsed.handleEdgesType {
+/** 解析 styleParams.floor 中边线相关的参数 */
+function parseEdgeParams(params: styleParams.floor): styleParsed.handleEdgesType {
   return {
     set: params.setEdges?.map((setEdges) => {
       const { offset, clamp, orient } = setEdges
@@ -428,7 +479,7 @@ function parseEdgeParams(params: params.floor): parsed.handleEdgesType {
 }
 
 /** 解析偏移边线参数 */
-function parseOffsetOrScale(params?: params.scaleOrOffsetType) {
+function parseOffsetOrScale(params?: styleParams.scaleOrOffsetType) {
   if (params) {
     if (typeof params === 'object') {
       return {
@@ -448,8 +499,8 @@ function parseOffsetOrScale(params?: params.scaleOrOffsetType) {
 function parseExtrude(
   elevation: number,
   isOnce: boolean,
-  saveAs: parsed.resultClassified,
-  extrudes?: params.extrude[]
+  saveAs: styleParsed.resultClassified,
+  extrudes?: styleParams.extrude[]
 ) {
   if (extrudes) {
     extrudes.forEach((extrudeParams) => {
@@ -471,8 +522,8 @@ function parseExtrude(
 function parseSlopingRoof(
   elevation: number,
   isOnce: boolean,
-  saveAs: parsed.resultClassified,
-  slopingRoofs?: params.slopingRoof[]
+  saveAs: styleParsed.resultClassified,
+  slopingRoofs?: styleParams.slopingRoof[]
 ) {
   if (slopingRoofs) {
     slopingRoofs.forEach((roofParams) => {
@@ -494,8 +545,8 @@ function parseSlopingRoof(
 function parseClampBox(
   elevation: number,
   isOnce: boolean,
-  saveAs: parsed.resultClassified,
-  clampBox?: params.clampBox[]
+  saveAs: styleParsed.resultClassified,
+  clampBox?: styleParams.clampBox[]
 ) {
   if (clampBox) {
     clampBox.forEach((clampParams) => {
@@ -507,7 +558,7 @@ function parseClampBox(
   }
 }
 
-function parseControl(params?: params.control): parsed.control | undefined {
+function parseControl(params?: styleParams.control): styleParsed.control | undefined {
   return params
     ? {
         skipIndex: parse(params.skipIndex),
@@ -521,14 +572,14 @@ function parseControl(params?: params.control): parsed.control | undefined {
 function parseFacade(
   elevation: number,
   isOnce: boolean,
-  saveAs: parsed.resultClassified,
-  facade?: params.facade[]
+  saveAs: styleParsed.resultClassified,
+  facade?: styleParams.facade[]
 ) {
   if (facade) {
     facade.forEach((f) => {
       const { once, padding, proto } = f
       if (!once || isOnce) {
-        const parsed: parsed.facade = {
+        const parsed: styleParsed.facade = {
           elevation,
           padding: parsePadding(padding),
           proto: [],
@@ -572,14 +623,14 @@ function parseFacade(
 function parseMatch(
   elevation: number,
   isOnce: boolean,
-  saveAs: parsed.resultClassified,
-  matches?: params.match[]
+  saveAs: styleParsed.resultClassified,
+  matches?: styleParams.match[]
 ) {
   if (matches)
     matches.forEach((matchParam) => {
       const { once, along, top, bottom } = matchParam
       if (!once || isOnce) {
-        const parsed: parsed.match = {
+        const parsed: styleParsed.match = {
           elevation,
           along,
           flexes: matchParam.flexes.map(parseBoxFlex),
@@ -615,8 +666,8 @@ function parseMatch(
 function parseBoxInside(
   elevation: number,
   isOnce: boolean,
-  saveAs: parsed.resultClassified,
-  boxInside?: params.boxInside[]
+  saveAs: styleParsed.resultClassified,
+  boxInside?: styleParams.boxInside[]
 ) {
   if (boxInside) {
     boxInside.forEach((boxParams) => {
@@ -638,7 +689,7 @@ function parseBoxInside(
 }
 
 function parseMinAndMax(
-  v: [min: params.ns, max: params.ns] | params.ns | undefined
+  v: [min: styleParams.ns, max: styleParams.ns] | styleParams.ns | undefined
 ): [min: number, max: number] {
   if (typeof v === 'object') {
     return [parse(v[0]), parse(v[1])]
@@ -652,8 +703,8 @@ function parseMinAndMax(
 function parseAdjuncts(
   elevation: number,
   isOnce: boolean,
-  saveAs: parsed.resultClassified,
-  adjuncts?: params.adjunct[]
+  saveAs: styleParsed.resultClassified,
+  adjuncts?: styleParams.adjunct[]
 ) {
   if (adjuncts) {
     adjuncts.forEach((adjunct) => {
@@ -670,7 +721,7 @@ function parseAdjuncts(
   }
 }
 
-function parseClamp(params?: params.clampRangeType): parsed.clampRangeType | undefined {
+function parseClamp(params?: styleParams.clampRangeType): styleParsed.clampRangeType | undefined {
   if (params) {
     return {
       xMin: parse(params.xMin),
@@ -687,7 +738,7 @@ function parseClamp(params?: params.clampRangeType): parsed.clampRangeType | und
   }
 }
 
-function parsePadding(params?: params.paddingType): parsed.paddingType | undefined {
+function parsePadding(params?: styleParams.paddingType): styleParsed.paddingType | undefined {
   if (params) {
     return {
       start: parse(params.start),
@@ -700,7 +751,7 @@ function parsePadding(params?: params.paddingType): parsed.paddingType | undefin
 }
 
 /** 解析带单位的公式。 */
-function parse(ns?: params.ns): number {
+function parse(ns?: styleParams.ns): number {
   let n: number
   if (typeof ns === 'string') {
     // 计算单位值
@@ -721,7 +772,7 @@ function parse(ns?: params.ns): number {
 }
 
 /** 替换单位值，单位必以数字开头字母结尾 */
-function replaceUnit(input: string, units?: parsed.unitType) {
+function replaceUnit(input: string, units?: styleParsed.unitType) {
   if (units) {
     // 优先解析长字符的变量，防止"变量A"先于"变量AB"解析导致后者错误
     const keys = Object.keys(units).sort((a, b) => b.length - a.length)

@@ -36,14 +36,14 @@ export default class PLAN {
 
   /** 创建建筑平面实例 */
   constructor(input: parseRequestType) {
-    //
-
     // Path,ShapeGeometry,ExtrudeGeometry 内部在创建时都会检查clockwise，但为了保证 pushRandomSquaresInside 计算正确，须提格式化
     const inputPoints2D = input.loops.map((loop) => loop.map((p2) => new Vector2(...p2)))
     const outterLoop = inputPoints2D[0]
     // 确保外圈至少包含3个点
     if (outterLoop && outterLoop.length > 2) {
       if (ShapeUtils.isClockWise(outterLoop)) outterLoop.reverse()
+
+      // 计算面积
       this.area = ShapeUtils.area(outterLoop)
       for (let i = 1; i < inputPoints2D.length; i++) {
         const loop = inputPoints2D[i] as Vector2[]
@@ -82,7 +82,7 @@ export default class PLAN {
         ),
       }
     } else {
-      throw 'ERROR: invalid input.loopPoints'
+      throw 'ERROR: invalid input.loops'
     }
 
     this.seed = new SEED()

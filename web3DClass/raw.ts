@@ -16,7 +16,7 @@ import {
   BufferAttribute,
 } from 'three'
 import type { temp } from 'types/temp'
-import { material, glassMaterial, twoSideMaterial, lineMaterial } from './movingMaterials'
+import { material, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
 
 export { handleRaw, glassMaterial }
 

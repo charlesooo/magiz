@@ -1,4 +1,4 @@
-declare namespace params {
+export namespace styleParams {
   /** 参数可以是数字或代表公式的字符串 */
   type ns = number | string
 
@@ -286,6 +286,8 @@ declare namespace params {
 
   /** 建筑样式 */
   type style = {
+    /** 附加信息 */
+    info?: string
     /** 订阅类型 */
     type?: paymentType
     /** 用于解析 ns 的单位变量 */
@@ -307,8 +309,6 @@ declare namespace params {
 
   /** 自定义样式 */
   type styles = {
-    /** 附加信息 */
-    info?: string
     /** 可重复利用的预设样式，基本格式：{ [name: string]: { floor: floor[] } } */
     preset: {
       /** 样式名称 */
