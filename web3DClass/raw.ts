@@ -18,13 +18,11 @@ import {
 import type { temp } from 'types/temp'
 import { material, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
 
-export { handleRaw, glassMaterial }
-
 const boxGeom = new BoxGeometry()
 const slopingGeom = getSlopingRoofGeometry()
 
 /** 将 Magiz 解析的 rawDataType 转为 Three.js 对象 */
-function handleRaw(
+export default function handleRaw(
   input: rawDataType[],
   scene: Scene,
   options?: Partial<web3DRefreshOptionsType>

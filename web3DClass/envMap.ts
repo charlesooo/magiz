@@ -1,7 +1,12 @@
-import { WebGLRenderer, PMREMGenerator, DataTexture, EquirectangularReflectionMapping } from 'three'
+import {
+  WebGLRenderer,
+  PMREMGenerator,
+  DataTexture,
+  EquirectangularReflectionMapping,
+} from 'three'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'
 
-import { glassMaterial } from './raw'
+import { glassMaterial } from './basicMaterials'
 
 /** 为 glassMaterial 添加环境光反射效果 */
 export default function addEnvMap(renderer: WebGLRenderer, exrFile: string) {

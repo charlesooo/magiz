@@ -4,10 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Document</title>
+  <title>Magiz-Infinite-city</title>
   <link rel="stylesheet" href="index.css" />
   <script src="https://cdn.bootcdn.net/ajax/libs/animejs/3.2.2/anime.min.js"></script>
-  <script src="./rythm.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/rythm.js/2.2.5/rythm.min.js
+  "></script>
 </head>
 
 <body>
@@ -23,13 +24,14 @@
     <rect width="100%" height="100%" fill="#111" mask="url(#maskEl)" />
   </svg>
 
-  <div id="ui"><button id="btn" onclick="toggleScale()">TEST</button></div>
-
   <div id="details">
-    <p>技术细节：</p>
-    <p>参数化生成 栋建筑模型</p>
-    <p>通过 Shader 渲染边线和动画</p>
+    <span></span>
+    <p>参数化生成 1917 栋建筑模型， Shader 渲染边线和动画，由 Magiz 驱动</p>
   </div>
+
+  <button id="btn" type="button" onclick="toggleScale()">全屏</button>
+
+  <div id="cover"></div>
 
   <script type="module" src="index.mjs"></script>
   <script src="./animation.js"></script>

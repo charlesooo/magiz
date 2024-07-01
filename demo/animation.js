@@ -19,18 +19,17 @@ function setTexts() {
   anime.set('#t2', { height: h2, x: ml, y: h1 })
   anime({
     targets: ['#t1'],
-    translateX: [-tw - ml, 0],
+    translateX: [-ml - tw, 0],
   })
   anime({
     targets: ['#t2'],
     translateX: [tw + ml, 0],
     delay: 200,
   })
+
+  document.getElementById('mask')?.classList.remove('hide')
+  document.getElementById('details')?.classList.remove('hide')
 }
-
-window.addEventListener('resize', setTexts)
-
-setTexts()
 
 const maskEl = document.getElementById('mask')
 const scaleText = anime({
@@ -48,12 +47,18 @@ const scaleText = anime({
   },
 })
 
-toggleScale()
-
 function toggleScale() {
   const s = anime.get(maskEl, 'scale')
   if (s === '1' || s === '99') {
     scaleText.reverse()
     scaleText.play()
+    const d = document.getElementById('details')
+    if (d) {
+      s === '1' ? d.classList.add('hide') : d.classList.remove('hide')
+    }
   }
 }
+
+window.addEventListener('resize', setTexts)
+toggleScale()
+setTexts()

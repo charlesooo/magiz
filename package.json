@@ -24,6 +24,7 @@
   "scripts": {
     "check": "tsc --noEmit",
     "dev": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --sourcemap --watch --minify --outfile=dist/magiz.module.min.mjs",
-    "course": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --watch --minify --outfile=D:/Works/magiz-course/src/magiz.module.min.mjs"
+    "course": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --watch --minify --outfile=D:/Works/magiz-course/src/magiz.module.min.mjs",
+    "demo_city": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --watch --minify --outfile=demo/magiz.module.min.mjs"
   }
 }

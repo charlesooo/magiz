@@ -20,10 +20,9 @@ body,
   display        : flex;
   align-items    : center;
   justify-content: center;
-
-  text-transform: uppercase;
-  font-size     : 120px;
-  pointer-events: none;
+  text-transform : uppercase;
+  font-size      : 120px;
+  pointer-events : none;
 }
 
 #mask {
@@ -56,8 +55,40 @@ body,
   height  : 100%;
 }
 
-#ui {
+#details {
+  box-sizing     : border-box;
+  position       : fixed;
+  bottom         : 0;
+  width          : 100%;
+  background     : #111;
+  color          : #fff;
+  display        : flex;
+  justify-content: space-between;
+  align-items    : center;
+  padding        : 6px;
+  transition     : 1s;
+}
+
+#details.hide {
+  bottom: -100%;
+}
+
+#btn {
   position: fixed;
-  bottom  : 12px;
-  left    : 12px;
+  left    : 18px;
+  bottom  : 21px;
+}
+
+#cover {
+  position  : fixed;
+  top       : 0;
+  width     : 100%;
+  height    : 100%;
+  background: #000;
+  transition: 3s;
+}
+
+#cover.hide {
+  pointer-events: none;
+  opacity       : 0;
 }

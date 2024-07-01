@@ -1,14 +1,14 @@
 import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
-// import { globalTime } from './movingMaterials'
-import { handleRaw } from './raw'
+import handleRaw from './raw'
 import VIEW from './view'
-
 import type { temp } from '../types/temp'
 
-///////////////////////////////////////////////////////////////////////
-/////////////////////////////// WEB3D /////////////////////////////////
-///////////////////////////////////////////////////////////////////////
+///////////////////// Shader动画 /////////////////////
+import { material, glassMaterial, lineMaterial } from './basicMaterials'
+import setMovingMaterial from './movingMaterials'
+
+///////////////////// WEB3D /////////////////////
 // js 必须在的一定数值范围内显示，否则会出现异常。这是3D渲染通病。如按
 // 经纬度计算数值过小，出现部分EdgesGeometry不显示的问题。如离原点过远，会出
 // 现模型旋转时不停闪烁的问题，即使设置logarithmicDepthBuffer 为 true，也
@@ -106,6 +106,10 @@ export default class WEB3D {
     // 按需渲染会增加很多代码合复杂性！
     animate(this)
   }
+  /** 重写材质shader，添加平移动画和边线渲染 */
+  setMovingMaterial() {
+    setMovingMaterial(this.playing, material, glassMaterial, lineMaterial)
+  }
   /** 设置相机位置和焦点（所有场景都调用同一相机） */
   setCamera(params: { position?: [number, number, number]; lookAt?: [number, number, number] }) {
     // 如调用了controls, 因 animatie() 中的 controls.update() 会不停修改 camera.target, camera.lookAt() 设置无效
@@ -187,38 +191,40 @@ export default class WEB3D {
     playingOnly ? cleanView(this.playing) : this.views.forEach(cleanView)
   }
   /** 清理场景并生成模型，返回总指标 */
-  refresh(data: rawDataType[], options?: Partial<web3DRefreshOptionsType>) {
-    this.clean()
-    const info = { floorArea: 0, maxFloors: 0 }
-    let maxHeight = 0
+  refresh(
+    data: rawDataType[],
+    options?: Partial<web3DRefreshOptionsType>
+  ): Promise<{ floorArea: number; maxFloors: number }> {
+    return new Promise((resolve, _) => {
+      this.clean()
+      const info = { floorArea: 0, maxFloors: 0 }
+      let maxHeight = 0
 
-    // 生成建筑
-    handleRaw(data, this.playing.scene, options)
+      // 生成建筑
+      handleRaw(data, this.playing.scene, options)
 
-    // 计算指标
-    data.forEach((rawData) => {
-      const { floors, floorArea } = rawData.info
-      info.floorArea += floorArea * floors
-      if (info.maxFloors < floors) info.maxFloors = floors
-      if (maxHeight < rawData.params.height) maxHeight = rawData.params.height
+      // 计算指标
+      data.forEach((rawData) => {
+        const { floors, floorArea } = rawData.info
+        info.floorArea += floorArea * floors
+        if (info.maxFloors < floors) info.maxFloors = floors
+        if (maxHeight < rawData.params.height) maxHeight = rawData.params.height
+      })
+
+      // console.log('info:', this.renderer.info.render, this.playing)
+
+      // 调整镜头
+      this.setCamera({ lookAt: [0, maxHeight / 2, 0] })
+
+      resolve(info)
     })
-
-    // console.log('info:', this.renderer.info.render, this.playing)
-
-    // 调整镜头
-    this.setCamera({ lookAt: [0, maxHeight / 2, 0] })
-
-    return info
   }
 }
 
 function animate(web3D: WEB3D) {
-  const c = web3D.playing
-  web3D.renderer.render(c.scene, web3D.camera)
-  for (const f in c.animations) (c.animations[f] as Function)()
-
-  // globalTime.value++
-
+  const v = web3D.playing
+  web3D.renderer.render(v.scene, web3D.camera)
+  for (const f in v.animations) (v.animations[f] as Function)()
   // 开发时的HMR导致多个渲染循环，须通过检查dom元素自动终止
   if (document.body.contains(web3D.renderer.domElement))
     requestAnimationFrame(() => animate(web3D))

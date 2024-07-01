@@ -1,22 +1,18 @@
-import {
-  Vector3,
-  DoubleSide,
-  MeshLambertMaterial,
-  MeshStandardMaterial,
-  LineBasicMaterial,
-} from 'three'
+import { Vector3, MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
+import VIEW from './view'
 
-export {
-  globalTime,
-  movingVect,
-  material,
-  twoSideMaterial,
-  glassMaterial,
-  lineMaterial,
-  basicMaterialVects,
-  glassMaterialVects,
-  lineMaterialVects,
-  uniformVectorType,
+export default function setMovingMaterial(
+  view: VIEW,
+  material: MeshLambertMaterial,
+  glassMaterial: MeshStandardMaterial,
+  lineMaterial: LineBasicMaterial
+) {
+  view.animations.movingMaterial = () => {
+    globalTime.value++
+  }
+  setMovingShader(material, globalTime, movingVect, basicMaterialVects)
+  setMovingShader(glassMaterial, globalTime, movingVect, glassMaterialVects)
+  setMovingEdgeShader(lineMaterial, globalTime, movingVect, lineMaterialVects)
 }
 
 const movingVect = new Vector3(1, 0, 0)
@@ -24,54 +20,21 @@ const globalTime = { value: 0 }
 
 // node_modules\three\src\renderers\shaders\ShaderChunk
 
-const glassParams = {
-  side: DoubleSide,
-  opacity: 0.6,
-  transparent: true,
-  depthWrite: false,
-  polygonOffset: true,
-  polygonOffsetUnits: 1,
-  polygonOffsetFactor: 0.1,
-}
-
-const material = new MeshLambertMaterial()
-const twoSideMaterial = new MeshLambertMaterial({ side: 2 })
-const glassMaterial = new MeshStandardMaterial(glassParams)
-const lineMaterial = new LineBasicMaterial({ color: '#000' })
-
 type uniformVectorType = { [name: string]: { value: Vector3 } }
 
 /** 颜色渐变矢量可视化 @see http://dev.thi.ng/gradients/ */
-function getUniformVectors(s: string): uniformVectorType {
-  const v = JSON.parse(s.trim().replace(/ +/g, ','))
-  return {
-    v1: { value: new Vector3(...v[0]) },
-    v2: { value: new Vector3(...v[1]) },
-    v3: { value: new Vector3(...v[2]) },
-    v4: { value: new Vector3(...v[3]) },
-  }
-}
 
-const test = `
+const basicMaterialVects = getUniformVectors(`
 [[0.778 0.778 0.750] [0.198 0.034 -0.198] [-0.770 -0.492 0.490] [-4.670 -4.970 -5.428]]
-
-`
-
-const basicMaterialVects = getUniformVectors(test)
+`)
 
 const glassMaterialVects = getUniformVectors(`
 [[0.778 0.778 0.750] [0.198 0.034 -0.198] [-0.770 -0.492 0.490] [-4.670 -4.970 -5.428]]
-
 `)
 
 const lineMaterialVects = getUniformVectors(`
 [[1 1 1] [0 0 0] [0 0 0] [0 0 0]]
-
 `)
-
-setMovingShader(material, globalTime, movingVect, basicMaterialVects)
-setMovingShader(glassMaterial, globalTime, movingVect, glassMaterialVects)
-setMovingEdgeShader(lineMaterial, globalTime, movingVect, lineMaterialVects)
 
 const initVertexShader = `
 uniform float time;
@@ -109,6 +72,16 @@ const mvPositionClamp = `
   }
   mvPosition.z *= bufferRatio;
 `
+
+function getUniformVectors(s: string): uniformVectorType {
+  const v = JSON.parse(s.trim().replace(/ +/g, ','))
+  return {
+    v1: { value: new Vector3(...v[0]) },
+    v2: { value: new Vector3(...v[1]) },
+    v3: { value: new Vector3(...v[2]) },
+    v4: { value: new Vector3(...v[3]) },
+  }
+}
 
 function setFS(shader: string) {
   return shader
