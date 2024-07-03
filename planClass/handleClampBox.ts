@@ -3,11 +3,13 @@ import { sample } from './handleMath'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 import { SEED } from './handleUtils'
 
+import type { styleParsed } from '../types/stylesParsed'
+
 export { handleClampBox }
 
 /** 将 parsed.block 转为纯数据保存到结果 */
 function handleClampBox(
-  parsed: parsed.clampBox[],
+  parsed: styleParsed.clampBox[],
   bounds: { min: Vector2; max: Vector2 },
   result: rawDataType,
   seed: SEED

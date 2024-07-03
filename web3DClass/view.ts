@@ -125,8 +125,7 @@ export default class VIEW {
 
   setPlaneUvMovingX(x: number) {
     if (this.ground) {
-      const { texture, size } = this.ground
-      const u = x / size
+      const { texture } = this.ground
       // 0,1,1,1,0,0,1,0
       this.animations.uvMovingX = () => {
         console.log(texture.offset.x)

@@ -16,7 +16,7 @@ export namespace styleParsed {
   }
 
   type box = status & { x: number; y: number; z: number }
-  type boxFlex = status & { depth: number; height: number; extend: number }
+  type boxFlex = status & { width: number; height: number; shrink: number }
 
   type control = {
     skipIndex: number
@@ -63,7 +63,7 @@ export namespace styleParsed {
       | {
           offset: { x: number; y: number; asRatio: boolean } | undefined
           clamp: clampRangeType | undefined
-          orient: styleParams.alongType | undefined
+          along: styleParams.alongType | undefined
         }[]
       | undefined
   }

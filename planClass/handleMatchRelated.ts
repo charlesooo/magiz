@@ -11,6 +11,7 @@ import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 import { passControl, SEED } from './handleUtils'
 
 import type { temp } from '../types/temp'
+import type { styleParsed } from '../types/stylesParsed'
 
 export { handleMatch, handleBoxInside, handleAdjunct, handleExtrude }
 
@@ -44,10 +45,10 @@ function simplifyMatchData(matchData: temp.match[]) {
           result.push(x)
         } else {
           // 没有差别时更新修改目标
-          x.depth += current.depth
+          x.width += current.width
           x.height = (x.height + current.height) / 2
           x.elevation = (x.elevation + current.elevation) / 2
-          const moveY = current.depth / 2
+          const moveY = current.width / 2
           x.pairs.forEach((pair) => {
             pair.center.y += moveY
           })
@@ -59,20 +60,26 @@ function simplifyMatchData(matchData: temp.match[]) {
 }
 
 /** 将 parsed.match 转为纯数据保存到结果 */
-function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawDataType, seed: SEED) {
+function handleMatch(
+  parsed: styleParsed.match[],
+  rays: temp.ray[][],
+  result: rawDataType,
+  seed: SEED,
+  /** 拟合平面时可以简化结果 */
+  simplify = false
+) {
   parsed.forEach((matchParsed) => {
     // 根据参数旋转平面再进行拟合
     const { along, flexes, elevation, sandwich } = matchParsed
     const { newRays, radian } = rotateLinesAlong(rays.flat(), seed, along)
 
-    const matchData = simplifyMatchData(
-      matchPolygonLinesAlongX(newRays, flexes, elevation, sandwich)
-    )
+    let matchData = matchPolygonLinesAlongX(newRays, flexes, elevation, sandwich)
+    if (simplify) matchData = simplifyMatchData(matchData)
     if (!matchData) return
 
     /** 拟合结果的总深度（） */
     let total = 0
-    matchData.forEach((data) => (total += data.depth))
+    matchData.forEach((data) => (total += data.width))
 
     let tStart = 0
     let tEnd = total
@@ -100,7 +107,7 @@ function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawData
 
     matchData.forEach((data, i) => {
       if (passControl(i, seed, matchParsed.control)) {
-        const { depth, pairs } = data
+        const { width, pairs } = data
         let { height, elevation } = data
 
         // 处理height为负的情况
@@ -112,7 +119,7 @@ function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawData
 
         // 非占位
         if (height > 0) {
-          current += depth / 2
+          current += width / 2
 
           // 调整顶部形态
           if (matchParsed.top && tRange > 0) {
@@ -141,14 +148,14 @@ function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawData
             }
           }
 
-          current += depth / 2
+          current += width / 2
           const restoreMatrix = new Matrix4().makeRotationZ(-radian)
 
           // pair 为每个step代表中线的交点
           pairs.forEach((pair) => {
             // 随机颜色须每个单独sample
             const color = sample(data.color, seed) || DEFAULT_COLOR
-            const matrix = applyTransform(data, new Matrix4().makeScale(pair.width, depth, height))
+            const matrix = applyTransform(data, new Matrix4().makeScale(pair.width, width, height))
               .premultiply(
                 TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
               )
@@ -159,7 +166,7 @@ function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawData
             saveAs.colors.push(color.index)
           })
         } else {
-          current += depth
+          current += width
         }
       }
     })
@@ -167,7 +174,7 @@ function handleMatch(parsed: parsed.match[], rays: temp.ray[][], result: rawData
 }
 
 function handleBoxInside(
-  parsed: parsed.boxInside[],
+  parsed: styleParsed.boxInside[],
   rays: temp.ray[][],
   result: rawDataType,
   seed: SEED
@@ -269,7 +276,7 @@ function handleBoxInside(
 }
 
 function handleAdjunct(
-  parsed: parsed.adjunct[],
+  parsed: styleParsed.adjunct[],
   rays: temp.ray[][],
   result: rawDataType,
   seed: SEED
@@ -325,6 +332,7 @@ function randomPointOnEdge(loops: temp.line[][], seed: SEED) {
       return new Vector2(start.x + (end.x - start.x) * t, start.y + (end.y - start.y) * t)
     }
   }
+  return undefined
 }
 
 /** 根据拟合的结果matchData，从指定序号开始向两侧收集符合条件的结果，用于生成随机大小的 boxInside */
@@ -354,6 +362,7 @@ function collectPairs(
       y: (vars.centerMinY + vars.centerMaxY) / 2,
     }
   }
+  return undefined
 }
 
 /** 从index开始朝一个方向进行拟合，同步更新 xLeftMin, xRightMax, centerMaxY, centerMinY */
@@ -395,12 +404,12 @@ function matching(
 
 /** 平面多边形用box拟合以轻量化模型 */
 function handleExtrude(
-  parsed: parsed.extrude[],
+  parsed: styleParsed.extrude[],
   rays: temp.ray[][],
   result: rawDataType,
   seed: SEED,
   /** 用box拟合挤出平面的块厚度 */
-  depth: number
+  width: number
 ) {
   parsed.forEach((extrudeParams) => {
     const { color, transform, height, thickness, elevation } = extrudeParams
@@ -432,10 +441,10 @@ function handleExtrude(
       })
     } else {
       // 按偏移后的边线用box拟合挤出平面
-      const parsedMatchParams: parsed.match[] = [
+      const parsedMatchParams: styleParsed.match[] = [
         {
           along: 'WIDTH',
-          flexes: [{ extend: 0, depth, height, transform, color }],
+          flexes: [{ shrink: 0, width, height, transform, color }],
           elevation,
           sandwich: false,
           top: undefined,
@@ -443,7 +452,7 @@ function handleExtrude(
           control: undefined,
         },
       ]
-      handleMatch(parsedMatchParams, rays, result, seed)
+      handleMatch(parsedMatchParams, rays, result, seed, true)
     }
   })
 }

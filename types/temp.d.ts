@@ -1,4 +1,5 @@
 import { Vector2, Matrix4, Material, BufferGeometry, Color } from 'three'
+import type { styleParsed } from './stylesParsed'
 
 /** 计算过程数据 */
 export namespace temp {
@@ -23,11 +24,11 @@ export namespace temp {
 
   type box = {
     matrix: Matrix4
-    color: parsed.colorType[]
+    color: styleParsed.colorType[]
   }
 
-  type match = parsed.status & {
-    depth: number
+  type match = styleParsed.status & {
+    width: number
     height: number
     elevation: number
     /** 如果有孔洞，可能一行存在多个pair */

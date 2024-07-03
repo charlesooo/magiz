@@ -1,8 +1,11 @@
 import { rand } from './handleMath'
+
+import type { styleParsed } from '../types/stylesParsed'
+
 export { passControl, SEED }
 
 /** 是否通过生成控制器检查 */
-function passControl(i: number, seed: SEED, control?: parsed.control) {
+function passControl(i: number, seed: SEED, control?: styleParsed.control) {
   let pass = true
   if (control) {
     const { everyIndex, skipIndex, chance } = control

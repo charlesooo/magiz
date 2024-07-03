@@ -11,6 +11,7 @@ import polylabel from 'polylabel'
 import STYLES from '../styleClass'
 
 import type { temp } from '../types/temp'
+import type { styleParsed } from '../types/stylesParsed'
 
 /** 建筑平面类，包括用于生成模型的相关数据和方法 */
 export default class PLAN {
@@ -97,7 +98,7 @@ export default class PLAN {
 
   /** 根据样式参数中的 setEdges 处理边线向量并生成新的向量数组。不处理内部的边线。 */
   getEdges(
-    params: parsed.handleEdgesType,
+    params: styleParsed.handleEdgesType,
     seed: SEED,
     outerOnly: boolean,
     rotate?: number
@@ -120,8 +121,8 @@ export default class PLAN {
         const bounds = getBounds(outter.map((line) => line.start))
         const rects = getClampedRects(bounds, p.clamp)
         rays = rectClampRays(rays, rects)
-      } else if (p.orient) {
-        const o = p.orient
+      } else if (p.along) {
+        const o = p.along
         switch (o) {
           case 'WIDTH':
             rays = rays
@@ -190,7 +191,7 @@ export default class PLAN {
 function toRawData(
   plan: PLAN,
   /** 根据样式库中解析后的样式参数 */
-  styleParsed: parsed.result
+  styleParsed: styleParsed.result
 ): rawDataType {
   const result: rawDataType = {
     info: { floorArea: plan.area, floors: styleParsed.floorCount },
@@ -231,7 +232,7 @@ function toRawData(
 /** 根据参数返回偏移后的定界框 */
 function getClampedRects(
   bounds: { min: Vector2; max: Vector2 },
-  params: parsed.clampRangeType
+  params: styleParsed.clampRangeType
 ): { min: Vector2; max: Vector2 }[] {
   const min = bounds.min.clone()
   const max = bounds.max.clone()

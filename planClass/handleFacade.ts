@@ -2,18 +2,20 @@ import { Matrix4, Vector2 } from 'three'
 import { passControl, SEED } from './handleUtils'
 import { sample, getMatchRatioAndCount } from './handleMath'
 import { TEMP, DEFAULT_COLOR, handleFacadeElements } from './handleBasic'
+
 import type { temp } from '../types/temp'
+import type { styleParsed } from '../types/stylesParsed'
 
 export { handleFacade }
 
 type spacingDataType = {
-  model: { matrix: Matrix4; color: parsed.colorType[] }[] | undefined
-  control: parsed.control | undefined
+  model: temp.box[] | undefined
+  control: styleParsed.control | undefined
   space: number
 }
 
 function handleFacade(
-  parsed: parsed.facade[],
+  parsed: styleParsed.facade[],
   rays: temp.ray[][],
   result: rawDataType,
   seed: SEED
@@ -24,7 +26,7 @@ function handleFacade(
 }
 
 /** 按padding将每条边线分解，并计算长度。没有padding也须计算middleRay */
-function handlePadding(rays: temp.ray[][], padding?: parsed.paddingType): temp.splitted[][] {
+function handlePadding(rays: temp.ray[][], padding?: styleParsed.paddingType): temp.splitted[][] {
   if (padding) {
     const { start, middle, end, asRatio } = padding
     return rays.map((loop) =>
@@ -83,7 +85,7 @@ function handlePadding(rays: temp.ray[][], padding?: parsed.paddingType): temp.s
 function handleBoxes(
   result: rawDataType['data'],
   lineData: temp.splitted[][],
-  partPared: parsed.facade,
+  partPared: styleParsed.facade,
   seed: SEED
 ) {
   const { proto, elevation } = partPared
@@ -116,7 +118,7 @@ function handleBoxes(
 
 /** 在给定的起点、方向、距离内，按间距返回点阵。考虑美观，间距都按参数的近似值。moveZ 在之后结合标高一起计算。如果ray不存在则跳过 */
 function pushDividePoints(
-  boxArray: parsed.boxArray,
+  boxArray: styleParsed.boxArray,
   result: rawDataType['data'],
   elevation: number,
   seed: SEED,
@@ -143,16 +145,18 @@ function pushDividePoints(
 
       if (rc) {
         const { ratio, count } = rc
-        const data: spacingDataType[] = []
+        const spacingDdata: spacingDataType[] = []
         spacing.forEach((s) => {
-          const model = s.group?.map((b) => handleFacadeElements(b, s.space, ratio))
+          const model = s.group
+            ?.map((b) => handleFacadeElements(b, s.space, ratio))
+            .filter((x) => x !== undefined)
           const control = s.control
           for (let i = -1; i < s.repeat; i++) {
-            data.push({ model, control, space: s.space * ratio })
+            spacingDdata.push({ model, control, space: s.space * ratio })
           }
         })
 
-        pushData(data, count, result, elevation, direction, start, first, last, seed)
+        pushData(spacingDdata, count, result, elevation, direction, start, first, last, seed)
       }
     }
 
@@ -165,7 +169,9 @@ function pushDividePoints(
           space *= ratio
           data = [
             {
-              model: d.group.map((b) => handleFacadeElements(b, space, ratio)),
+              model: d.group
+                .map((b) => handleFacadeElements(b, space, ratio))
+                .filter((x) => x !== undefined),
               control: d.control,
               space: space * ratio,
             },

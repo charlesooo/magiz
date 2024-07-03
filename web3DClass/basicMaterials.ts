@@ -6,10 +6,6 @@ const glassParams = {
   side: DoubleSide,
   opacity: 0.6,
   transparent: true,
-  depthWrite: false,
-  polygonOffset: true,
-  polygonOffsetUnits: 1,
-  polygonOffsetFactor: 0.1,
 }
 
 const material = new MeshLambertMaterial()

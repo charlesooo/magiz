@@ -15,7 +15,7 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import type { temp } from 'types/temp'
+import type { temp } from '../types/temp'
 import { material, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
 
 const boxGeom = new BoxGeometry()

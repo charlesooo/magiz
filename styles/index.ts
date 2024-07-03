@@ -1,5 +1,5 @@
 import STYLES from '../styleClass'
-import { styles as basic } from './default/basic'
+import { styles as basic } from './advanced/basic'
 import { styles as villa } from './advanced/villa'
 import { styles as marseille } from './advanced/marseille'
 import { styles as match } from './advanced/match'

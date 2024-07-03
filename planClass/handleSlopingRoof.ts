@@ -3,11 +3,13 @@ import { sample } from './handleMath'
 import { SEED } from './handleUtils'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 
+import type { styleParsed } from '../types/stylesParsed'
+
 export { handleSlopingRoof }
 
 /** 将 parsed.block 转为纯数据保存到结果 */
 function handleSlopingRoof(
-  parsed: parsed.slopingRoof[],
+  parsed: styleParsed.slopingRoof[],
   bounds: { min: Vector2; max: Vector2 },
   result: rawDataType,
   seed: SEED

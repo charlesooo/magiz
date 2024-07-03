@@ -83,12 +83,12 @@ export namespace styleParams {
   }
   /** 灵活的box，宽度后续按情况设定 */
   type boxFlex = status & {
-    /** 水平深度，负值表示朝外 */
-    depth: ns
+    /** 水平宽度，负值表示朝外 */
+    width: ns
     /** 垂直高度，负值表示朝下，省略表示仅占位 */
     height?: ns
-    /** 加长，负值表示缩短 */
-    extend?: ns
+    /** 加长深度，正值表示缩短 */
+    shrink?: ns
   }
 
   type control = {
@@ -244,14 +244,14 @@ export namespace styleParams {
 
     ///////// 边线相关修改须前置，以便extrude、facade等抽象为预设 /////////
 
-    /** 根据参数组合修改边线，每条按 offset|clamp|orient 的顺序，仅有一项生效 */
+    /** 根据参数组合修改边线，每条按 offset|clamp|along 的顺序，仅有一项生效 */
     setEdges?: {
       /** 精确偏移边线，不影响 extrude，默认不按比例 */
       offset?: scaleOrOffsetType
       /** 按定界框向内偏移，选择在范围内的边线 */
       clamp?: clampRangeType
       /** 按轴向筛选边线 (不考虑世界轴向以简化逻辑) */
-      orient?: alongType
+      along?: alongType
       // 不考虑检查线段长度，通过算法保证长度不足时跳过生成
     }[]
 
@@ -262,7 +262,6 @@ export namespace styleParams {
 
     /** 从平面挤出体块 */
     extrude?: extrude[]
-
     /** 按boundingBox生成坡屋顶 */
     slopingRoof?: slopingRoof[]
     /** clamp平面而成的 box */

@@ -3,8 +3,10 @@
 import { Vector2, Matrix3 } from 'three'
 import { seededRandom } from 'three/src/math/MathUtils.js'
 import { SEED } from './handleUtils'
-import type { temp } from '../types/temp'
 
+import type { temp } from '../types/temp'
+import type { styleParsed } from '../types/stylesParsed'
+import type { styleParams } from '../types/style'
 export {
   rand,
   sample,
@@ -272,11 +274,8 @@ function getMatchRatioAndCount(spacing: number[], distance: number, addWidthToLa
 }
 
 /** 计算平行Y轴的直线与多边形所有边的交点，排除在端点的情况，结果按x值从小到大排序 */
-function sweepPolygonLines(
-  y: number,
-  lines: temp.line[]
-): [leftPoint: Vector2, rightPoint: Vector2][] {
-  const result: ReturnType<typeof sweepPolygonLines> = []
+function sweepPolygonLines(y: number, lines: temp.line[]) {
+  const result: [leftPoint: Vector2, rightPoint: Vector2][] = []
   const a: Vector2[] = []
   lines.forEach((line) => {
     const i = pointAt(y, line)
@@ -310,7 +309,7 @@ function sweepPolygonLines(
 /** 根据输入的match参数，添加标高并按拟合缩放数值，返回计算结果。根据 steps 组合沿Y轴计算交点。返回的 pairs 为每个step中线的交点，Y值相同 */
 function matchPolygonLinesAlongX(
   lines: temp.line[],
-  flexBoxes: parsed.boxFlex[],
+  flexBoxes: styleParsed.boxFlex[],
   elevation: number,
   sandwich: boolean
 ) {
@@ -322,11 +321,11 @@ function matchPolygonLinesAlongX(
   // 将spacing按总长度拟合，以正好覆盖范围
   const distance = bounds.max.y - bounds.min.y
   const flexData = flexBoxes.map((flexBox) => Object.assign({ elevation }, flexBox))
-  const depths = flexData.map((d) => d.depth)
-  const rc = getMatchRatioAndCount(depths, distance, sandwich ? depths[0] : 0)
+  const widths = flexData.map((d) => d.width)
+  const rc = getMatchRatioAndCount(widths, distance, sandwich ? widths[0] : 0)
   if (rc) {
     // 按拟合比例缩放间距
-    flexData.forEach((data) => (data.depth *= rc.ratio))
+    flexData.forEach((data) => (data.width *= rc.ratio))
 
     for (let i = 0; i < rc.count; i++) {
       // if (!order) shuffleArray(matchData)
@@ -341,10 +340,10 @@ function matchPolygonLinesAlongX(
 
   return result
 
-  /** 调用公共变量Y，将拟合结果推送到result */
+  /** 调用公共变量currentY，将拟合结果推送到result */
   function pushMatchData(data: (typeof flexData)[0]) {
-    // 先移动当前Y坐标到计算的中点位置
-    const s = data.depth / 2
+    // 先移动当前currentY坐标到计算的中点位置
+    const s = data.width / 2
     currentY += s
     // 计算中点和总宽。sweepPolygonLines 排除在端点的情况，须在中线处拟合
     const pairs = sweepPolygonLines(currentY, lines).map((pair) => {
@@ -358,9 +357,9 @@ function matchPolygonLinesAlongX(
       }
     })
 
-    // 根据 extend 调整结果
-    if (data.extend) {
-      pairs.forEach((pair) => (pair.width += data.extend))
+    // 根据 shrink 调整结果
+    if (data.shrink) {
+      pairs.forEach((pair) => (pair.width -= data.shrink))
     }
     // 根据 tansform 中的位移调整结果，暂不考虑旋转
     data.transform?.forEach((t) => {
@@ -378,7 +377,7 @@ function matchPolygonLinesAlongX(
 }
 
 /** 根据along旋转由Plane生成的lines数据，默认按 WIDTH */
-function rotateLinesAlong(rays: temp.ray[], seed: SEED, along?: params.alongType) {
+function rotateLinesAlong(rays: temp.ray[], seed: SEED, along?: styleParams.alongType) {
   let radian = 0
   if (along === 'RANDOM') {
     radian = Math.PI * 2 * rand(seed)

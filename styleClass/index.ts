@@ -2,8 +2,8 @@ import { evaluate } from 'mathjs'
 import { SEED, passControl } from '../planClass/handleUtils'
 import { sample } from '../planClass/handleMath'
 
-import type { styleParams } from 'types/style'
-import type { styleParsed } from 'types/stylesParsed'
+import type { styleParams } from '../types/style'
+import type { styleParsed } from '../types/stylesParsed'
 
 /** 解析时全局缓存的字典 */
 const GLOBAL: {
@@ -229,9 +229,9 @@ function parseBoxGroup(
           z: parse(b.z),
         })
       : parseStatus(b, {
-          depth: parse(b.depth),
+          width: parse(b.width),
           height: parse(b.height),
-          extend: parse(b.extend),
+          shrink: parse(b.shrink),
         })
   })
 }
@@ -250,9 +250,9 @@ function parseBoxes(boxes: styleParams.box[]): styleParsed.box[] {
 /** 解析 boxFlex[] */
 function parseBoxFlex(boxFlex: styleParams.boxFlex): styleParsed.boxFlex {
   return parseStatus(boxFlex, {
-    depth: parse(boxFlex.depth),
+    width: parse(boxFlex.width),
     height: parse(boxFlex.height),
-    extend: parse(boxFlex.extend),
+    shrink: parse(boxFlex.shrink),
   })
 }
 
@@ -289,59 +289,62 @@ function parseSection(
             // 如果缓存中有对应名称的样式
             if (styles.data.preset) {
               /** 预设样式 */
-              let p: (typeof styles.data.preset)[string] | undefined
+              let presetData: (typeof styles.data.preset)[string] | undefined
               if (name) {
                 // 按名字指定预设样式
-                p = styles.data.preset[name]
+                presetData = styles.data.preset[name]
               } else if (key) {
                 // 按关键词随机选择预设样式
                 const names = Object.keys(styles.data.preset).filter((n) => n.includes(key))
                 if (names.length > 0) {
-                  p = styles.data.preset[sample(names, seed) as string]
+                  presetData = styles.data.preset[sample(names, seed) as string]
                 }
               }
 
               // 仅在预设参数范围内更新数值
-              if (p) {
-                if (p.unit) {
+              if (presetData) {
+                if (presetData.unit) {
                   GLOBAL.UNITS_PRESET = {}
                   if (unit) {
-                    for (const key in p.unit) {
+                    for (const key in presetData.unit) {
                       const inputUnit = unit[key]
                       GLOBAL.UNITS_PRESET[key] = parse(
                         // 避免值为 0 时不被解析
-                        inputUnit !== undefined ? inputUnit : p.unit[key]
+                        inputUnit !== undefined ? inputUnit : presetData.unit[key]
                       )
                     }
                   } else {
-                    for (const key in p.unit) {
-                      GLOBAL.UNITS_PRESET[key] = parse(p.unit[key])
+                    for (const key in presetData.unit) {
+                      GLOBAL.UNITS_PRESET[key] = parse(presetData.unit[key])
                     }
                   }
                 }
 
-                if (p.color) {
+                if (presetData.color) {
                   GLOBAL.COLOR_PRESET = {}
                   // 如果输入的参数中有color
                   if (color) {
-                    for (const key in p.color) {
-                      GLOBAL.COLOR_PRESET[key] = color[key] || (p.color[key] as string | string[])
+                    for (const key in presetData.color) {
+                      GLOBAL.COLOR_PRESET[key] =
+                        color[key] || (presetData.color[key] as string | string[])
                     }
                   } else {
-                    for (const key in p.color) {
-                      GLOBAL.COLOR_PRESET[key] = p.color[key] as string | string[]
+                    for (const key in presetData.color) {
+                      GLOBAL.COLOR_PRESET[key] = presetData.color[key] as string | string[]
                     }
                   }
                 }
 
-                p.floor.forEach((f) => {
+                presetData.floor.forEach((f) => {
                   // 创建预设的深拷贝
                   const fp = Object.assign({}, f)
                   // 如果父级参数有除生成体块外的其他部分，与预设进行整合，以便在预设基础上增加自定义
                   if (floorParams.floorControl) fp.floorControl = floorParams.floorControl
                   if (floorParams.floorNumber) fp.floorNumber = floorParams.floorNumber
                   if (floorParams.floorRange) fp.floorRange = floorParams.floorRange
-                  if (floorParams.setEdges) fp.setEdges = floorParams.setEdges
+
+                  // 边线控制可以叠加
+                  fp.setEdges = [...(floorParams.setEdges || []), ...(fp.setEdges || [])]
 
                   parseFloor(floorCount, floorHeight, sectionHeight, sectionElevation, fp, seed)
                 })
@@ -468,11 +471,11 @@ function limitFloorRange(
 function parseEdgeParams(params: styleParams.floor): styleParsed.handleEdgesType {
   return {
     set: params.setEdges?.map((setEdges) => {
-      const { offset, clamp, orient } = setEdges
+      const { offset, clamp, along } = setEdges
       return {
         offset: parseOffsetOrScale(offset),
         clamp: parseClamp(clamp),
-        orient,
+        along,
       }
     }),
   }
