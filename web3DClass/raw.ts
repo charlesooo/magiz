@@ -15,17 +15,19 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import type { temp } from '../types/temp'
 import { material, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
+
+import type { temp } from '../types/temp'
+import type { magizTypes } from '../types/magizTypes'
 
 const boxGeom = new BoxGeometry()
 const slopingGeom = getSlopingRoofGeometry()
 
-/** 将 Magiz 解析的 rawDataType 转为 Three.js 对象 */
+/** 将 Magiz 解析的 magizTypes.rawData 转为 Three.js 对象 */
 export default function handleRaw(
-  input: rawDataType[],
+  input: magizTypes.rawData[],
   scene: Scene,
-  options?: Partial<web3DRefreshOptionsType>
+  options?: Partial<magizTypes.webRefreshOptions>
 ) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
@@ -45,7 +47,7 @@ export default function handleRaw(
   }
 
   // 模型元素类型
-  let instanceType: keyof rawDataType['data']
+  let instanceType: keyof magizTypes.rawData['data']
 
   // 整合输入的rawData到 result
   input.forEach((rawData) => {

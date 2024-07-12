@@ -1,6 +1,6 @@
-import type { styleParams } from '../../types/style'
+import type { styleTypes } from '../../types/style'
 
-export const styles: styleParams.styles = {
+export const styles: styleTypes.styles = {
   preset: {
     '新中式别墅坡屋顶<高度,出挑><颜色,屋顶颜色>': {
       unit: { 高度: 2, 出挑: 0.5 },

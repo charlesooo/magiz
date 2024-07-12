@@ -1,4 +1,4 @@
-import type { styleParams } from './style'
+import type { styleTypes } from './style'
 
 export namespace styleParsed {
   type paddingType = { start: number; middle: number; end: number; asRatio: boolean }
@@ -36,7 +36,7 @@ export namespace styleParsed {
   }
 
   type boxArray = {
-    area: styleParams.paddingAreaType
+    area: styleTypes.paddingAreaType
     spacing:
       | {
           space: number
@@ -57,13 +57,13 @@ export namespace styleParsed {
     lastWidth: number
   }
 
-  /** 解析styleParams.floor与边线相关的参数 */
+  /** 解析styleTypes.floor与边线相关的参数 */
   type handleEdgesType = {
     set:
       | {
           offset: { x: number; y: number; asRatio: boolean } | undefined
           clamp: clampRangeType | undefined
-          along: styleParams.alongType | undefined
+          along: styleTypes.alongType | undefined
         }[]
       | undefined
   }
@@ -92,19 +92,19 @@ export namespace styleParsed {
   }
 
   type match = {
-    along: styleParams.alongType | undefined
+    along: styleTypes.alongType | undefined
     flexes: boxFlex[]
     top:
       | {
           ratio: number
-          like: styleParams.topLikeType
+          like: styleTypes.topLikeType
           padding: paddingType | undefined
         }
       | undefined
     bottom:
       | {
           ratio: number
-          like: styleParams.bottomLikeType
+          like: styleTypes.bottomLikeType
           padding: paddingType | undefined
         }
       | undefined
@@ -119,13 +119,13 @@ export namespace styleParsed {
     widthRatio: [min: number, max: number]
     depthRatio: [min: number, max: number]
     heightRatio: [min: number, max: number]
-    along: styleParams.alongType | undefined
+    along: styleTypes.alongType | undefined
     elevation: number
   }
 
   type adjunct = {
     boxes: box[]
-    place: styleParams.randomPlaceType
+    place: styleTypes.randomPlaceType
     count: number
     elevation: number
   }

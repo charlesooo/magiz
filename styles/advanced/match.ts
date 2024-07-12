@@ -1,6 +1,6 @@
-import type { styleParams } from '../../types/style'
+import type { styleTypes } from '../../types/style'
 
-export const styles: styleParams.styles = {
+export const styles: styleTypes.styles = {
   preset: {
     ///////////////// using basic.ts /////////////////
     '订阅中部45度拟合立面<出挑><横板>': {

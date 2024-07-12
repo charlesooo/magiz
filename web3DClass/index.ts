@@ -2,7 +2,9 @@ import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three
 import { OrbitControls, addOrbitControls } from './controls'
 import handleRaw from './raw'
 import VIEW from './view'
+
 import type { temp } from '../types/temp'
+import type { magizTypes } from '../types/magizTypes'
 
 ///////////////////// Shader动画 /////////////////////
 import { material, glassMaterial, lineMaterial } from './basicMaterials'
@@ -20,7 +22,7 @@ import setMovingMaterial from './movingMaterials'
 // 从 instancedMesh 到 Mesh 用 SceneUtils.createMeshesFromInstancedMesh
 // https://threejs.org/docs/#examples/zh/utils/SceneUtils
 
-const web3DOptions: web3DOptionsType = {
+const web3DOptions: magizTypes.webOptions = {
   cameraPosition: [-900, 600, 900],
   cameraLookAt: [0, 90, 0],
   sunDistance: 10000,
@@ -52,7 +54,7 @@ export default class WEB3D {
   /** 太阳坐标 */
   sunPosition: Vector3
   /** 工具实例的参数 */
-  options: web3DOptionsType
+  options: magizTypes.webOptions
   /** 绑定DOM元素，并生成用于Three.js渲染场景的canvas元素 */
   parent: Element
   /** 绑定材质用于镜面材质的环境反射效果 */
@@ -72,7 +74,7 @@ export default class WEB3D {
     /** 通过querySelector绑定Canvas到Div */
     DivID: string,
     /** 初始化工具实例的参数 */
-    options?: Partial<web3DOptionsType>
+    options?: Partial<magizTypes.webOptions>
   ) {
     const dom = document.querySelector(DivID)
     if (!dom) throw 'ERROR: invalid parentCSSID'
@@ -192,8 +194,8 @@ export default class WEB3D {
   }
   /** 清理场景并生成模型，返回总指标 */
   refresh(
-    data: rawDataType[],
-    options?: Partial<web3DRefreshOptionsType>
+    data: magizTypes.rawData[],
+    options?: Partial<magizTypes.webRefreshOptions>
   ): Promise<{ floorArea: number; maxFloors: number }> {
     return new Promise((resolve, _) => {
       this.clean()
@@ -205,10 +207,11 @@ export default class WEB3D {
 
       // 计算指标
       data.forEach((rawData) => {
+        const h = rawData.params.height
         const { floors, floorArea } = rawData.info
         info.floorArea += floorArea * floors
         if (info.maxFloors < floors) info.maxFloors = floors
-        if (maxHeight < rawData.params.height) maxHeight = rawData.params.height
+        if (maxHeight < h) maxHeight = h
       })
 
       // console.log('info:', this.renderer.info.render, this.playing)

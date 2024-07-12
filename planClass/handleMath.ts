@@ -6,7 +6,7 @@ import { SEED } from './handleUtils'
 
 import type { temp } from '../types/temp'
 import type { styleParsed } from '../types/stylesParsed'
-import type { styleParams } from '../types/style'
+import type { styleTypes } from '../types/style'
 export {
   rand,
   sample,
@@ -377,7 +377,7 @@ function matchPolygonLinesAlongX(
 }
 
 /** 根据along旋转由Plane生成的lines数据，默认按 WIDTH */
-function rotateLinesAlong(rays: temp.ray[], seed: SEED, along?: styleParams.alongType) {
+function rotateLinesAlong(rays: temp.ray[], seed: SEED, along?: styleTypes.alongType) {
   let radian = 0
   if (along === 'RANDOM') {
     radian = Math.PI * 2 * rand(seed)

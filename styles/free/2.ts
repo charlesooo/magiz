@@ -1,6 +1,6 @@
-import type { styleParams } from '../../types/style'
+import type { styleTypes } from '../../types/style'
 
-export const styles: styleParams.styles = {
+export const styles: styleTypes.styles = {
   preset: {},
   building: {
     S6: {

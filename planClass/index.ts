@@ -7,18 +7,18 @@ import { handleClampBox } from './handleClampBox'
 import { handleFacade } from './handleFacade'
 import { handleMatch, handleBoxInside, handleAdjunct, handleExtrude } from './handleMatchRelated'
 import { offsetRays, rectClampRays } from './handleRays'
-import polylabel from 'polylabel'
 import STYLES from '../styleClass'
 
-import type { temp } from '../types/temp'
+import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
+import type { temp } from '../types/temp'
 
 /** 建筑平面类，包括用于生成模型的相关数据和方法 */
 export default class PLAN {
   /** 每个平面对应一个随机数种子 */
   seed: SEED
   /** 建筑模型生成的参数 */
-  styleParams: styleParamsType
+  styleParams: magizTypes.styleParams
   /** 平面的面积 */
   area: number
   /** 平面的中心点坐标 （用于移动模型到原位） */
@@ -34,20 +34,24 @@ export default class PLAN {
     /** 围绕坐标轴原点旋转到原位的弧度 */
     radian: number
   }
+  /** 输入的源坐标 */
+  orignal: Vector2[][]
 
   /** 创建建筑平面实例 */
-  constructor(input: parseRequestType) {
+  constructor(input: magizTypes.parseRequest) {
     // Path,ShapeGeometry,ExtrudeGeometry 内部在创建时都会检查clockwise，但为了保证 pushRandomSquaresInside 计算正确，须提格式化
-    const inputPoints2D = input.loops.map((loop) => loop.map((p2) => new Vector2(...p2)))
-    const outterLoop = inputPoints2D[0]
+    this.orignal = input.loops.map((loop) => loop.map((pt) => new Vector2(...pt)))
+
+    const outterLoop = this.orignal[0]
+
     // 确保外圈至少包含3个点
     if (outterLoop && outterLoop.length > 2) {
       if (ShapeUtils.isClockWise(outterLoop)) outterLoop.reverse()
 
       // 计算面积
       this.area = ShapeUtils.area(outterLoop)
-      for (let i = 1; i < inputPoints2D.length; i++) {
-        const loop = inputPoints2D[i] as Vector2[]
+      for (let i = 1; i < this.orignal.length; i++) {
+        const loop = this.orignal[i] as Vector2[]
         if (!ShapeUtils.isClockWise(loop)) loop.reverse()
         this.area -= ShapeUtils.area(loop)
       }
@@ -62,10 +66,10 @@ export default class PLAN {
 
       const origin = new Vector2(0, 0)
       const radian = longest.angle()
-      const rawPoints = outterLoop.map((v) => v.toArray())
-      this.center = new Vector2(...polylabel([rawPoints]))
+      this.center = getCenter(outterLoop)
 
-      const relativePoints = inputPoints2D.map((loop) =>
+      // 将坐标点的中心重置到原点
+      const relativePoints = this.orignal.map((loop) =>
         loop.map((v2) => v2.sub(this.center).rotateAround(origin, -radian))
       )
 
@@ -180,54 +184,93 @@ export default class PLAN {
 
     return rays
   }
-  /** 按样式库生成建筑模型 */
-  generate(styles: STYLES): rawDataType {
-    const data = toRawData(this, styles.parseStyle(this.styleParams, this.seed))
-    return data
-  }
-}
+  /** 按样式库生成建筑模型数据 */
+  toModel(styles: STYLES, centerOfAll?: { x: number; y: number }): magizTypes.rawData {
+    const styleParsed = styles.parseStyle(this.styleParams, this.seed)
+    const center: [number, number] = centerOfAll
+      ? [this.center.x - centerOfAll.x, this.center.y - centerOfAll.y]
+      : this.center.toArray()
 
-/** 按Z轴向上计算生成建筑模型所需的JSON数据 */
-function toRawData(
-  plan: PLAN,
-  /** 根据样式库中解析后的样式参数 */
-  styleParsed: styleParsed.result
-): rawDataType {
-  const result: rawDataType = {
-    info: { floorArea: plan.area, floors: styleParsed.floorCount },
-    points: plan.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
-    center: plan.center.toArray(),
-    params: plan.styleParams,
-    colorMap: styleParsed.colorMap,
-    rotate: plan.relative.radian,
-    data: {
-      box: { matrices: [], colors: [] },
-      boxGlass: { matrices: [], colors: [] },
-      sloping: { matrices: [], colors: [] },
-      slopingGlass: { matrices: [], colors: [] },
-    },
-  }
-
-  const seed = plan.seed
-  styleParsed.classified.forEach((s) => {
-    // 保留包含内部孔洞的数据格式，但暂时只处理外边线
-    const rays = plan.getEdges(s.edgeParams, seed, true)
-
-    if (rays[0] && rays[0].length > 0) {
-      const bounds = getBounds(rays[0].map((r) => r.start))
-
-      handleFacade(s.facade, rays, result, seed)
-      handleExtrude(s.extrude, rays, result, seed, 4)
-      handleBoxInside(s.boxInside, rays, result, seed)
-      handleAdjunct(s.adjunct, rays, result, seed)
-      handleMatch(s.match, rays, result, seed)
-      handleClampBox(s.clampBox, bounds, result, seed)
-      handleSlopingRoof(s.slopingRoof, bounds, result, seed)
+    // 按相对坐标还是源坐标生成
+    const result: magizTypes.rawData = {
+      info: { floorArea: this.area, floors: styleParsed.floorCount },
+      points: this.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
+      center,
+      params: this.styleParams,
+      colorMap: styleParsed.colorMap,
+      rotate: this.relative.radian,
+      data: {
+        box: { matrices: [], colors: [] },
+        boxGlass: { matrices: [], colors: [] },
+        sloping: { matrices: [], colors: [] },
+        slopingGlass: { matrices: [], colors: [] },
+      },
     }
-  })
 
-  return result
+    const seed = this.seed
+    styleParsed.classified.forEach((s) => {
+      // 保留包含内部孔洞的数据格式，但暂时只处理外边线
+      const rays = this.getEdges(s.edgeParams, seed, true)
+
+      if (rays[0] && rays[0].length > 0) {
+        const bounds = getBounds(rays[0].map((r) => r.start))
+
+        handleFacade(s.facade, rays, result, seed)
+        handleExtrude(s.extrude, rays, result, seed, 4)
+        handleBoxInside(s.boxInside, rays, result, seed)
+        handleAdjunct(s.adjunct, rays, result, seed)
+        handleMatch(s.match, rays, result, seed)
+        handleClampBox(s.clampBox, bounds, result, seed)
+        handleSlopingRoof(s.slopingRoof, bounds, result, seed)
+      }
+    })
+
+    return result
+  }
 }
+
+// /** 按Z轴向上计算生成建筑模型所需的JSON数据 */
+// function toRawData(
+//   plan: PLAN,
+//   relative: boolean,
+//   /** 根据样式库中解析后的样式参数 */
+//   styleParsed: styleParsed.result
+// ): magizTypes.rawData {
+//   const result: magizTypes.rawData = {
+//     info: { floorArea: plan.area, floors: styleParsed.floorCount },
+//     points: plan.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
+//     center: plan.center.toArray(),
+//     params: plan.styleParams,
+//     colorMap: styleParsed.colorMap,
+//     rotate: plan.relative.radian,
+//     data: {
+//       box: { matrices: [], colors: [] },
+//       boxGlass: { matrices: [], colors: [] },
+//       sloping: { matrices: [], colors: [] },
+//       slopingGlass: { matrices: [], colors: [] },
+//     },
+//   }
+
+//   const seed = plan.seed
+//   styleParsed.classified.forEach((s) => {
+//     // 保留包含内部孔洞的数据格式，但暂时只处理外边线
+//     const rays = plan.getEdges(s.edgeParams, seed, true)
+
+//     if (rays[0] && rays[0].length > 0) {
+//       const bounds = getBounds(rays[0].map((r) => r.start))
+
+//       handleFacade(s.facade, rays, result, seed)
+//       handleExtrude(s.extrude, rays, result, seed, 4)
+//       handleBoxInside(s.boxInside, rays, result, seed)
+//       handleAdjunct(s.adjunct, rays, result, seed)
+//       handleMatch(s.match, rays, result, seed)
+//       handleClampBox(s.clampBox, bounds, result, seed)
+//       handleSlopingRoof(s.slopingRoof, bounds, result, seed)
+//     }
+//   })
+
+//   return result
+// }
 
 /** 根据参数返回偏移后的定界框 */
 function getClampedRects(
@@ -310,4 +353,15 @@ function pushRect(
     })
   }
   bounds.push(...pushing)
+}
+
+function getCenter(loop: Vector2[]) {
+  const c: [number, number] = [0, 0]
+  loop.forEach((v) => {
+    c[0] += v.x
+    c[1] += v.y
+  })
+  c[0] /= loop.length
+  c[1] /= loop.length
+  return new Vector2(...c)
 }

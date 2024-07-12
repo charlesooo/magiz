@@ -1,4 +1,4 @@
-export namespace styleParams {
+export namespace styleTypes {
   /** 参数可以是数字或代表公式的字符串 */
   type ns = number | string
 
@@ -306,17 +306,6 @@ export namespace styleParams {
     }
   }
 
-  /** 自定义样式 */
-  type styles = {
-    /** 可重复利用的预设样式，基本格式：{ [name: string]: { floor: floor[] } } */
-    preset: {
-      /** 样式名称 */
-      [name: string]: preset
-    }
-    /** 建筑样式 */
-    building: { [name: string]: style }
-  }
-
   type preset = {
     /** 预设样式变量的默认值 */
     unit?: { [key: string]: ns }
@@ -335,5 +324,16 @@ export namespace styleParams {
     key?: string
     /** 预设样式的名称 */
     name?: string
+  }
+
+  /** 自定义样式 */
+  type styles = {
+    /** 可重复利用的预设样式，基本格式：{ [name: string]: { floor: floor[] } } */
+    preset: {
+      /** 样式名称 */
+      [name: string]: preset
+    }
+    /** 建筑样式 */
+    building: { [name: string]: style }
   }
 }

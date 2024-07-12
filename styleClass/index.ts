@@ -1,8 +1,10 @@
 import { evaluate } from 'mathjs'
 import { SEED, passControl } from '../planClass/handleUtils'
 import { sample } from '../planClass/handleMath'
+import mergeStyles from './merge'
 
-import type { styleParams } from '../types/style'
+import type { magizTypes } from '../types/magizTypes'
+import type { styleTypes } from '../types/style'
 import type { styleParsed } from '../types/stylesParsed'
 
 /** 解析时全局缓存的字典 */
@@ -21,50 +23,41 @@ const RESULT: styleParsed.result = { colorMap: [], floorCount: 0, classified: []
 
 /** 用于管理多个样式文件的样式库类 */
 export default class STYLES {
-  /** 样式参数备份，方便调试时重生成 */
-  json: string
   /** 整合后的样式参数 */
-  data: styleParams.styles
+  data: styleTypes.styles
+  /** 缓存自定义的样式，解析一次后就删除 */
+  cache?: styleTypes.styles
 
   /** 创建样式库实例，输入的样式将自动整合 */
   constructor(
     /** 输入多个样式参数并整合 */
-    ...styles: styleParams.styles[]
+    ...styles: styleTypes.styles[]
   ) {
     this.data = { preset: {}, building: {} }
-    this.json = ''
     this.merge(styles)
   }
 
   /** 合并样式参数（会提示被替换的项） */
-  merge(a: styleParams.styles[]): styleParams.styles {
+  merge(a: styleTypes.styles[]): styleTypes.styles {
     mergeStyles(this.data, a)
-    this.json = JSON.stringify(this.data)
     return this.data
   }
 
-  /** 读取的调试文件与初始化时的样式参数合并 */
-  mergeTest(s: styleParams.styles) {
-    this.data = JSON.parse(this.json)
-    Object.assign(this.data.preset, s.preset)
-    Object.assign(this.data.building, s.building)
-  }
-
   /** @ignore 按是否免费返回分类后的样式名称 */
-  getOptions(): styleOptionsType {
-    const result: styleOptionsType = { paid: [], free: [] }
+  getOptions(): magizTypes.styleOptions {
+    const result: magizTypes.styleOptions = { paid: [], free: [] }
     const b = this.data.building
     for (const n in b) {
-      const s = b[n] as styleParams.style
+      const s = b[n] as styleTypes.style
       s.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
     }
     return result
   }
 
-  /** 根据输入参数和随机种子解析样式 */
+  /** 根据输入参数和随机种子解析样式。优先按custom解析 */
   parseStyle(
     /** 控制解析的参数 */
-    styleParams: styleParamsType,
+    styleParams: magizTypes.styleParams,
     /** 全局随机种子 */
     seed: SEED
   ): styleParsed.result {
@@ -80,7 +73,9 @@ export default class STYLES {
     // 设置随机数种子
     seed.set(Number(styleParams.seed) || Math.round(Math.random() * 100000))
 
-    const selected = this.data.building[styleParams.style]
+    // 有先按 custom 解析
+    const data = this.cache || this.data
+    const selected = data.building[styleParams.style]
     if (selected) {
       /** 内部全局变量，保存解析公式所需的单位 */
       GLOBAL.UNITS = Object.assign({ BH: height }, selected.unit)
@@ -111,53 +106,16 @@ export default class STYLES {
       console.warn('未找到建筑样式，返回空的解析结果')
     }
 
+    // 解析完成后清理 custom
+    this.cache = undefined
     return RESULT
   }
 }
 
 //////////////////////////////////////////////////////////
 
-/** 合并样式参数，并提示被替换的项 */
-function mergeStyles(source: styleParams.styles, a: styleParams.styles[]): styleParams.styles {
-  const { preset, building } = source
-
-  for (let i = 0; i < a.length; i++) {
-    const s = a[i] as styleParams.styles
-
-    // 提示被替换项
-    for (const key in s.preset) {
-      if (preset[key]) console.log(`preset:${key} is replaceed`)
-    }
-    for (const key in s.building) {
-      if (building[key]) console.log(`building:${key} is replaceed`)
-    }
-
-    Object.assign(building, s.building)
-    Object.assign(preset, s.preset)
-  }
-
-  // 检查调用预设样式
-  for (const name in building) {
-    const b = building[name] as styleParams.style
-    b.section.roof?.floor?.forEach((f) => {
-      f.preset?.forEach((p) => {
-        if (p.name && !preset[p.name]) {
-          console.error('无效的预设样式', p.name, '@', name)
-        }
-        const k = p.key
-        if (k) {
-          const keys = Object.keys(preset).filter((n) => n.includes(k))
-          if (keys.length === 0) console.error('无效的样式名关键词', p.key)
-        }
-      })
-    })
-  }
-
-  return source
-}
-
-/** 解析包含 styleParams.status 的参数 */
-function parseStatus<MORE>(status: styleParams.status, data: MORE): styleParsed.status & MORE {
+/** 解析包含 styleTypes.status 的参数 */
+function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.status & MORE {
   let colors: string[] = []
   const c = status.color
   if (c) {
@@ -219,7 +177,7 @@ function parseStatus<MORE>(status: styleParams.status, data: MORE): styleParsed.
 
 /** 解析 (box|boxFlex)[]  */
 function parseBoxGroup(
-  model: (styleParams.box | styleParams.boxFlex)[]
+  model: (styleTypes.box | styleTypes.boxFlex)[]
 ): (styleParsed.box | styleParsed.boxFlex)[] {
   return model.map((b) => {
     return 'x' in b
@@ -237,7 +195,7 @@ function parseBoxGroup(
 }
 
 /** 解析 box[] */
-function parseBoxes(boxes: styleParams.box[]): styleParsed.box[] {
+function parseBoxes(boxes: styleTypes.box[]): styleParsed.box[] {
   return boxes.map((b) =>
     parseStatus(b, {
       x: parse(b.x),
@@ -248,7 +206,7 @@ function parseBoxes(boxes: styleParams.box[]): styleParsed.box[] {
 }
 
 /** 解析 boxFlex[] */
-function parseBoxFlex(boxFlex: styleParams.boxFlex): styleParsed.boxFlex {
+function parseBoxFlex(boxFlex: styleTypes.boxFlex): styleParsed.boxFlex {
   return parseStatus(boxFlex, {
     width: parse(boxFlex.width),
     height: parse(boxFlex.height),
@@ -259,12 +217,12 @@ function parseBoxFlex(boxFlex: styleParams.boxFlex): styleParsed.boxFlex {
 /** 解析样式的段，须调用 style、styleParams  */
 function parseSection(
   styles: STYLES,
-  styleParams: styleParamsType,
+  styleParams: magizTypes.styleParams,
   sectionElevation: number,
   sectionHeight: number,
   floorHeight: number,
   seed: SEED,
-  section?: styleParams.section,
+  section?: styleTypes.section,
   isRoof?: boolean
 ) {
   if (section) {
@@ -372,7 +330,7 @@ function parseFloor(
   /** 段高 */
   sectionHeight: number,
   sectionElevation: number,
-  floorParams: styleParams.floor,
+  floorParams: styleTypes.floor,
   seed: SEED
 ) {
   const control = parseControl(floorParams.floorControl)
@@ -425,8 +383,8 @@ function parseFloor(
 function limitFloorRange(
   bottomFloor: number,
   topFloor: number,
-  count: styleParams.floor['floorNumber'],
-  range: styleParams.floor['floorRange']
+  count: styleTypes.floor['floorNumber'],
+  range: styleTypes.floor['floorRange']
 ) {
   const result: [bottom: number, top: number][] = []
 
@@ -467,8 +425,8 @@ function limitFloorRange(
   return result
 }
 
-/** 解析 styleParams.floor 中边线相关的参数 */
-function parseEdgeParams(params: styleParams.floor): styleParsed.handleEdgesType {
+/** 解析 styleTypes.floor 中边线相关的参数 */
+function parseEdgeParams(params: styleTypes.floor): styleParsed.handleEdgesType {
   return {
     set: params.setEdges?.map((setEdges) => {
       const { offset, clamp, along } = setEdges
@@ -482,7 +440,7 @@ function parseEdgeParams(params: styleParams.floor): styleParsed.handleEdgesType
 }
 
 /** 解析偏移边线参数 */
-function parseOffsetOrScale(params?: styleParams.scaleOrOffsetType) {
+function parseOffsetOrScale(params?: styleTypes.scaleOrOffsetType) {
   if (params) {
     if (typeof params === 'object') {
       return {
@@ -503,7 +461,7 @@ function parseExtrude(
   elevation: number,
   isOnce: boolean,
   saveAs: styleParsed.resultClassified,
-  extrudes?: styleParams.extrude[]
+  extrudes?: styleTypes.extrude[]
 ) {
   if (extrudes) {
     extrudes.forEach((extrudeParams) => {
@@ -526,7 +484,7 @@ function parseSlopingRoof(
   elevation: number,
   isOnce: boolean,
   saveAs: styleParsed.resultClassified,
-  slopingRoofs?: styleParams.slopingRoof[]
+  slopingRoofs?: styleTypes.slopingRoof[]
 ) {
   if (slopingRoofs) {
     slopingRoofs.forEach((roofParams) => {
@@ -549,7 +507,7 @@ function parseClampBox(
   elevation: number,
   isOnce: boolean,
   saveAs: styleParsed.resultClassified,
-  clampBox?: styleParams.clampBox[]
+  clampBox?: styleTypes.clampBox[]
 ) {
   if (clampBox) {
     clampBox.forEach((clampParams) => {
@@ -561,7 +519,7 @@ function parseClampBox(
   }
 }
 
-function parseControl(params?: styleParams.control): styleParsed.control | undefined {
+function parseControl(params?: styleTypes.control): styleParsed.control | undefined {
   return params
     ? {
         skipIndex: parse(params.skipIndex),
@@ -576,7 +534,7 @@ function parseFacade(
   elevation: number,
   isOnce: boolean,
   saveAs: styleParsed.resultClassified,
-  facade?: styleParams.facade[]
+  facade?: styleTypes.facade[]
 ) {
   if (facade) {
     facade.forEach((f) => {
@@ -627,7 +585,7 @@ function parseMatch(
   elevation: number,
   isOnce: boolean,
   saveAs: styleParsed.resultClassified,
-  matches?: styleParams.match[]
+  matches?: styleTypes.match[]
 ) {
   if (matches)
     matches.forEach((matchParam) => {
@@ -670,7 +628,7 @@ function parseBoxInside(
   elevation: number,
   isOnce: boolean,
   saveAs: styleParsed.resultClassified,
-  boxInside?: styleParams.boxInside[]
+  boxInside?: styleTypes.boxInside[]
 ) {
   if (boxInside) {
     boxInside.forEach((boxParams) => {
@@ -692,7 +650,7 @@ function parseBoxInside(
 }
 
 function parseMinAndMax(
-  v: [min: styleParams.ns, max: styleParams.ns] | styleParams.ns | undefined
+  v: [min: styleTypes.ns, max: styleTypes.ns] | styleTypes.ns | undefined
 ): [min: number, max: number] {
   if (typeof v === 'object') {
     return [parse(v[0]), parse(v[1])]
@@ -707,7 +665,7 @@ function parseAdjuncts(
   elevation: number,
   isOnce: boolean,
   saveAs: styleParsed.resultClassified,
-  adjuncts?: styleParams.adjunct[]
+  adjuncts?: styleTypes.adjunct[]
 ) {
   if (adjuncts) {
     adjuncts.forEach((adjunct) => {
@@ -724,7 +682,7 @@ function parseAdjuncts(
   }
 }
 
-function parseClamp(params?: styleParams.clampRangeType): styleParsed.clampRangeType | undefined {
+function parseClamp(params?: styleTypes.clampRangeType): styleParsed.clampRangeType | undefined {
   if (params) {
     return {
       xMin: parse(params.xMin),
@@ -741,7 +699,7 @@ function parseClamp(params?: styleParams.clampRangeType): styleParsed.clampRange
   }
 }
 
-function parsePadding(params?: styleParams.paddingType): styleParsed.paddingType | undefined {
+function parsePadding(params?: styleTypes.paddingType): styleParsed.paddingType | undefined {
   if (params) {
     return {
       start: parse(params.start),
@@ -754,7 +712,7 @@ function parsePadding(params?: styleParams.paddingType): styleParsed.paddingType
 }
 
 /** 解析带单位的公式。 */
-function parse(ns?: styleParams.ns): number {
+function parse(ns?: styleTypes.ns): number {
   let n: number
   if (typeof ns === 'string') {
     // 计算单位值

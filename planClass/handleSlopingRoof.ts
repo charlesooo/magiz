@@ -3,6 +3,7 @@ import { sample } from './handleMath'
 import { SEED } from './handleUtils'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 
+import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
 
 export { handleSlopingRoof }
@@ -11,7 +12,7 @@ export { handleSlopingRoof }
 function handleSlopingRoof(
   parsed: styleParsed.slopingRoof[],
   bounds: { min: Vector2; max: Vector2 },
-  result: rawDataType,
+  result: magizTypes.rawData,
   seed: SEED
 ) {
   parsed.forEach((roofParams) => {

@@ -10,8 +10,9 @@ import {
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 import { passControl, SEED } from './handleUtils'
 
-import type { temp } from '../types/temp'
+import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
+import type { temp } from '../types/temp'
 
 export { handleMatch, handleBoxInside, handleAdjunct, handleExtrude }
 
@@ -63,7 +64,7 @@ function simplifyMatchData(matchData: temp.match[]) {
 function handleMatch(
   parsed: styleParsed.match[],
   rays: temp.ray[][],
-  result: rawDataType,
+  result: magizTypes.rawData,
   seed: SEED,
   /** 拟合平面时可以简化结果 */
   simplify = false
@@ -161,7 +162,7 @@ function handleMatch(
               )
               .premultiply(restoreMatrix)
 
-            const saveAs: instancedDataType = result.data[color.glass ? 'boxGlass' : 'box']
+            const saveAs: magizTypes.instancedData = result.data[color.glass ? 'boxGlass' : 'box']
             saveAs.matrices.push(matrix.toArray())
             saveAs.colors.push(color.index)
           })
@@ -176,7 +177,7 @@ function handleMatch(
 function handleBoxInside(
   parsed: styleParsed.boxInside[],
   rays: temp.ray[][],
-  result: rawDataType,
+  result: magizTypes.rawData,
   seed: SEED
 ) {
   parsed.forEach((boxInside) => {
@@ -265,7 +266,7 @@ function handleBoxInside(
               .premultiply(TEMP.makeRotationZ(-radian))
 
             const color = sample(data.color, seed) || DEFAULT_COLOR
-            const saveAs: instancedDataType = result.data[color.glass ? 'boxGlass' : 'box']
+            const saveAs: magizTypes.instancedData = result.data[color.glass ? 'boxGlass' : 'box']
             saveAs.matrices.push(matrix.toArray())
             saveAs.colors.push(color.index)
           }
@@ -278,7 +279,7 @@ function handleBoxInside(
 function handleAdjunct(
   parsed: styleParsed.adjunct[],
   rays: temp.ray[][],
-  result: rawDataType,
+  result: magizTypes.rawData,
   seed: SEED
 ) {
   parsed.forEach((adjunct) => {
@@ -296,7 +297,7 @@ function handleAdjunct(
           applyTransform(box, matrix).premultiply(
             TEMP.makeTranslation(point.x, point.y, elevation)
           )
-          const saveAs: instancedDataType = result.data[color.glass ? 'boxGlass' : 'box']
+          const saveAs: magizTypes.instancedData = result.data[color.glass ? 'boxGlass' : 'box']
           saveAs.matrices.push(matrix.toArray())
           saveAs.colors.push(color.index)
         })
@@ -406,7 +407,7 @@ function matching(
 function handleExtrude(
   parsed: styleParsed.extrude[],
   rays: temp.ray[][],
-  result: rawDataType,
+  result: magizTypes.rawData,
   seed: SEED,
   /** 用box拟合挤出平面的块厚度 */
   width: number

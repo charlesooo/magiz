@@ -4,6 +4,7 @@ import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 import { SEED } from './handleUtils'
 
 import type { styleParsed } from '../types/stylesParsed'
+import type { magizTypes } from '../types/magizTypes'
 
 export { handleClampBox }
 
@@ -11,7 +12,7 @@ export { handleClampBox }
 function handleClampBox(
   parsed: styleParsed.clampBox[],
   bounds: { min: Vector2; max: Vector2 },
-  result: rawDataType,
+  result: magizTypes.rawData,
   seed: SEED
 ) {
   parsed.forEach((clampParams) => {

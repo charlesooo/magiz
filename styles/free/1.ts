@@ -1,6 +1,6 @@
-import type { styleParams } from '../../types/style'
+import type { styleTypes } from '../../types/style'
 
-export const styles: styleParams.styles = {
+export const styles: styleTypes.styles = {
   preset: {
     '免费屋顶女儿墙<缩进,高度,厚度,抬升><颜色>': {
       unit: { 缩进: 0, 高度: 1.2, 厚度: 0.2, 抬升: 0 },
