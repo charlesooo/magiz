@@ -1,6 +1,6 @@
 import { Vector2, Vector3, Matrix4, Raycaster, Quaternion } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import WEB3D from '.'
+import WEB3D from './web3D'
 
 export { OrbitControls, addOrbitControls, autoSaveCameraState, loadCameraState, showMousePointed }
 

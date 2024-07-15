@@ -23,9 +23,9 @@ import type { magizTypes } from '../types/magizTypes'
 const boxGeom = new BoxGeometry()
 const slopingGeom = getSlopingRoofGeometry()
 
-/** 将 Magiz 解析的 magizTypes.rawData 转为 Three.js 对象 */
+/** 将 Magiz 解析的 magizTypes.rawBuilding 转为 Three.js 对象 */
 export default function handleRaw(
-  input: magizTypes.rawData[],
+  input: magizTypes.rawData,
   scene: Scene,
   options?: Partial<magizTypes.webRefreshOptions>
 ) {
@@ -47,13 +47,15 @@ export default function handleRaw(
   }
 
   // 模型元素类型
-  let instanceType: keyof magizTypes.rawData['data']
+  let instanceType: keyof magizTypes.rawBuilding['data']
 
-  // 整合输入的rawData到 result
-  input.forEach((rawData) => {
-    const restoreParams = inplace ? { center: rawData.center, rotate: rawData.rotate } : undefined
-    for (instanceType in rawData.data) {
-      const inputData = rawData.data[instanceType]
+  // 整合输入的rawBuilding到 result
+  input.models.forEach((rawBuilding) => {
+    const restoreParams = inplace
+      ? { center: rawBuilding.center, rotate: rawBuilding.rotate }
+      : undefined
+    for (instanceType in rawBuilding.data) {
+      const inputData = rawBuilding.data[instanceType]
       const saveAs = result.instance[instanceType]
 
       inputData.matrices.forEach((m, i) => {
@@ -77,9 +79,9 @@ export default function handleRaw(
         saveAs.matrix.push(matrix)
 
         // 断言是因为样式解析后的颜色索引必然对应
-        let c = rawData.colorMap[inputData.colors[i] as number] as string
+        let c = input.colorMap[inputData.colors[i] as number] as string
         if (grayScale) {
-          c = rawData.colorMap[c.includes('G') ? 1 : 0] as string
+          c = input.colorMap[c.includes('G') ? 1 : 0] as string
         }
         let color = colors[c]
         if (!color) {

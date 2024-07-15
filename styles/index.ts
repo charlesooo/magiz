@@ -1,4 +1,4 @@
-import STYLES from '../styleClass'
+import STYLES from '../styleClass/styles'
 import { styles as basic } from './advanced/basic'
 import { styles as villa } from './advanced/villa'
 import { styles as marseille } from './advanced/marseille'

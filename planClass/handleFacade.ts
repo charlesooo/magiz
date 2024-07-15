@@ -18,7 +18,7 @@ type spacingDataType = {
 function handleFacade(
   parsed: styleParsed.facade[],
   rays: temp.ray[][],
-  result: magizTypes.rawData,
+  result: magizTypes.rawBuilding,
   seed: SEED
 ) {
   parsed.forEach((facadeParams) => {
@@ -84,7 +84,7 @@ function handlePadding(rays: temp.ray[][], padding?: styleParsed.paddingType): t
 
 /** 如果有 divide，计算在偏移区内的点阵数据 */
 function handleBoxes(
-  result: magizTypes.rawData['data'],
+  result: magizTypes.rawBuilding['data'],
   lineData: temp.splitted[][],
   partPared: styleParsed.facade,
   seed: SEED
@@ -120,7 +120,7 @@ function handleBoxes(
 /** 在给定的起点、方向、距离内，按间距返回点阵。考虑美观，间距都按参数的近似值。moveZ 在之后结合标高一起计算。如果ray不存在则跳过 */
 function pushDividePoints(
   boxArray: styleParsed.boxArray,
-  result: magizTypes.rawData['data'],
+  result: magizTypes.rawBuilding['data'],
   elevation: number,
   seed: SEED,
   ray?: temp.ray
@@ -191,7 +191,7 @@ function pushDividePoints(
 function pushData(
   data: spacingDataType[],
   count: number,
-  result: magizTypes.rawData['data'],
+  result: magizTypes.rawBuilding['data'],
   elevation: number,
   direction: Vector2,
   startPoint: Vector2,
@@ -227,7 +227,7 @@ function pushSpacingData(
   distance: number,
   placeMatrix: Matrix4,
   seed: SEED,
-  result: magizTypes.rawData['data']
+  result: magizTypes.rawBuilding['data']
 ) {
   data.model?.forEach((m) => {
     const newMatrix = m.matrix

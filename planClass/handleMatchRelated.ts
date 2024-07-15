@@ -64,7 +64,7 @@ function simplifyMatchData(matchData: temp.match[]) {
 function handleMatch(
   parsed: styleParsed.match[],
   rays: temp.ray[][],
-  result: magizTypes.rawData,
+  result: magizTypes.rawBuilding,
   seed: SEED,
   /** 拟合平面时可以简化结果 */
   simplify = false
@@ -177,7 +177,7 @@ function handleMatch(
 function handleBoxInside(
   parsed: styleParsed.boxInside[],
   rays: temp.ray[][],
-  result: magizTypes.rawData,
+  result: magizTypes.rawBuilding,
   seed: SEED
 ) {
   parsed.forEach((boxInside) => {
@@ -279,7 +279,7 @@ function handleBoxInside(
 function handleAdjunct(
   parsed: styleParsed.adjunct[],
   rays: temp.ray[][],
-  result: magizTypes.rawData,
+  result: magizTypes.rawBuilding,
   seed: SEED
 ) {
   parsed.forEach((adjunct) => {
@@ -407,7 +407,7 @@ function matching(
 function handleExtrude(
   parsed: styleParsed.extrude[],
   rays: temp.ray[][],
-  result: magizTypes.rawData,
+  result: magizTypes.rawBuilding,
   seed: SEED,
   /** 用box拟合挤出平面的块厚度 */
   width: number

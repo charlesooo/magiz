@@ -12,7 +12,7 @@ export { handleClampBox }
 function handleClampBox(
   parsed: styleParsed.clampBox[],
   bounds: { min: Vector2; max: Vector2 },
-  result: magizTypes.rawData,
+  result: magizTypes.rawBuilding,
   seed: SEED
 ) {
   parsed.forEach((clampParams) => {

@@ -13,7 +13,7 @@ import {
   Texture,
   RepeatWrapping,
 } from 'three'
-import WEB3D from '.'
+import WEB3D from './web3D'
 
 /** 通过rotateX从生成平面时的默认Z轴朝上还原到Y轴朝上 */
 const xRadian = -Math.PI / 2

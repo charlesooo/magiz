@@ -12,7 +12,7 @@ export { handleSlopingRoof }
 function handleSlopingRoof(
   parsed: styleParsed.slopingRoof[],
   bounds: { min: Vector2; max: Vector2 },
-  result: magizTypes.rawData,
+  result: magizTypes.rawBuilding,
   seed: SEED
 ) {
   parsed.forEach((roofParams) => {
