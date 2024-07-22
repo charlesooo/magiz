@@ -39,7 +39,7 @@ export default class PLAN {
   orignal: Vector2[][]
 
   /** 创建建筑平面实例 */
-  constructor(input: magizTypes.parseRequest) {
+  constructor(input: magizTypes.requestData) {
     // Path,ShapeGeometry,ExtrudeGeometry 内部在创建时都会检查clockwise，但为了保证 pushRandomSquaresInside 计算正确，须提格式化
     this.orignal = input.loops.map((loop) => loop.map((pt) => new Vector2(...pt)))
 

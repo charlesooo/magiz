@@ -1,3 +1,11 @@
+/*!
+  Magiz
+  a light weight building 3D model generator for web
+  Copyright (c) 2019-2024 周曦 <453154007@qq.com>
+  https://www.atchitech.fun
+  GPL Version 3 license
+*/
+
 import styles from './styles'
 import PLAN from './planClass/plan'
 import STYLES from './styleClass/styles'

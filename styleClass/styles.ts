@@ -735,6 +735,7 @@ function parse(ns?: styleTypes.ns): number {
 
     try {
       n = evaluate(ns)
+      // n = eval(ns)
     } catch (error) {
       console.log('Error parse fomula:', error, ns, GLOBAL.UNITS, GLOBAL.UNITS_PRESET)
       n = 0

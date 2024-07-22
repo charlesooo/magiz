@@ -40,21 +40,25 @@ export namespace magizTypes {
   }
 
   /** 解析请求 */
-  type requests = {
+  type request = {
     /** 成组的解析请求 */
-    data: parseRequest[]
-    /** 显示单个 parseRequest，在 group 中的序号 */
+    data: requestData[]
+    /** 显示单个 requestData，为 data 中的序号 */
     focus: number
-    /** 带有自定义样式的按自定义样式，反之按默认样式 */
-    customStyles?: styleTypes.styles
   }
 
   /** 请求解析样式所需的参数，须注意多边形坐标的不能首尾重复 */
-  type parseRequest = {
+  type requestData = {
     /** 建筑生成参数 */
     params: styleParams
     /** 平面可以是任意多边形，之后将长边对齐X轴并平移到原点，并用矩形拟合 */
     loops: [x: number, y: number][][]
+    /** 带有自定义样式的按自定义样式，反之按默认样式 */
+    customStyles?: styleTypes.styles
+    /** 用于显示的ID */
+    id?: string
+    /** 用于显示的附加信息 */
+    info?: string
   }
 
   /** 从平面生成建筑模型的参数 */

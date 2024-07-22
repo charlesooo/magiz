@@ -15,13 +15,15 @@
     "three": "^0.164.0"
   },
   "devDependencies": {
+    "@types/node": "^20.14.11",
     "@types/three": "^0.164.0",
     "esbuild": "0.21.3"
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "dev": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --sourcemap --watch --minify --outfile=dist/magiz.module.min.mjs",
-    "course": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --watch --minify --outfile=D:/Works/magiz-course/src/magiz.module.min.mjs",
-    "demo_city": "esbuild index.ts --footer:js=/*Copyright_2019-2024_周曦*/ --format=esm --bundle --watch --minify --outfile=demo/magiz.module.min.mjs"
+    "dev": "esbuild index.ts --format=esm --bundle --sourcemap --watch --outfile=dist/magiz.module.js",
+    "build": "esbuild index.ts --format=esm --bundle --minify --metafile=dist/meta.min.json --outfile=dist/magiz.module.min.js && echo 包大小分析: https://www.esbuild.cn/api/#metafile",
+    "course": "esbuild index.ts --format=esm --bundle --watch --minify --outfile=D:/Works/magiz-course/src/magiz.module.min.js",
+    "demo_city": "esbuild index.ts --format=esm --bundle --watch --minify --outfile=demo/magiz.module.min.js"
   }
 }
