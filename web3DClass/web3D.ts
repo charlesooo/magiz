@@ -7,7 +7,7 @@ import type { temp } from '../types/temp'
 import type { magizTypes } from '../types/magizTypes'
 
 ///////////////////// Shader动画 /////////////////////
-import { material, glassMaterial, lineMaterial } from './basicMaterials'
+import { basicMaterial, glassMaterial, lineMaterial } from './basicMaterials'
 import setMovingMaterial from './movingMaterials'
 
 ///////////////////// WEB3D /////////////////////
@@ -113,7 +113,7 @@ export default class WEB3D {
   }
   /** 重写材质shader，添加平移动画和边线渲染 */
   setMovingMaterial() {
-    setMovingMaterial(this.playing, material, glassMaterial, lineMaterial)
+    setMovingMaterial(this.playing, basicMaterial, glassMaterial, lineMaterial)
   }
   /** 设置相机位置和焦点（所有场景都调用同一相机） */
   setCamera(params: { position?: [number, number, number]; lookAt?: [number, number, number] }) {

@@ -1,6 +1,6 @@
 import { DoubleSide, MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
 
-export { material, twoSideMaterial, glassMaterial, lineMaterial }
+export { basicMaterial, twoSideMaterial, glassMaterial, lineMaterial }
 
 const glassParams = {
   side: DoubleSide,
@@ -8,7 +8,7 @@ const glassParams = {
   transparent: true,
 }
 
-const material = new MeshLambertMaterial()
+const basicMaterial = new MeshLambertMaterial()
 const twoSideMaterial = new MeshLambertMaterial({ side: 2 })
 const glassMaterial = new MeshStandardMaterial(glassParams)
 const lineMaterial = new LineBasicMaterial({ color: '#000' })

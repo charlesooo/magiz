@@ -3,14 +3,14 @@ import VIEW from './view'
 
 export default function setMovingMaterial(
   view: VIEW,
-  material: MeshLambertMaterial,
+  basicMaterial: MeshLambertMaterial,
   glassMaterial: MeshStandardMaterial,
   lineMaterial: LineBasicMaterial
 ) {
   view.animations.movingMaterial = () => {
     globalTime.value++
   }
-  setMovingShader(material, globalTime, movingVect, basicMaterialVects)
+  setMovingShader(basicMaterial, globalTime, movingVect, basicMaterialVects)
   setMovingShader(glassMaterial, globalTime, movingVect, glassMaterialVects)
   setMovingEdgeShader(lineMaterial, globalTime, movingVect, lineMaterialVects)
 }
@@ -114,12 +114,12 @@ gl_FragColor = vec4( col, 1.0 );`
 }
 
 function setMovingShader(
-  material: MeshLambertMaterial | MeshStandardMaterial,
+  presetMaterial: MeshLambertMaterial | MeshStandardMaterial,
   time: { value: number },
   vect: Vector3,
   colorVector: uniformVectorType
 ) {
-  material.onBeforeCompile = (shader) => {
+  presetMaterial.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, colorVector)
     shader.uniforms.time = time
     shader.uniforms.vect = { value: vect }
@@ -148,14 +148,14 @@ function setMovingShader(
 }
 
 function setMovingEdgeShader(
-  material: LineBasicMaterial,
+  lineMaterial: LineBasicMaterial,
   time: { value: number },
   vect: Vector3,
   colorVector: uniformVectorType
 ) {
-  material.depthWrite = false
-  material.forceSinglePass = true
-  material.onBeforeCompile = (shader) => {
+  lineMaterial.depthWrite = false
+  lineMaterial.forceSinglePass = true
+  lineMaterial.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, colorVector)
     shader.uniforms.time = time
     shader.uniforms.vect = { value: vect }

@@ -88,12 +88,11 @@ export default class STYLES {
     // 设置随机数种子
     seed.set(Number(styleParams.seed) || Math.round(Math.random() * 100000))
 
-    // 有先按 custom 解析
-    const data = customStyles || this.data
+    // 优先按 customStyles 解析
     const selected =
       !styleParams.style || styleParams.style === 'Blocks'
         ? this.Blocks
-        : data.building[styleParams.style]
+        : customStyles?.building[styleParams.style] || this.data.building[styleParams.style]
 
     if (selected) {
       /** 内部全局变量，保存解析公式所需的单位 */
@@ -118,11 +117,21 @@ export default class STYLES {
       bsh = height - rsh - msh
       bfh = bsh / Math.floor(bsh / bfh)
 
-      parseSection(this, styleParams, elevation, bsh, bfh, seed, ss.bottom)
-      parseSection(this, styleParams, elevation + bsh, msh, mfh, seed, ss.middle)
-      parseSection(this, styleParams, elevation + height - rsh, rsh, rfh, seed, ss.roof, true)
+      parseSection(this, customStyles, styleParams, elevation, bsh, bfh, seed, ss.bottom)
+      parseSection(this, customStyles, styleParams, elevation + bsh, msh, mfh, seed, ss.middle)
+      parseSection(
+        this,
+        customStyles,
+        styleParams,
+        elevation + height - rsh,
+        rsh,
+        rfh,
+        seed,
+        ss.roof,
+        true
+      )
     } else {
-      console.warn(`${styleParams.style} 建筑样式错误，返回空的解析结果`)
+      console.warn(`${styleParams.style} is ivalid, returned empty data`)
     }
 
     // 解析完成后清理 custom
@@ -235,6 +244,7 @@ function parseBoxFlex(boxFlex: styleTypes.boxFlex): styleParsed.boxFlex {
 /** 解析样式的段，须调用 style、styleParams  */
 function parseSection(
   styles: STYLES,
+  customStyles: styleTypes.styles | undefined,
   styleParams: magizTypes.styleParams,
   sectionElevation: number,
   sectionHeight: number,
@@ -262,72 +272,80 @@ function parseSection(
         floorParams.preset?.forEach((floorPresetParams) => {
           const { name, key, unit, color } = floorPresetParams
           try {
-            // 如果缓存中有对应名称的样式
-            if (styles.data.preset) {
-              /** 预设样式 */
-              let presetData: (typeof styles.data.preset)[string] | undefined
-              if (name) {
-                // 按名字指定预设样式
-                presetData = styles.data.preset[name]
-              } else if (key) {
-                // 按关键词随机选择预设样式
+            /** 预设样式 */
+            let presetData: styleTypes.preset | undefined
+
+            if (name) {
+              // 按名字指定预设样式
+              presetData = customStyles?.preset[name] || styles.data.preset[name]
+            } else if (key) {
+              // 按关键词随机选择预设样式
+              if (customStyles) {
+                const names = Object.keys(customStyles.preset).filter((n) => n.includes(key))
+                if (names.length > 0) {
+                  presetData = customStyles.preset[sample(names, seed) as string]
+                }
+              }
+
+              // 无自定义，或自定义中没有找到预设，在默认中查找
+              if (!presetData) {
                 const names = Object.keys(styles.data.preset).filter((n) => n.includes(key))
                 if (names.length > 0) {
                   presetData = styles.data.preset[sample(names, seed) as string]
                 }
               }
+            }
 
-              // 仅在预设参数范围内更新数值
-              if (presetData) {
-                if (presetData.unit) {
-                  GLOBAL.UNITS_PRESET = {}
-                  if (unit) {
-                    for (const key in presetData.unit) {
-                      const inputUnit = unit[key]
-                      GLOBAL.UNITS_PRESET[key] = parse(
-                        // 避免值为 0 时不被解析
-                        inputUnit !== undefined ? inputUnit : presetData.unit[key]
-                      )
-                    }
-                  } else {
-                    for (const key in presetData.unit) {
-                      GLOBAL.UNITS_PRESET[key] = parse(presetData.unit[key])
-                    }
+            // 仅在预设参数范围内更新数值
+            if (presetData) {
+              if (presetData.unit) {
+                GLOBAL.UNITS_PRESET = {}
+                if (unit) {
+                  for (const key in presetData.unit) {
+                    const inputUnit = unit[key]
+                    GLOBAL.UNITS_PRESET[key] = parse(
+                      // 避免值为 0 时不被解析
+                      inputUnit !== undefined ? inputUnit : presetData.unit[key]
+                    )
+                  }
+                } else {
+                  for (const key in presetData.unit) {
+                    GLOBAL.UNITS_PRESET[key] = parse(presetData.unit[key])
                   }
                 }
-
-                if (presetData.color) {
-                  GLOBAL.COLOR_PRESET = {}
-                  // 如果输入的参数中有color
-                  if (color) {
-                    for (const key in presetData.color) {
-                      GLOBAL.COLOR_PRESET[key] =
-                        color[key] || (presetData.color[key] as string | string[])
-                    }
-                  } else {
-                    for (const key in presetData.color) {
-                      GLOBAL.COLOR_PRESET[key] = presetData.color[key] as string | string[]
-                    }
-                  }
-                }
-
-                presetData.floor.forEach((f) => {
-                  // 创建预设的深拷贝
-                  const fp = Object.assign({}, f)
-                  // 如果父级参数有除生成体块外的其他部分，与预设进行整合，以便在预设基础上增加自定义
-                  if (floorParams.floorControl) fp.floorControl = floorParams.floorControl
-                  if (floorParams.floorNumber) fp.floorNumber = floorParams.floorNumber
-                  if (floorParams.floorRange) fp.floorRange = floorParams.floorRange
-
-                  // 边线控制可以叠加
-                  fp.setEdges = [...(floorParams.setEdges || []), ...(fp.setEdges || [])]
-
-                  parseFloor(floorCount, floorHeight, sectionHeight, sectionElevation, fp, seed)
-                })
-                GLOBAL.COLOR_PRESET = GLOBAL.UNITS_PRESET = {}
-              } else {
-                console.warn('没找到预设的样式：', name, '@', styleParams.style)
               }
+
+              if (presetData.color) {
+                GLOBAL.COLOR_PRESET = {}
+                // 如果输入的参数中有color
+                if (color) {
+                  for (const key in presetData.color) {
+                    GLOBAL.COLOR_PRESET[key] =
+                      color[key] || (presetData.color[key] as string | string[])
+                  }
+                } else {
+                  for (const key in presetData.color) {
+                    GLOBAL.COLOR_PRESET[key] = presetData.color[key] as string | string[]
+                  }
+                }
+              }
+
+              presetData.floor.forEach((f) => {
+                // 创建预设的深拷贝
+                const fp = Object.assign({}, f)
+                // 如果父级参数有除生成体块外的其他部分，与预设进行整合，以便在预设基础上增加自定义
+                if (floorParams.floorControl) fp.floorControl = floorParams.floorControl
+                if (floorParams.floorNumber) fp.floorNumber = floorParams.floorNumber
+                if (floorParams.floorRange) fp.floorRange = floorParams.floorRange
+
+                // 边线控制可以叠加
+                fp.setEdges = [...(floorParams.setEdges || []), ...(fp.setEdges || [])]
+
+                parseFloor(floorCount, floorHeight, sectionHeight, sectionElevation, fp, seed)
+              })
+              GLOBAL.COLOR_PRESET = GLOBAL.UNITS_PRESET = {}
+            } else {
+              console.warn('can not find style:', name, '@', styleParams.style)
             }
           } catch (error) {
             console.warn('handle preset error:', name, error)

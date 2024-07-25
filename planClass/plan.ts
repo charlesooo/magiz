@@ -91,7 +91,6 @@ export default class PLAN {
       throw 'ERROR: invalid input.loops'
     }
 
-    this.seed = new SEED()
     this.styleParams = input.params || {
       style: '',
       height: 24,
@@ -99,6 +98,8 @@ export default class PLAN {
       elevation: 0,
       seed: 0,
     }
+    // 按参数设置种子
+    this.seed = new SEED(this.styleParams.seed)
   }
 
   /** 根据样式参数中的 setEdges 处理边线向量并生成新的向量数组。不处理内部的边线。 */

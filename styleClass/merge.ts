@@ -28,12 +28,12 @@ export default function mergeStyles(
     b.section.roof?.floor?.forEach((f) => {
       f.preset?.forEach((p) => {
         if (p.name && !preset[p.name]) {
-          console.error('无效的预设样式', p.name, '@', name)
+          console.error('invalid style:', p.name, '@', name)
         }
         const k = p.key
         if (k) {
           const keys = Object.keys(preset).filter((n) => n.includes(k))
-          if (keys.length === 0) console.error('无效的样式名关键词', p.key)
+          if (keys.length === 0) console.error('invalid key of style:', p.key)
         }
       })
     })

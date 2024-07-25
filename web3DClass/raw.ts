@@ -15,7 +15,7 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import { material, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
+import { basicMaterial, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
 
 import type { temp } from '../types/temp'
 import type { magizTypes } from '../types/magizTypes'
@@ -29,6 +29,12 @@ export default function handleRaw(
   scene: Scene,
   options?: Partial<magizTypes.webRefreshOptions>
 ) {
+  input.colorMap.forEach((c, i) => {
+    if (c.includes('#CDAF95')) c = '#CDAF95'
+  })
+
+  console.log(input.colorMap)
+
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
   const colors: { [name: string]: Color } = {}
@@ -94,7 +100,7 @@ export default function handleRaw(
   })
 
   // 根据 result 生成体块
-  addInstanceData(buildings, result.instance.box, boxGeom, material)
+  addInstanceData(buildings, result.instance.box, boxGeom, basicMaterial)
   addInstanceData(buildings, result.instance.boxGlass, boxGeom, glassMaterial)
   addInstanceData(buildings, result.instance.sloping, slopingGeom, twoSideMaterial)
   addInstanceData(buildings, result.instance.slopingGlass, slopingGeom, glassMaterial)
@@ -141,10 +147,10 @@ function addInstanceData(
   buildings: Group,
   data: temp.rawInstanceData,
   geom: BufferGeometry,
-  material: MeshLambertMaterial | MeshStandardMaterial
+  mat: MeshLambertMaterial | MeshStandardMaterial
 ) {
   if (data.matrix.length > 0) {
-    const i = new InstancedMesh(geom, material, data.matrix.length)
+    const i = new InstancedMesh(geom, mat, data.matrix.length)
     data.matrix.forEach((m, n) => {
       i.setMatrixAt(n, m)
       i.setColorAt(n, data.color[n] as Color)
