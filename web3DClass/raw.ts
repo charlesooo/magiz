@@ -29,12 +29,6 @@ export default function handleRaw(
   scene: Scene,
   options?: Partial<magizTypes.webRefreshOptions>
 ) {
-  input.colorMap.forEach((c, i) => {
-    if (c.includes('#CDAF95')) c = '#CDAF95'
-  })
-
-  console.log(input.colorMap)
-
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
   const colors: { [name: string]: Color } = {}

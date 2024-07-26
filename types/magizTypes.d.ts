@@ -27,8 +27,6 @@ export namespace magizTypes {
     showEdge: boolean
     /** 模型按原位生成 */
     inplace: boolean
-    /** 相机焦点按指定序号的模型高度设置 */
-    focus: number
   }
 
   /** 经过分类后的样式名称 */

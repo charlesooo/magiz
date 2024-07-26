@@ -72,11 +72,11 @@ export default class WEB3D {
   /** 创建管理工具实例 */
   constructor(
     /** 通过querySelector绑定Canvas到Div */
-    DivID: string,
+    divID: string,
     /** 初始化工具实例的参数 */
     options?: Partial<magizTypes.webOptions>
   ) {
-    const dom = document.querySelector(DivID)
+    const dom = document.querySelector(divID)
     if (!dom) throw 'ERROR: invalid parentCSSID'
     const canvas = document.createElement('canvas')
     dom.appendChild(canvas)
@@ -215,16 +215,6 @@ export default class WEB3D {
         info.floorArea += floorArea * floors
         if (info.maxFloors < floors) info.maxFloors = floors
         if (maxHeight < h) maxHeight = h
-      })
-
-      // console.log('info:', this.renderer.info.render, this.playing)
-
-      // 调整镜头
-      const i = options?.focus
-      const d = i ? data.models[i] : undefined
-      const h = d ? d.params.height : maxHeight
-      this.setCamera({
-        lookAt: [0, h / 2, 0],
       })
 
       resolve(info)
