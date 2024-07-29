@@ -14,14 +14,19 @@ import {
   InstancedBufferGeometry,
   InstancedBufferAttribute,
   BufferAttribute,
-} from 'three'
-import { basicMaterial, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
+} from "three";
+import {
+  basicMaterial,
+  glassMaterial,
+  twoSideMaterial,
+  lineMaterial,
+} from "./basicMaterials";
 
-import type { temp } from '../types/temp'
-import type { magizTypes } from '../types/magizTypes'
+import type { temp } from "../types/temp";
+import type { magizTypes } from "../types/magizTypes";
 
-const boxGeom = new BoxGeometry()
-const slopingGeom = getSlopingRoofGeometry()
+const boxGeom = new BoxGeometry();
+const slopingGeom = getSlopingRoofGeometry();
 
 /** 将 Magiz 解析的 magizTypes.rawBuilding 转为 Three.js 对象 */
 export default function handleRaw(
@@ -30,12 +35,12 @@ export default function handleRaw(
   options?: Partial<magizTypes.webRefreshOptions>
 ) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
-  const buildings = new Group().rotateX(-Math.PI / 2)
-  const colors: { [name: string]: Color } = {}
-  const showEdge = options?.showEdge || false
-  const grayScale = options?.grayScale || false
-  const inplace = options?.inplace || false
-  const tempMatrix = new Matrix4()
+  const buildings = new Group().rotateX(-Math.PI / 2);
+  const colors: { [name: string]: Color } = {};
+  const showEdge = options?.showEdge || false;
+  const grayScale = options?.grayScale || false;
+  const inplace = options?.inplace || false;
+  const tempMatrix = new Matrix4();
   const result: temp.rawInstanceDataResult = {
     instance: {
       box: { color: [], matrix: [] },
@@ -44,84 +49,96 @@ export default function handleRaw(
       slopingGlass: { color: [], matrix: [] },
     },
     edge: { boxMatrix: [], slopingMatrix: [] },
-  }
+  };
 
   // 模型元素类型
-  let instanceType: keyof magizTypes.rawBuilding['data']
+  let instanceType: keyof magizTypes.rawBuilding["data"];
 
   // 整合输入的rawBuilding到 result
   input.models.forEach((rawBuilding) => {
     const restoreParams = inplace
-      ? { center: rawBuilding.center, rotate: rawBuilding.rotate }
-      : undefined
+      ? { center: rawBuilding.centerRelative, rotate: rawBuilding.rotate }
+      : undefined;
     for (instanceType in rawBuilding.data) {
-      const inputData = rawBuilding.data[instanceType]
-      const saveAs = result.instance[instanceType]
+      const inputData = rawBuilding.data[instanceType];
+      const saveAs = result.instance[instanceType];
 
       inputData.matrices.forEach((m, i) => {
-        const matrix = new Matrix4().fromArray(m)
+        const matrix = new Matrix4().fromArray(m);
 
         // 还原位置和旋转
         if (restoreParams) {
           matrix
             .premultiply(tempMatrix.makeRotationZ(restoreParams.rotate))
-            .premultiply(tempMatrix.makeTranslation(...restoreParams.center, 0))
+            .premultiply(
+              tempMatrix.makeTranslation(...restoreParams.center, 0)
+            );
         }
 
         // 保存边线数据
         if (showEdge) {
-          result.edge[instanceType.includes('box') ? 'boxMatrix' : 'slopingMatrix'].push(
-            ...matrix.toArray()
-          )
+          result.edge[
+            instanceType.includes("box") ? "boxMatrix" : "slopingMatrix"
+          ].push(...matrix.toArray());
         }
 
         // 保存矩阵数据
-        saveAs.matrix.push(matrix)
+        saveAs.matrix.push(matrix);
 
         // 断言是因为样式解析后的颜色索引必然对应
-        let c = input.colorMap[inputData.colors[i] as number] as string
+        let c = input.colorMap[inputData.colors[i] as number] as string;
         if (grayScale) {
-          c = input.colorMap[c.includes('G') ? 1 : 0] as string
+          c = input.colorMap[c.includes("G") ? 1 : 0] as string;
         }
-        let color = colors[c]
+        let color = colors[c];
         if (!color) {
-          color = new Color(c.replace(/ *G$/, ''))
-          colors[c] = color
+          color = new Color(c.replace(/ *G$/, ""));
+          colors[c] = color;
         }
-        saveAs.color.push(color)
-      })
+        saveAs.color.push(color);
+      });
     }
-  })
+  });
 
   // 根据 result 生成体块
-  addInstanceData(buildings, result.instance.box, boxGeom, basicMaterial)
-  addInstanceData(buildings, result.instance.boxGlass, boxGeom, glassMaterial)
-  addInstanceData(buildings, result.instance.sloping, slopingGeom, twoSideMaterial)
-  addInstanceData(buildings, result.instance.slopingGlass, slopingGeom, glassMaterial)
+  addInstanceData(buildings, result.instance.box, boxGeom, basicMaterial);
+  addInstanceData(buildings, result.instance.boxGlass, boxGeom, glassMaterial);
+  addInstanceData(
+    buildings,
+    result.instance.sloping,
+    slopingGeom,
+    twoSideMaterial
+  );
+  addInstanceData(
+    buildings,
+    result.instance.slopingGlass,
+    slopingGeom,
+    glassMaterial
+  );
 
   // 根据 result 生成边线
-  const { boxMatrix, slopingMatrix } = result.edge
+  const { boxMatrix, slopingMatrix } = result.edge;
   if (boxMatrix.length > 0) {
-    const ibg = getEdgeIBG(boxGeom)
-    buildings.add(getInstancedLineSegments(ibg, boxMatrix, lineMaterial))
+    const ibg = getEdgeIBG(boxGeom);
+    buildings.add(getInstancedLineSegments(ibg, boxMatrix, lineMaterial));
   }
   if (slopingMatrix.length > 0) {
-    const ibg = getEdgeIBG(getSlopingRoofGeometry())
-    buildings.add(getInstancedLineSegments(ibg, slopingMatrix, lineMaterial))
+    const ibg = getEdgeIBG(getSlopingRoofGeometry());
+    buildings.add(getInstancedLineSegments(ibg, slopingMatrix, lineMaterial));
   }
 
   // 添加模型到场景
-  buildings.name = 'buildings'
-  scene.add(buildings)
+  buildings.name = "buildings";
+  scene.add(buildings);
 }
 
 /** 初始化用于渲染边线的 InstancedBufferGeometry */
 function getEdgeIBG(geom: BufferGeometry) {
-  const eg = new EdgesGeometry(geom)
-  const eibg = new InstancedBufferGeometry()
-  eibg.setAttribute('position', eg.getAttribute('position'))
-  eg.dispose()
-  return eibg
+  const eg = new EdgesGeometry(geom);
+  const eibg = new InstancedBufferGeometry();
+  eibg.setAttribute("position", eg.getAttribute("position"));
+  eg.dispose();
+  return eibg;
 }
 
 function getInstancedLineSegments(
@@ -129,11 +146,14 @@ function getInstancedLineSegments(
   matrixData: number[],
   edgeShaderMaterial: LineBasicMaterial
 ) {
-  ibg.setAttribute('matrix', new InstancedBufferAttribute(new Float32Array(matrixData), 16))
-  ibg.instanceCount = matrixData.length / 16
-  const ls = new LineSegments(ibg, edgeShaderMaterial)
-  ls.frustumCulled = false
-  return ls
+  ibg.setAttribute(
+    "matrix",
+    new InstancedBufferAttribute(new Float32Array(matrixData), 16)
+  );
+  ibg.instanceCount = matrixData.length / 16;
+  const ls = new LineSegments(ibg, edgeShaderMaterial);
+  ls.frustumCulled = false;
+  return ls;
 }
 
 /** 设置instancedMesh的matrix与color */
@@ -144,25 +164,25 @@ function addInstanceData(
   mat: MeshLambertMaterial | MeshStandardMaterial
 ) {
   if (data.matrix.length > 0) {
-    const i = new InstancedMesh(geom, mat, data.matrix.length)
+    const i = new InstancedMesh(geom, mat, data.matrix.length);
     data.matrix.forEach((m, n) => {
-      i.setMatrixAt(n, m)
-      i.setColorAt(n, data.color[n] as Color)
-    })
-    i.castShadow = i.receiveShadow = true
-    buildings.add(i)
+      i.setMatrixAt(n, m);
+      i.setColorAt(n, data.color[n] as Color);
+    });
+    i.castShadow = i.receiveShadow = true;
+    buildings.add(i);
   }
 }
 
 /** 生成尺寸为 1x1x1 ，最小点为原点，顶部缩进 indentRatio 的坡屋顶 */
 function getSlopingRoofGeometry(indentRatio: number = 0.2) {
-  const geometry = new BufferGeometry()
-  const p1 = [indentRatio, 0.5, 1]
-  const p2 = [1 - indentRatio, 0.5, 1]
-  const c1 = [0, 0, 0]
-  const c2 = [1, 0, 0]
-  const c3 = [1, 1, 0]
-  const c4 = [0, 1, 0]
+  const geometry = new BufferGeometry();
+  const p1 = [indentRatio, 0.5, 1];
+  const p2 = [1 - indentRatio, 0.5, 1];
+  const c1 = [0, 0, 0];
+  const c2 = [1, 0, 0];
+  const c3 = [1, 1, 0];
+  const c4 = [0, 1, 0];
   const vertices = new Float32Array([
     ...c2,
     ...p1,
@@ -182,9 +202,9 @@ function getSlopingRoofGeometry(indentRatio: number = 0.2) {
     ...c3,
     ...p2,
     ...c2,
-  ])
+  ]);
 
-  return geometry.setAttribute('position', new BufferAttribute(vertices, 3))
+  return geometry.setAttribute("position", new BufferAttribute(vertices, 3));
 }
 
 /** 将平面点转为高度为1的 ExtrudeGeometry */
