@@ -1,4 +1,4 @@
-import { evaluate } from 'mathjs'
+import Mexp from 'math-expression-evaluator'
 import { SEED, passControl } from '../planClass/handleUtils'
 import { sample } from '../planClass/handleMath'
 import mergeStyles from './merge'
@@ -6,6 +6,8 @@ import mergeStyles from './merge'
 import type { magizTypes } from '../types/magizTypes'
 import type { styleTypes } from '../types/style'
 import type { styleParsed } from '../types/stylesParsed'
+
+const mexp = new Mexp()
 
 /** 解析时全局缓存的字典 */
 const GLOBAL: {
@@ -131,7 +133,7 @@ export default class STYLES {
         true
       )
     } else {
-      console.warn(`${styleParams.style} is ivalid, returned empty data`)
+      console.warn(`${styleParams.style} is invalid, returned empty data`)
     }
 
     // 解析完成后清理 custom
@@ -752,7 +754,7 @@ function parse(ns?: styleTypes.ns): number {
     ns = replaceUnit(ns, GLOBAL.UNITS_PRESET)
 
     try {
-      n = evaluate(ns)
+      n = mexp.eval(ns)
       // n = eval(ns)
     } catch (error) {
       console.log('Error parse fomula:', error, ns, GLOBAL.UNITS, GLOBAL.UNITS_PRESET)

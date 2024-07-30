@@ -3,6 +3,9 @@
     "./**/*",
   ],
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
     "baseUrl": ".",
     "outDir": "dist",
     "strict": true,

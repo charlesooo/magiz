@@ -11,7 +11,7 @@
   ],
   "main": "index.ts",
   "dependencies": {
-    "mathjs": "^12.4.2",
+    "math-expression-evaluator": "^2.0.5",
     "three": "^0.164.0"
   },
   "devDependencies": {

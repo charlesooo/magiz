@@ -7,17 +7,12 @@
 ### 安装
 
 ```bash
-# For windows
-$ npm install
+$ npm i
 ```
 
-### 最小化
+### 使用说明
 
-magiz.min.js 中包含了引用的三个库（mathjs, polylabel, three），将库剥离后的源码不到100KB。如忽略安全性，可不使用 mathjs。
-
-### 项目案例
-
-+ 在网页中使用：
++ 在网页中使用
 
 ```js
 import { styles, PLAN, STYLES, WEB3D } from './dist/magiz.min.js'
