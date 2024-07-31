@@ -27,6 +27,12 @@ export namespace magizTypes {
     inplace: boolean
   }
 
+  type tagsDataType = {
+    title: string
+    text: string | undefined
+    position: [x: number, y: number, z: number]
+  }
+
   /** 经过分类后的样式名称 */
   type styleOptions = {
     /** 付费样式，须订阅 */
