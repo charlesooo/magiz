@@ -49,19 +49,6 @@ function randomBetween(seed: SEED, a: number, b: number, step?: number) {
   return step ? a + Math.floor(((b - a) / step) * rand(seed)) * step : a + (b - a) * rand(seed)
 }
 
-/** 根据偏移的距离计算缩放比例，默认返回 [1, 1] */
-// function getScaleRatio(
-//   size: { x: number; y: number },
-//   scale: parsed.scaleOrOffsetType | undefined
-// ): [scaleX: number, scaleY: number] {
-//   if (scale) {
-//     const { x, y } = size
-//     return scale.asRatio
-//       ? [1 - 2 * scale.x, 1 - 2 * scale.y]
-//       : [(x - 2 * scale.x) / x, (y - 2 * scale.y) / y]
-//   } else return [1, 1]
-// }
-
 /** 根据点积计算定界框的最小点和最大点 */
 function getBounds(points2D: Vector2[]) {
   const pt = points2D[0] as Vector2

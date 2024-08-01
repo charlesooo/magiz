@@ -11,56 +11,46 @@ import {
   Fog,
   Texture,
   RepeatWrapping,
-} from "three";
-import WEB3D from "./web3D";
+} from 'three'
+import WEB3D from './web3D'
 
 /** 通过rotateX从生成平面时的默认Z轴朝上还原到Y轴朝上 */
-const xRadian = -Math.PI / 2;
+const xRadian = -Math.PI / 2
 
 /** 每个实例为一个Three.js场景，用于 WEB3D.views 和 WEB3D.playing */
 export default class VIEW {
   /** 父级WEB3D入口 */
-  parent: WEB3D;
+  parent: WEB3D
   /** 创建的 Three.js 场景 */
-  scene: Scene;
+  scene: Scene
   /** 场景中的直射光和环境光 */
   lights: {
-    directional: DirectionalLight;
-    ambient: AmbientLight;
-  };
+    directional: DirectionalLight
+    ambient: AmbientLight
+  }
   /** 场景中的动画函数 */
-  animations: { [name: string]: () => void };
+  animations: { [name: string]: () => void }
   /** 场景中不被自动清理的的元素（如光、地面、Helpers） */
-  ignored: Group;
+  ignored: Group
   /** 场景中地面相关数据 */
   ground?: {
-    texture: Texture;
-    size: number;
-  };
+    texture: Texture
+    size: number
+  }
 
-  constructor(parent: WEB3D) {
-    this.parent = parent;
-    this.scene = new Scene();
-    this.ignored = new Group();
-    this.animations = {};
+  constructor(parent: WEB3D, shadow = true) {
+    this.parent = parent
+    this.scene = new Scene()
+    this.ignored = new Group()
+    this.animations = {}
 
     // 阴影设置案例 https://threejs.org/docs/index.html?q=DirectionalLight#api/en/lights/shadows/DirectionalLightShadow
     // 部分材质不会产生阴影 https://threejs.org/manual/#zh/materials
     // 阴影效果可通过 light.shadow.mapSize 和 renderer.shadowMap.type 进行调整 https://threejs.org/docs/index.html#api/zh/constants/Renderer
-    const ambient = new AmbientLight("#fff", 0);
-    // const hemisphere = new HemisphereLight('#fff', '#bbb', 1)
-    const directional = new DirectionalLight();
-    directional.shadow.mapSize.set(4096, 4096);
-    directional.castShadow = true;
-    const sc = directional.shadow.camera;
-    sc.far = parent.options.sunDistance * 2;
-
-    const sm = parent.renderer.shadowMap;
-    sm.type = PCFSoftShadowMap;
-    sm.enabled = true;
-
-    this.lights = { directional, ambient };
-    this.ignored.userData.ignored = true;
+    const ambient = new AmbientLight('#fff', 0)
+    const directional = new DirectionalLight()
+    this.lights = { directional, ambient }
+    this.ignored.userData.ignored = true
 
     // 解决z-fighting的可用参数:
     // Material.polygonOffset + Material.polygonOffsetFactor + Material.polygonOffsetUnits
@@ -69,67 +59,77 @@ export default class VIEW {
     // Mesh.renderOrder
 
     // https://threejs.org/docs/#api/zh/lights/DirectionalLight.target
-    this.ignored.add(ambient, directional, directional.target);
-    this.scene.add(this.ignored);
-    this.setShadowArea(200, 200);
+    this.ignored.add(ambient, directional, directional.target)
+    this.scene.add(this.ignored)
+
+    if (shadow) {
+      directional.shadow.mapSize.set(4096, 4096)
+      directional.castShadow = true
+      const sc = directional.shadow.camera
+      sc.far = parent.options.sunDistance * 2
+
+      const sm = parent.renderer.shadowMap
+      sm.type = PCFSoftShadowMap
+      sm.enabled = true
+
+      this.setShadowArea(200, 200)
+    }
   }
 
   setShadowArea(width: number, height: number) {
-    const sc = this.lights.directional.shadow.camera;
-    sc.bottom = -(sc.top = height);
-    sc.left = -(sc.right = width);
-    sc.updateProjectionMatrix();
+    const sc = this.lights.directional.shadow.camera
+    sc.bottom = -(sc.top = height)
+    sc.left = -(sc.right = width)
+    sc.updateProjectionMatrix()
   }
 
   /** 添加指定大小的地面 */
   addGround(
     size: number,
     params?: {
-      pictureURL: string;
-      uvMoving: number;
+      pictureURL: string
+      uvMoving: number
     }
   ) {
     const planeMaterial = new MeshLambertMaterial({
-      color: "#eee",
+      color: '#eee',
       polygonOffset: true,
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 0.1,
-    });
-    const planeGeom = new PlaneGeometry(size, size).rotateX(xRadian);
-    const plane = new Mesh(planeGeom, planeMaterial);
-    plane.renderOrder = -1;
-    plane.receiveShadow = true;
-    this.ignored.add(plane);
+    })
+    const planeGeom = new PlaneGeometry(size, size).rotateX(xRadian)
+    const plane = new Mesh(planeGeom, planeMaterial)
+    plane.renderOrder = -1
+    plane.receiveShadow = true
+    this.ignored.add(plane)
 
     if (params) {
       new TextureLoader().load(
         params.pictureURL,
         (texture) => {
-          this.ground = { texture, size };
-          planeMaterial.map = texture;
-          planeMaterial.needsUpdate = true;
+          this.ground = { texture, size }
+          planeMaterial.map = texture
+          planeMaterial.needsUpdate = true
           if (params.uvMoving) {
-            texture.wrapS = texture.wrapT = RepeatWrapping;
-            const speed = params.uvMoving / size;
+            texture.wrapS = texture.wrapT = RepeatWrapping
+            const speed = params.uvMoving / size
             this.animations.uvMovingX = () => {
-              texture.offset.x += -speed;
-            };
+              texture.offset.x += -speed
+            }
           }
         },
-        (err) => console.error("TextureLoader error", params.pictureURL, err)
-      );
+        (err) => console.error('TextureLoader error', params.pictureURL, err)
+      )
     }
   }
 
   setPlaneUvMovingX(x: number) {
     if (this.ground) {
-      const { texture } = this.ground;
+      const { texture } = this.ground
       // 0,1,1,1,0,0,1,0
       this.animations.uvMovingX = () => {
-        console.log(texture.offset.x);
-
-        texture.offset.x += x;
-      };
+        texture.offset.x += x
+      }
     }
   }
 
@@ -140,8 +140,8 @@ export default class VIEW {
     /** 雾气过渡效果的最远距离 */
     far: number,
     /** 雾气的颜色 */
-    color = "#fff"
+    color = '#fff'
   ) {
-    this.scene.fog = new Fog(color, near, far);
+    this.scene.fog = new Fog(color, near, far)
   }
 }

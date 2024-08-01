@@ -14,9 +14,9 @@ import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
 import type { temp } from '../types/temp'
 
-export { handleMatch, handleBoxInside, handleAdjunct, handleExtrude }
+export { handleMatch, handleBoxInside, handleAdjunct, handleExtrudeByMatch }
 
-// TODO: handleExtrude 可缓存计算结果以减少重复计算
+// TODO: handleExtrudeByMatch 可缓存计算结果以减少重复计算
 
 /** 首尾对齐的结果进行合并 */
 function simplifyMatchData(matchData: temp.match[]) {
@@ -404,7 +404,7 @@ function matching(
 }
 
 /** 平面多边形用box拟合以轻量化模型 */
-function handleExtrude(
+function handleExtrudeByMatch(
   parsed: styleParsed.extrude[],
   rays: temp.ray[][],
   result: magizTypes.rawBuilding,

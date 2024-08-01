@@ -24,7 +24,7 @@ export namespace styleTypes {
   }
 
   /** 边线缩放或偏移 */
-  type scaleOrOffsetType = { x?: ns; y?: ns; asRatio?: boolean } | ns
+  type scaleOrOffset = { x?: ns; y?: ns; asRatio?: boolean } | ns
 
   /** 将元素变形拆解为基本项目。例如按X轴旋转和按Y轴旋转，前后组合的不同，变形的结果也不同 */
   type transformType =
@@ -247,7 +247,7 @@ export namespace styleTypes {
     /** 根据参数组合修改边线，每条按 offset|clamp|along 的顺序，仅有一项生效 */
     setEdges?: {
       /** 精确偏移边线，不影响 extrude，默认不按比例 */
-      offset?: scaleOrOffsetType
+      offset?: scaleOrOffset
       /** 按定界框向内偏移，选择在范围内的边线 */
       clamp?: clampRangeType
       /** 按轴向筛选边线 (不考虑世界轴向以简化逻辑) */

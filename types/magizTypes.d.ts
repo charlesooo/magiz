@@ -16,6 +16,8 @@ export namespace magizTypes {
     sunDistance: number
     /** 通过时间设置光影 */
     time: number
+    /** 开关阴影 */
+    shadow: boolean
   }
 
   type webRefreshOptions = {
@@ -63,7 +65,7 @@ export namespace magizTypes {
     info?: any
   }
 
-  /** 从平面生成建筑模型的参数 */
+  /** 从平面生成建筑模型的参数。(内部参数不能省略!) */
   type styleParams = {
     /** 指定样式名称 */
     style: string
@@ -75,6 +77,8 @@ export namespace magizTypes {
     elevation: number
     /** 随机数种子，0表示使用随机值 */
     seed: number
+    /** 平面拟合的宽度 */
+    matchSpacing: number
   }
 
   /** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */

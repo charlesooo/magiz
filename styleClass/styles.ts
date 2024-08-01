@@ -84,23 +84,24 @@ export default class STYLES {
 
     // 确保输入的参数为数字
     const height = Number(styleParams.height)
-    const floorHeight = Number(styleParams.floorHeight)
-    const elevation = Number(styleParams.elevation)
+    // 部分参数具有默认值
+    const floorHeight = Number(styleParams.floorHeight || 3)
+    const elevation = Number(styleParams.elevation || 0)
 
     // 设置随机数种子
-    seed.set(Number(styleParams.seed) || Math.round(Math.random() * 100000))
+    seed.set(Number(styleParams.seed || 0) || Math.round(Math.random() * 100000))
 
     // 优先按 customStyles 解析
-    const selected =
+    const styleSelected =
       !styleParams.style || styleParams.style === 'Blocks'
         ? this.Blocks
         : customStyles?.building[styleParams.style] || this.data.building[styleParams.style]
 
-    if (selected) {
+    if (styleSelected) {
       /** 内部全局变量，保存解析公式所需的单位 */
-      GLOBAL.UNITS = Object.assign({ BH: height }, selected.unit)
+      GLOBAL.UNITS = Object.assign({ BH: height }, styleSelected.unit)
 
-      const ss = selected.section
+      const ss = styleSelected.section
       const rsh = parse(ss.roof?.height)
       const rfh = parse(ss.roof?.floorHeight) || floorHeight
 
@@ -119,19 +120,9 @@ export default class STYLES {
       bsh = height - rsh - msh
       bfh = bsh / Math.floor(bsh / bfh)
 
-      parseSection(this, customStyles, styleParams, elevation, bsh, bfh, seed, ss.bottom)
-      parseSection(this, customStyles, styleParams, elevation + bsh, msh, mfh, seed, ss.middle)
-      parseSection(
-        this,
-        customStyles,
-        styleParams,
-        elevation + height - rsh,
-        rsh,
-        rfh,
-        seed,
-        ss.roof,
-        true
-      )
+      parseSection(this, customStyles, elevation, bsh, bfh, seed, ss.bottom)
+      parseSection(this, customStyles, elevation + bsh, msh, mfh, seed, ss.middle)
+      parseSection(this, customStyles, elevation + height - rsh, rsh, rfh, seed, ss.roof, true)
     } else {
       console.warn(`${styleParams.style} is invalid, returned empty data`)
     }
@@ -243,11 +234,10 @@ function parseBoxFlex(boxFlex: styleTypes.boxFlex): styleParsed.boxFlex {
   })
 }
 
-/** 解析样式的段，须调用 style、styleParams  */
+/** 解析样式的段，须调用 styles  */
 function parseSection(
   styles: STYLES,
   customStyles: styleTypes.styles | undefined,
-  styleParams: magizTypes.styleParams,
   sectionElevation: number,
   sectionHeight: number,
   floorHeight: number,
@@ -347,7 +337,7 @@ function parseSection(
               })
               GLOBAL.COLOR_PRESET = GLOBAL.UNITS_PRESET = {}
             } else {
-              console.warn('can not find style:', name, '@', styleParams.style)
+              console.warn('can not find preset:', name)
             }
           } catch (error) {
             console.warn('handle preset error:', name, error)
@@ -478,7 +468,7 @@ function parseEdgeParams(params: styleTypes.floor): styleParsed.handleEdgesType 
 }
 
 /** 解析偏移边线参数 */
-function parseOffsetOrScale(params?: styleTypes.scaleOrOffsetType) {
+function parseOffsetOrScale(params?: styleTypes.scaleOrOffset) {
   if (params) {
     if (typeof params === 'object') {
       return {
