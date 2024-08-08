@@ -1,4 +1,4 @@
-import type { styleTypes } from '../../types/style'
+import type { styleTypes } from '../../src/types/style'
 
 export const styles: styleTypes.styles = {
   preset: {},

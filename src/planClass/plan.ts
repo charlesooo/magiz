@@ -197,20 +197,21 @@ export default class PLAN {
   }
   /** 按样式库生成建筑模型数据 */
   toModel(
-    colorMapToUpdate: string[],
+    result: magizTypes.rawData,
     styles: STYLES,
     centerOfAll: { x: number; y: number },
     customStyles?: styleTypes.styles
-  ): magizTypes.rawBuilding {
+  ): magizTypes.rawData {
+    const { colorMap, models } = result
     const styleParsed = styles.parseStyle(this.styleParams, this.seed, customStyles)
 
-    // 将该plan的colorMap合并到全局
+    // 将该plan的colorMap合并到 result.colorMap
     styleParsed.colorMap.forEach((c) => {
-      if (!colorMapToUpdate.includes(c)) colorMapToUpdate.push(c)
+      if (!colorMap.includes(c)) colorMap.push(c)
     })
 
     // 按相对坐标还是源坐标生成
-    const result: magizTypes.rawBuilding = {
+    const building: magizTypes.rawBuilding = {
       info: { floorArea: this.area, floors: styleParsed.floorCount },
       points: this.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
       center: this.center.toArray(),
@@ -233,17 +234,18 @@ export default class PLAN {
       if (rays[0] && rays[0].length > 0) {
         const bounds = getBounds(rays[0].map((r) => r.start))
 
-        handleExtrudeByMatch(s.extrude, rays, result, seed, this.styleParams.matchSpacing || 2)
-        handleMatch(s.match, rays, result, seed)
-        handleFacade(s.facade, rays, result, seed)
-        handleBoxInside(s.boxInside, rays, result, seed)
-        handleAdjunct(s.adjunct, rays, result, seed)
+        handleExtrudeByMatch(s.extrude, rays, building, seed, this.styleParams.matchSpacing || 2)
+        handleMatch(s.match, rays, building, seed)
+        handleFacade(s.facade, rays, building, seed)
+        handleBoxInside(s.boxInside, rays, building, seed)
+        handleAdjunct(s.adjunct, rays, building, seed)
 
-        handleClampBox(s.clampBox, bounds, result, seed)
-        handleSlopingRoof(s.slopingRoof, bounds, result, seed)
+        handleClampBox(s.clampBox, bounds, building, seed)
+        handleSlopingRoof(s.slopingRoof, bounds, building, seed)
       }
     })
 
+    models.push(building)
     return result
   }
 }

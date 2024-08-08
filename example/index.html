@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Magiz example</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="magiz"></div>
+  </body>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.staticfile.net/three.js/0.160.0/three.module.min.js"
+      }
+    }
+  </script>
+  <script type="module">
+    import { PLAN, STYLES, styles } from '../dist/magiz.module.min.js'
+    import WEB3D from '../dist/web3D.module.min.js'
+
+    // 初始化场景
+    const web3D = new WEB3D('#magiz')
+    // 设置镜头
+    web3D.camera.position.set(100, 50, 100)
+
+    // 控制建筑样式的参数
+    const params = {
+      style: 'Random',
+      height: 24,
+      floorHeight: 3,
+      elevation: 9,
+      seed: 0,
+      matchSpacing: 2,
+    }
+    // 定义平面形状的坐标
+    const loops = [
+      [
+        [0, 0],
+        [80, 0],
+        [80, 30],
+        [0, 30],
+      ],
+    ]
+    // 创建建筑平面
+    const plan = new PLAN({ params, loops })
+
+    // 定义一个对象存放生成的数据
+    const data = { colorMap: [], models: [] }
+    // 建筑平面按样式库生成建筑模型数据
+    plan.toModel(data, styles, { x: 0, y: 0 })
+    // 用模型数据更新场景
+    web3D.refresh(data, { grayScale: false, showEdge: true })
+  </script>
+</html>
