@@ -2,7 +2,7 @@ import { rand } from './handleMath'
 
 import type { styleParsed } from '../types/stylesParsed'
 
-export { passControl, SEED }
+export { passControl, SEED, getCenterOfPlans }
 
 /** 是否通过生成控制器检查 */
 function passControl(i: number, seed: SEED, control?: styleParsed.control) {
@@ -46,4 +46,22 @@ class SEED {
 /** 生成一个100以内的随机整数 */
 function rand100() {
   return Math.round(Math.random() * Math.pow(10, 3))
+}
+
+/** 计算多个平面的中心点 */
+function getCenterOfPlans(plans: [x: number, y: number][][][]) {
+  let count = 0
+  const center: { x: number; y: number } = { x: 0, y: 0 }
+  plans.forEach((plan) => {
+    plan.forEach((loop) =>
+      loop.forEach((pt) => {
+        center.x += pt[0]
+        center.y += pt[1]
+        count++
+      })
+    )
+  })
+  center.x /= count
+  center.y /= count
+  return center
 }

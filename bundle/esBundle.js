@@ -1,5 +1,9 @@
-const outMagiz = './dist/magiz.module.min.js'
-const outWeb3D = './dist/web3D.module.min.js'
+// const outDir = './dist/'
+const outDir = 'D:/Works/magiz-demo/dist/'
+const outMagiz = outDir + 'magiz.module.min.js'
+const outWeb3D = outDir + 'web3D.module.min.js'
+const outWeb2D = outDir + 'web2D.module.min.js'
+
 
 const { build } = require('esbuild')
 const path = require('node:path')
@@ -60,4 +64,16 @@ build({
 }).then(() => {
   console.log('Done: ', outWeb3D);
 });
+
+build({
+  entryPoints: ['src/web2DClass/web2D.ts'],
+  bundle: true,
+  minify: true,
+  format: 'esm',
+  plugins: [strictExternalize(['three'])],
+  outfile: outWeb2D,
+}).then(() => {
+  console.log('Done: ', outWeb2D);
+});
+
 

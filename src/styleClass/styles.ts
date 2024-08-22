@@ -1,5 +1,5 @@
 import Mexp from 'math-expression-evaluator'
-import { SEED, passControl } from '../planClass/handleUtils'
+import { SEED, passControl } from '../planClass/utils'
 import { sample } from '../planClass/handleMath'
 import mergeStyles from './merge'
 
@@ -99,30 +99,28 @@ export default class STYLES {
 
     if (styleSelected) {
       /** 内部全局变量，保存解析公式所需的单位 */
-      GLOBAL.UNITS = Object.assign({ BH: height }, styleSelected.unit)
+      GLOBAL.UNITS = Object.assign({ BH: height, FH: floorHeight }, styleSelected.unit)
 
       const ss = styleSelected.section
+
       const rsh = parse(ss.roof?.height)
       const rfh = parse(ss.roof?.floorHeight) || floorHeight
-
       // 先估算底部高度，按比例计算时初始值最小不小于层高
       let bsh = parse(ss.bottom.height)
       let bfh = parse(ss.bottom.floorHeight) || floorHeight
       if (bsh < bfh) bsh = bfh
-
       // 中段按层数拟合，高度可变
       let msh = height - rsh - bsh
       const mfh = parse(ss.middle?.floorHeight) || floorHeight
       const middleFloors = Math.floor(msh / mfh)
       msh = middleFloors * mfh
-
       // 底部段高和层高最终根据中部拟合高度确定
       bsh = height - rsh - msh
       bfh = bsh / Math.floor(bsh / bfh)
 
-      parseSection(this, customStyles, elevation, bsh, bfh, seed, ss.bottom)
-      parseSection(this, customStyles, elevation + bsh, msh, mfh, seed, ss.middle)
-      parseSection(this, customStyles, elevation + height - rsh, rsh, rfh, seed, ss.roof, true)
+      parseSection(ss.bottom, false, customStyles, this, elevation, bsh, bfh, seed)
+      parseSection(ss.middle, false, customStyles, this, elevation + bsh, msh, mfh, seed)
+      parseSection(ss.roof, true, customStyles, this, elevation + height - rsh, rsh, rfh, seed)
     } else {
       console.warn(`${styleParams.style} is invalid, returned empty data`)
     }
@@ -236,14 +234,14 @@ function parseBoxFlex(boxFlex: styleTypes.boxFlex): styleParsed.boxFlex {
 
 /** 解析样式的段，须调用 styles  */
 function parseSection(
-  styles: STYLES,
+  section: styleTypes.section | undefined,
+  isRoof: boolean,
   customStyles: styleTypes.styles | undefined,
+  styles: STYLES,
   sectionElevation: number,
   sectionHeight: number,
   floorHeight: number,
-  seed: SEED,
-  section?: styleTypes.section,
-  isRoof?: boolean
+  seed: SEED
 ) {
   if (section) {
     GLOBAL.UNITS.FH = floorHeight
@@ -747,7 +745,7 @@ function parse(ns?: styleTypes.ns): number {
       n = mexp.eval(ns)
       // n = eval(ns)
     } catch (error) {
-      console.log('Error parse fomula:', error, ns, GLOBAL.UNITS, GLOBAL.UNITS_PRESET)
+      console.log('[parse fomula]', error, ns, GLOBAL.UNITS, GLOBAL.UNITS_PRESET)
       n = 0
     }
   } else {
@@ -764,7 +762,7 @@ function replaceUnit(input: string, units?: styleParsed.unitType) {
     const keys = Object.keys(units).sort((a, b) => b.length - a.length)
     keys.forEach((k) => {
       input = input.replace(new RegExp(`\\d+(\\.\\d+)?${k}`, 'g'), (m) => {
-        const u = units[k] as number
+        const u = Number(units[k])
         return (Number(m.replace(k, '')) * u).toString()
       })
     })

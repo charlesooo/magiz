@@ -1,6 +1,6 @@
 import { Vector2, Matrix4 } from 'three'
 import { sample } from './handleMath'
-import { SEED } from './handleUtils'
+import { SEED } from './utils'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'

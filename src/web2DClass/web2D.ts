@@ -7,7 +7,7 @@ const far = 400
 const near = 300
 
 /** 辅助WEB3D显示文字图片信息的渲染器 */
-export default class RENDER2D {
+export default class WEB2D {
   /** 创建的 Three.js 渲染器实例 */
   renderer: CSS2DRenderer
   /** 缓存生成的对象 */
@@ -34,8 +34,7 @@ export default class RENDER2D {
     // 添加样式
     const style = document.createElement('style')
     document.head.appendChild(style)
-    style.innerHTML =
-      '.magizTag{pointer-events: none;font-size:small;background:#333;color:#fff;padding:6px}'
+    style.innerHTML = `${divID}{pointer-events:none;position:fixed;top:0}.magizTag{font-size:small;background:#fff;padding:6px}.magizTag h3{margin:0}.magizTag p{margin:0}`
   }
 
   resizeScene() {

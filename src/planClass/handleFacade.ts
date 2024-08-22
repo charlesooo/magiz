@@ -1,5 +1,5 @@
 import { Matrix4, Vector2 } from 'three'
-import { passControl, SEED } from './handleUtils'
+import { passControl, SEED } from './utils'
 import { sample, getMatchRatioAndCount } from './handleMath'
 import { TEMP, DEFAULT_COLOR, handleFacadeElements } from './handleBasic'
 

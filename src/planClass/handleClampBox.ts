@@ -1,7 +1,7 @@
 import { Vector2, Matrix4 } from 'three'
 import { sample } from './handleMath'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
-import { SEED } from './handleUtils'
+import { SEED } from './utils'
 
 import type { styleParsed } from '../types/stylesParsed'
 import type { magizTypes } from '../types/magizTypes'

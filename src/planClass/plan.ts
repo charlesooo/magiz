@@ -1,6 +1,6 @@
 import { Vector2, Matrix3 } from 'three'
 import { ShapeUtils } from 'three/src/extras/ShapeUtils.js'
-import { SEED } from './handleUtils'
+import { SEED } from './utils'
 import { rand, getBounds, isAlongAxis } from './handleMath'
 import { handleSlopingRoof } from './handleSlopingRoof'
 import { handleClampBox } from './handleClampBox'
@@ -201,7 +201,7 @@ export default class PLAN {
     styles: STYLES,
     centerOfAll: { x: number; y: number },
     customStyles?: styleTypes.styles
-  ): magizTypes.rawData {
+  ): magizTypes.rawBuilding {
     const { colorMap, models } = result
     const styleParsed = styles.parseStyle(this.styleParams, this.seed, customStyles)
 
@@ -246,7 +246,7 @@ export default class PLAN {
     })
 
     models.push(building)
-    return result
+    return building
   }
 }
 

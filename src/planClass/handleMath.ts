@@ -2,7 +2,7 @@
 
 import { Vector2, Matrix3 } from 'three'
 import { seededRandom } from 'three/src/math/MathUtils.js'
-import { SEED } from './handleUtils'
+import { SEED } from './utils'
 
 import type { temp } from '../types/temp'
 import type { styleParsed } from '../types/stylesParsed'

@@ -214,7 +214,6 @@ export const styles: styleTypes.styles = {
                     { space: 1.2, group: [{ x: 0.1, y: 0.1, z: '1总高', color: '深色' }] },
                     { space: 0.6, group: [{ x: 0.1, y: 0.1, z: '1总高', color: '深色' }] },
                     { space: 0.1, group: [{ x: 0.1, y: 0.1, z: '1总高', color: '深色' }] },
-                    { space: 0, group: [{ x: 0.1, y: 0.3, z: '1总高', color: '浅色' }] },
                   ],
                   last: true,
                   lastWidth: 1,
@@ -235,9 +234,9 @@ export const styles: styleTypes.styles = {
               proto: [
                 {
                   spacing: [
-                    { space: 1.1 },
+                    { space: 1 },
                     {
-                      space: 2.4,
+                      space: 2.6,
                       group: [
                         // 横窗格
                         {
@@ -256,7 +255,8 @@ export const styles: styleTypes.styles = {
                       ],
                     },
                   ],
-                  lastWidth: 1.1,
+                  last: true,
+                  lastWidth: 1,
                 },
               ],
             },

@@ -8,7 +8,7 @@ import {
   matchPolygonLinesAlongX,
 } from './handleMath'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
-import { passControl, SEED } from './handleUtils'
+import { passControl, SEED } from './utils'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
