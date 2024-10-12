@@ -16,7 +16,7 @@ export namespace magizTypes {
     sunDistance: number
     /** 通过时间设置光影 */
     time: number
-    /** 开关阴影 */
+    /** 开关阴影显示 */
     shadow: boolean
   }
 

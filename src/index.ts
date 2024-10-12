@@ -6,8 +6,7 @@
   GPL Version 3 license
 */
 
-import STYLES from './styleClass/styles'
 import PLAN from './planClass/plan'
 import styles from '../styles'
 
-export { PLAN, STYLES, styles }
+export { PLAN, styles }

@@ -1,16 +1,17 @@
 import { Vector3, MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
-import VIEW from './view'
+import View from '../web3DClass/view'
 
+/** 用于生成模型和相机均固定但视觉上匀速平移的场景 */
 export default function setMovingMaterial(
-  view: VIEW,
-  basicMaterial: MeshLambertMaterial,
+  view: View,
+  faceMaterial: MeshLambertMaterial,
   glassMaterial: MeshStandardMaterial,
   lineMaterial: LineBasicMaterial
 ) {
   view.animations.movingMaterial = () => {
     globalTime.value++
   }
-  setMovingShader(basicMaterial, globalTime, movingVect, basicMaterialVects)
+  setMovingShader(faceMaterial, globalTime, movingVect, faceMaterialVects)
   setMovingShader(glassMaterial, globalTime, movingVect, glassMaterialVects)
   setMovingEdgeShader(lineMaterial, globalTime, movingVect, lineMaterialVects)
 }
@@ -24,7 +25,7 @@ type uniformVectorType = { [name: string]: { value: Vector3 } }
 
 /** 颜色渐变矢量可视化 @see http://dev.thi.ng/gradients/ */
 
-const basicMaterialVects = getUniformVectors(`
+const faceMaterialVects = getUniformVectors(`
 [[0.778 0.778 0.750] [0.198 0.034 -0.198] [-0.770 -0.492 0.490] [-4.670 -4.970 -5.428]]
 `)
 
@@ -189,3 +190,30 @@ void main() {`
     shader.fragmentShader = setFS(shader.fragmentShader)
   }
 }
+
+// 地面移动动画的部分函数
+// setPlaneUvMovingX(x: number) {
+//   if (this.ground) {
+//     const { texture } = this.ground
+//     // 0,1,1,1,0,0,1,0
+//     this.animations.uvMovingX = () => {
+//       texture.offset.x += x
+//     }
+//   }
+// }
+// new TextureLoader().load(
+//   params.pictureURL,
+//   (texture) => {
+//     this.ground = { texture, size }
+//     groundMaterial.map = texture
+//     groundMaterial.needsUpdate = true
+//     if (params.uvMoving) {
+//       texture.wrapS = texture.wrapT = RepeatWrapping
+//       const speed = params.uvMoving / size
+//       this.animations.uvMovingX = () => {
+//         texture.offset.x += -speed
+//       }
+//     }
+//   },
+//   (err) => console.error('TextureLoader error', params.pictureURL, err)
+// )

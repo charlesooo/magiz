@@ -3,24 +3,22 @@ import {
   Scene,
   DirectionalLight,
   AmbientLight,
-  MeshLambertMaterial,
   PlaneGeometry,
   Mesh,
   PCFSoftShadowMap,
-  TextureLoader,
   Fog,
   Texture,
-  RepeatWrapping,
 } from 'three'
-import WEB3D from './web3D'
+import Web3D from './web3D'
+import { presetMaterials } from './materials'
 
 /** 通过rotateX从生成平面时的默认Z轴朝上还原到Y轴朝上 */
 const xRadian = -Math.PI / 2
 
-/** 每个实例为一个Three.js场景，用于 WEB3D.views 和 WEB3D.playing */
-export default class VIEW {
-  /** 父级WEB3D入口 */
-  parent: WEB3D
+/** 每个实例为一个Three.js场景 */
+export default class View {
+  /** 父级Web3D入口 */
+  parent: Web3D
   /** 创建的 Three.js 场景 */
   scene: Scene
   /** 场景中的直射光和环境光 */
@@ -38,7 +36,7 @@ export default class VIEW {
     size: number
   }
 
-  constructor(parent: WEB3D, shadow = true) {
+  constructor(parent: Web3D, shadow = true) {
     this.parent = parent
     this.scene = new Scene()
     this.ignored = new Group()
@@ -84,53 +82,12 @@ export default class VIEW {
   }
 
   /** 添加指定大小的地面 */
-  addGround(
-    size: number,
-    params?: {
-      pictureURL: string
-      uvMoving: number
-    }
-  ) {
-    const planeMaterial = new MeshLambertMaterial({
-      color: '#eee',
-      polygonOffset: true,
-      polygonOffsetFactor: 1,
-      polygonOffsetUnits: 0.1,
-    })
-    const planeGeom = new PlaneGeometry(size, size).rotateX(xRadian)
-    const plane = new Mesh(planeGeom, planeMaterial)
-    plane.renderOrder = -1
-    plane.receiveShadow = true
-    this.ignored.add(plane)
-
-    if (params) {
-      new TextureLoader().load(
-        params.pictureURL,
-        (texture) => {
-          this.ground = { texture, size }
-          planeMaterial.map = texture
-          planeMaterial.needsUpdate = true
-          if (params.uvMoving) {
-            texture.wrapS = texture.wrapT = RepeatWrapping
-            const speed = params.uvMoving / size
-            this.animations.uvMovingX = () => {
-              texture.offset.x += -speed
-            }
-          }
-        },
-        (err) => console.error('TextureLoader error', params.pictureURL, err)
-      )
-    }
-  }
-
-  setPlaneUvMovingX(x: number) {
-    if (this.ground) {
-      const { texture } = this.ground
-      // 0,1,1,1,0,0,1,0
-      this.animations.uvMovingX = () => {
-        texture.offset.x += x
-      }
-    }
+  addGround(size: number) {
+    const geom = new PlaneGeometry(size, size).rotateX(xRadian)
+    const ground = new Mesh(geom, presetMaterials.face['Ground | 地面'])
+    ground.renderOrder = -1
+    ground.receiveShadow = true
+    this.ignored.add(ground)
   }
 
   /** 添加雾气效果 */

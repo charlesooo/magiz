@@ -2,10 +2,10 @@ import { rand } from './handleMath'
 
 import type { styleParsed } from '../types/stylesParsed'
 
-export { passControl, SEED, getCenterOfPlans }
+export { passControl, Seed }
 
 /** 是否通过生成控制器检查 */
-function passControl(i: number, seed: SEED, control?: styleParsed.control) {
+function passControl(i: number, seed: Seed, control?: styleParsed.control) {
   let pass = true
   if (control) {
     const { everyIndex, skipIndex, chance } = control
@@ -21,7 +21,7 @@ function passControl(i: number, seed: SEED, control?: styleParsed.control) {
 }
 
 /** 自增随机数种子 */
-class SEED {
+class Seed {
   /** 递增值 */
   v: number
   /** 预设值，用于重置 */
@@ -46,22 +46,4 @@ class SEED {
 /** 生成一个100以内的随机整数 */
 function rand100() {
   return Math.round(Math.random() * Math.pow(10, 3))
-}
-
-/** 计算多个平面的中心点 */
-function getCenterOfPlans(plans: [x: number, y: number][][][]) {
-  let count = 0
-  const center: { x: number; y: number } = { x: 0, y: 0 }
-  plans.forEach((plan) => {
-    plan.forEach((loop) =>
-      loop.forEach((pt) => {
-        center.x += pt[0]
-        center.y += pt[1]
-        count++
-      })
-    )
-  })
-  center.x /= count
-  center.y /= count
-  return center
 }

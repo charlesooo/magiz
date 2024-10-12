@@ -1,6 +1,6 @@
 import { Vector2, Matrix4 } from 'three'
 import { sample } from './handleMath'
-import { SEED } from './utils'
+import { Seed } from './utils'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
@@ -13,7 +13,7 @@ function handleSlopingRoof(
   parsed: styleParsed.slopingRoof[],
   bounds: { min: Vector2; max: Vector2 },
   result: magizTypes.rawBuilding,
-  seed: SEED
+  seed: Seed
 ) {
   parsed.forEach((roofParams) => {
     const { color, height, overhang, elevation } = roofParams

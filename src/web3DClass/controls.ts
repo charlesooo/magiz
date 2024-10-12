@@ -1,8 +1,8 @@
-import { Vector2, Vector3, Raycaster, Quaternion } from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import WEB3D from "./web3D";
+import { Vector2, Vector3, Raycaster, Quaternion } from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import Web3D from './web3D'
 
-export { OrbitControls, addOrbitControls, showMousePointed };
+export { OrbitControls, addOrbitControls, showMousePointed }
 
 const orbitControlsOptions = {
   /** 速度大于 0 会自动旋转镜头 */
@@ -12,79 +12,70 @@ const orbitControlsOptions = {
   zoomToCursor: false,
   enableDamping: false,
   enablePan: false,
-};
+}
 
 /** 添加镜头控制 */
-function addOrbitControls(
-  web3D: WEB3D,
-  params?: Partial<typeof orbitControlsOptions>
-) {
-  const options: typeof orbitControlsOptions = Object.assign(
-    orbitControlsOptions,
-    params
-  );
-  const ctrl = new OrbitControls(web3D.camera, web3D.renderer.domElement);
+function addOrbitControls(web3D: Web3D, params?: Partial<typeof orbitControlsOptions>) {
+  const options: typeof orbitControlsOptions = Object.assign(orbitControlsOptions, params)
+  const ctrl = new OrbitControls(web3D.camera, web3D.renderer.domElement)
 
   // OrbitControls 可以 saveState() 然后 reset()
-  ctrl.zoomToCursor = options.zoomToCursor;
-  ctrl.enableDamping = options.enableDamping;
-  ctrl.enablePan = options.enablePan;
-  ctrl.maxDistance = 10000;
+  ctrl.zoomToCursor = options.zoomToCursor
+  ctrl.enableDamping = options.enableDamping
+  ctrl.enablePan = options.enablePan
+  ctrl.maxDistance = 10000
 
-  const rotateSpeed = options.autoRotateSpeed;
-  const zoomMinDistance = options.zoomMinDistance;
+  const rotateSpeed = options.autoRotateSpeed
+  const zoomMinDistance = options.zoomMinDistance
   if (rotateSpeed > 0) {
-    ctrl.autoRotateSpeed = rotateSpeed;
-    ctrl.autoRotate = true;
+    ctrl.autoRotateSpeed = rotateSpeed
+    ctrl.autoRotate = true
   }
   if (zoomMinDistance > 0) {
-    ctrl.addEventListener("change", () => {
+    ctrl.addEventListener('change', () => {
       if (ctrl.getDistance() < zoomMinDistance) {
-        const v = new Vector3();
-        ctrl.object.getWorldDirection(v);
-        ctrl.target.add(v.setLength(9));
+        const v = new Vector3()
+        ctrl.object.getWorldDirection(v)
+        ctrl.target.add(v.setLength(9))
       }
-    });
+    })
   }
 
-  web3D.playing.animations.updateControls = ctrl.update;
-  return ctrl;
+  web3D.playing.animations.updateControls = ctrl.update
+  return ctrl
 }
 
 /** 按住 Ctrl 时显示鼠标点的坐标，按住 Shift 时显示相机矩阵，按住 Alt 提示悬停元素的信息 */
-function showMousePointed(web3D: WEB3D) {
+function showMousePointed(web3D: Web3D) {
   function getPointed(event: PointerEvent) {
-    const pointer = new Vector2();
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, web3D.camera);
-    return raycaster.intersectObject(web3D.playing.scene);
+    const pointer = new Vector2()
+    pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+    raycaster.setFromCamera(pointer, web3D.camera)
+    return raycaster.intersectObject(web3D.playing.scene)
   }
 
-  const raycaster = new Raycaster();
-  const indicator = document.createElement("a");
-  indicator.setAttribute("style", "position:fixed;bottom:9px;left:9px");
-  document.body.appendChild(indicator);
-  document.addEventListener("pointermove", (e) => {
+  const raycaster = new Raycaster()
+  const indicator = document.createElement('a')
+  indicator.setAttribute('style', 'position:fixed;bottom:9px;left:9px')
+  document.body.appendChild(indicator)
+  document.addEventListener('pointermove', (e) => {
     if (e.altKey) {
-      const i = getPointed(e)[0];
-      if (i)
-        indicator.innerText = `[${i.object.type}] ${
-          i.object.name || "... no name"
-        }`;
+      const i = getPointed(e)[0]
+      if (i) indicator.innerText = `[${i.object.type}] ${i.object.name || '... no name'}`
     } else if (e.shiftKey) {
-      const p = new Vector3();
-      const q = new Quaternion();
-      const s = new Vector3();
-      web3D.camera.matrix.decompose(p, q, s);
-      indicator.innerText = `{p:[${p.toArray()}],q:[${q.toArray()}]}`;
+      const p = new Vector3()
+      const q = new Quaternion()
+      const s = new Vector3()
+      web3D.camera.matrix.decompose(p, q, s)
+      indicator.innerText = `{p:[${p.toArray()}],q:[${q.toArray()}]}`
     } else if (e.ctrlKey) {
-      const i = getPointed(e)[0];
+      const i = getPointed(e)[0]
       if (i)
         indicator.innerText = i.point
           .toArray()
           .map((v) => v.toFixed(3))
-          .join(" , ");
+          .join(' , ')
     }
-  });
+  })
 }

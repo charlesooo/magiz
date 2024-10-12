@@ -1,6 +1,6 @@
 import { Vector2, Matrix3 } from 'three'
 import { ShapeUtils } from 'three/src/extras/ShapeUtils.js'
-import { SEED } from './utils'
+import { Seed } from './utils'
 import { rand, getBounds, isAlongAxis } from './handleMath'
 import { handleSlopingRoof } from './handleSlopingRoof'
 import { handleClampBox } from './handleClampBox'
@@ -20,9 +20,9 @@ import type { styleParsed } from '../types/stylesParsed'
 import type { temp } from '../types/temp'
 
 /** 建筑平面类，包括用于生成模型的相关数据和方法 */
-export default class PLAN {
+export default class Plan {
   /** 每个平面对应一个随机数种子 */
-  seed: SEED
+  seed: Seed
   /** 建筑模型生成的参数 */
   styleParams: magizTypes.styleParams
   /** 平面的面积 */
@@ -108,13 +108,13 @@ export default class PLAN {
       input.params
     )
     // 按参数设置种子
-    this.seed = new SEED(this.styleParams.seed)
+    this.seed = new Seed(this.styleParams.seed)
   }
 
   /** 根据样式参数中的 setEdges 处理边线向量并生成新的向量数组。不处理内部的边线。 */
   getEdges(
     params: styleParsed.handleEdgesType,
-    seed: SEED,
+    seed: Seed,
     outerOnly: boolean,
     rotate?: number
   ): temp.ray[][] {
@@ -198,16 +198,21 @@ export default class PLAN {
   /** 按样式库生成建筑模型数据 */
   toModel(
     result: magizTypes.rawData,
-    styles: STYLES,
     centerOfAll: { x: number; y: number },
-    customStyles?: styleTypes.styles
+    styles: STYLES,
+    customStyles: styleTypes.styles | undefined,
+    /** 重映射颜色，用于生成controlNet */
+    remapColor: { in: string; out: string }[] | undefined
   ): magizTypes.rawBuilding {
+    // 将结果保存到公共变量，以便同时处理多个plan生成
     const { colorMap, models } = result
     const styleParsed = styles.parseStyle(this.styleParams, this.seed, customStyles)
 
     // 将该plan的colorMap合并到 result.colorMap
     styleParsed.colorMap.forEach((c) => {
-      if (!colorMap.includes(c)) colorMap.push(c)
+      // 重映射颜色值
+      const color = remapColor?.find((rm) => rm.in === c)?.out || c
+      if (!colorMap.includes(color)) colorMap.push(color)
     })
 
     // 按相对坐标还是源坐标生成

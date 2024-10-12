@@ -2,7 +2,7 @@
 
 import { Vector2, Matrix3 } from 'three'
 import { seededRandom } from 'three/src/math/MathUtils.js'
-import { SEED } from './utils'
+import { Seed } from './utils'
 
 import type { temp } from '../types/temp'
 import type { styleParsed } from '../types/stylesParsed'
@@ -30,22 +30,22 @@ export {
   rotateLinesAlong,
 }
 
-function rand(seed: SEED) {
+function rand(seed: Seed) {
   // 前端绑定 seed._v，清空时为 null
   return seed._v ? seededRandom(seed.get()) : Math.random()
 }
 
 /** 数组随机采样。如果数量小于2直接返回 a[0]。如果有种子则按种子随机数采样 */
-function sample<T>(a: T[], seed: SEED) {
+function sample<T>(a: T[], seed: Seed) {
   return a[1] ? a[Math.floor(rand(seed) * a.length)] : a[0]
 }
 
 /** 将数组顺序打乱，返回原数组 */
-function shuffleArray<T>(array: T[], seed: SEED) {
+function shuffleArray<T>(array: T[], seed: Seed) {
   return array.sort(() => rand(seed) - 0.5)
 }
 
-function randomBetween(seed: SEED, a: number, b: number, step?: number) {
+function randomBetween(seed: Seed, a: number, b: number, step?: number) {
   return step ? a + Math.floor(((b - a) / step) * rand(seed)) * step : a + (b - a) * rand(seed)
 }
 
@@ -364,7 +364,7 @@ function matchPolygonLinesAlongX(
 }
 
 /** 根据along旋转由Plane生成的lines数据，默认按 WIDTH */
-function rotateLinesAlong(rays: temp.ray[], seed: SEED, along?: styleTypes.alongType) {
+function rotateLinesAlong(rays: temp.ray[], seed: Seed, along?: styleTypes.alongType) {
   let radian = 0
   if (along === 'RANDOM') {
     radian = Math.PI * 2 * rand(seed)

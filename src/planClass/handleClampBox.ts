@@ -1,7 +1,7 @@
 import { Vector2, Matrix4 } from 'three'
 import { sample } from './handleMath'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
-import { SEED } from './utils'
+import { Seed } from './utils'
 
 import type { styleParsed } from '../types/stylesParsed'
 import type { magizTypes } from '../types/magizTypes'
@@ -13,7 +13,7 @@ function handleClampBox(
   parsed: styleParsed.clampBox[],
   bounds: { min: Vector2; max: Vector2 },
   result: magizTypes.rawBuilding,
-  seed: SEED
+  seed: Seed
 ) {
   parsed.forEach((clampParams) => {
     const { color, height, elevation } = clampParams

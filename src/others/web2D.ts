@@ -7,7 +7,7 @@ const far = 400
 const near = 300
 
 /** 辅助WEB3D显示文字图片信息的渲染器 */
-export default class WEB2D {
+export default class Web2D {
   /** 创建的 Three.js 渲染器实例 */
   renderer: CSS2DRenderer
   /** 缓存生成的对象 */
@@ -85,3 +85,25 @@ export default class WEB2D {
     on ? this.tags.forEach((o) => o.layers.set(0)) : this.tags.forEach((o) => o.layers.set(1))
   }
 }
+
+// /** 重新添加标签 */
+// function refreshTags(
+//   input: magizTypes.requestData[],
+//   result: magizTypes.rawData,
+//   web2D: Web2D | undefined
+// ) {
+//   if (web2D) {
+//     const tagsData: magizTypes.tagsDataType[] = []
+//     result.models.forEach((b, i) => {
+//       const info = input[i].info
+//       if (info) {
+//         tagsData.push({
+//           title: info.name,
+//           text: info.school,
+//           position: [b.centerRelative[0], b.params.height / 2, -b.centerRelative[1]],
+//         })
+//       }
+//     })
+//     web2D.refresh(tagsData)
+//   }
+// }

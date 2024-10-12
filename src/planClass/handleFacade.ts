@@ -1,5 +1,5 @@
 import { Matrix4, Vector2 } from 'three'
-import { passControl, SEED } from './utils'
+import { passControl, Seed } from './utils'
 import { sample, getMatchRatioAndCount } from './handleMath'
 import { TEMP, DEFAULT_COLOR, handleFacadeElements } from './handleBasic'
 
@@ -19,7 +19,7 @@ function handleFacade(
   parsed: styleParsed.facade[],
   rays: temp.ray[][],
   result: magizTypes.rawBuilding,
-  seed: SEED
+  seed: Seed
 ) {
   parsed.forEach((facadeParams) => {
     handleBoxes(result.data, handlePadding(rays, facadeParams.padding), facadeParams, seed)
@@ -87,7 +87,7 @@ function handleBoxes(
   result: magizTypes.rawBuilding['data'],
   lineData: temp.splitted[][],
   partPared: styleParsed.facade,
-  seed: SEED
+  seed: Seed
 ) {
   const { proto, elevation } = partPared
   proto?.forEach((boxArray) => {
@@ -122,7 +122,7 @@ function pushDividePoints(
   boxArray: styleParsed.boxArray,
   result: magizTypes.rawBuilding['data'],
   elevation: number,
-  seed: SEED,
+  seed: Seed,
   ray?: temp.ray
 ) {
   if (ray) {
@@ -197,7 +197,7 @@ function pushData(
   startPoint: Vector2,
   first: boolean,
   last: boolean,
-  seed: SEED
+  seed: Seed
 ) {
   /** 沿边线移动的总距离，用于直接从起点移动 */
   let distance = 0
@@ -226,7 +226,7 @@ function pushSpacingData(
   data: spacingDataType,
   distance: number,
   placeMatrix: Matrix4,
-  seed: SEED,
+  seed: Seed,
   result: magizTypes.rawBuilding['data']
 ) {
   data.model?.forEach((m) => {

@@ -1,5 +1,5 @@
 import Mexp from 'math-expression-evaluator'
-import { SEED, passControl } from '../planClass/utils'
+import { Seed, passControl } from '../planClass/utils'
 import { sample } from '../planClass/handleMath'
 import mergeStyles from './merge'
 
@@ -28,7 +28,7 @@ const RESULT: styleParsed.result = {
 }
 
 /** 用于管理多个样式文件的样式库类 */
-export default class STYLES {
+export default class StyleHandler {
   /** 受保护的默认样式 Blocks */
   Blocks: styleTypes.style
   /** 整合后的样式参数 */
@@ -50,6 +50,15 @@ export default class STYLES {
     }
     this.data = { preset: {}, building: {} }
     this.merge(styles)
+  }
+
+  isValid(name: string, reg: boolean) {
+    if (name === 'Blocks') {
+      return true
+    } else {
+      const found = this.data.building[name]
+      return found && (found.type === 'FREE' || reg) ? true : false
+    }
   }
 
   /** 合并样式参数（会提示被替换的项） */
@@ -74,7 +83,7 @@ export default class STYLES {
     /** 控制解析的参数 */
     styleParams: magizTypes.styleParams,
     /** 全局随机种子 */
-    seed: SEED,
+    seed: Seed,
     /** 如有，按自定义样式 */
     customStyles?: styleTypes.styles
   ): styleParsed.result {
@@ -237,11 +246,11 @@ function parseSection(
   section: styleTypes.section | undefined,
   isRoof: boolean,
   customStyles: styleTypes.styles | undefined,
-  styles: STYLES,
+  styles: StyleHandler,
   sectionElevation: number,
   sectionHeight: number,
   floorHeight: number,
-  seed: SEED
+  seed: Seed
 ) {
   if (section) {
     GLOBAL.UNITS.FH = floorHeight
@@ -357,7 +366,7 @@ function parseFloor(
   sectionHeight: number,
   sectionElevation: number,
   floorParams: styleTypes.floor,
-  seed: SEED
+  seed: Seed
 ) {
   const control = parseControl(floorParams.floorControl)
   const edgeParams = parseEdgeParams(floorParams)

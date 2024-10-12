@@ -8,7 +8,7 @@ import {
   matchPolygonLinesAlongX,
 } from './handleMath'
 import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
-import { passControl, SEED } from './utils'
+import { passControl, Seed } from './utils'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
@@ -65,7 +65,7 @@ function handleMatch(
   parsed: styleParsed.match[],
   rays: temp.ray[][],
   result: magizTypes.rawBuilding,
-  seed: SEED,
+  seed: Seed,
   /** 拟合平面时可以简化结果 */
   simplify = false
 ) {
@@ -178,7 +178,7 @@ function handleBoxInside(
   parsed: styleParsed.boxInside[],
   rays: temp.ray[][],
   result: magizTypes.rawBuilding,
-  seed: SEED
+  seed: Seed
 ) {
   parsed.forEach((boxInside) => {
     const { flex, count, depthRatio, widthRatio, heightRatio, along, elevation } = boxInside
@@ -280,7 +280,7 @@ function handleAdjunct(
   parsed: styleParsed.adjunct[],
   rays: temp.ray[][],
   result: magizTypes.rawBuilding,
-  seed: SEED
+  seed: Seed
 ) {
   parsed.forEach((adjunct) => {
     const { boxes, place, count, elevation } = adjunct
@@ -307,7 +307,7 @@ function handleAdjunct(
 }
 
 /** 返回多边形的随机内部点 */
-function randomPointInPolygon(loops: temp.line[][], seed: SEED) {
+function randomPointInPolygon(loops: temp.line[][], seed: Seed) {
   // 多边形沿Y轴的范围内随机取点
   const rangeY = { min: Infinity, max: -Infinity }
   loops[0]?.forEach((p) => {
@@ -323,7 +323,7 @@ function randomPointInPolygon(loops: temp.line[][], seed: SEED) {
 }
 
 /** 返回多边形边线上的随机点 */
-function randomPointOnEdge(loops: temp.line[][], seed: SEED) {
+function randomPointOnEdge(loops: temp.line[][], seed: Seed) {
   const loop = loops[0]
   if (loop) {
     const line = sample(loop, seed)
@@ -408,7 +408,7 @@ function handleExtrudeByMatch(
   parsed: styleParsed.extrude[],
   rays: temp.ray[][],
   result: magizTypes.rawBuilding,
-  seed: SEED,
+  seed: Seed,
   /** 用box拟合挤出平面的块厚度 */
   width: number
 ) {

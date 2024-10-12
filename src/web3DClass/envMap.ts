@@ -6,7 +6,7 @@ import {
 } from 'three'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'
 
-import { glassMaterial } from './basicMaterials'
+import { presetMaterials } from './materials'
 
 /** 为 glassMaterial 添加环境光反射效果 */
 export default function addEnvMap(renderer: WebGLRenderer, exrFile: string) {
@@ -19,11 +19,11 @@ export default function addEnvMap(renderer: WebGLRenderer, exrFile: string) {
 
       // 背景设为环境贴图
       // this.playing.scene.background = texture
-
-      glassMaterial.envMap = exrCubeRenderTarget.texture
-      glassMaterial.roughness = 0.1
-      glassMaterial.metalness = 1
-      glassMaterial.needsUpdate = true
+      const m = presetMaterials.face['Glass | 玻璃']
+      m.envMap = exrCubeRenderTarget.texture
+      m.roughness = 0.1
+      m.metalness = 1
+      m.needsUpdate = true
     })
   } catch (error) {
     console.log('no envMap')

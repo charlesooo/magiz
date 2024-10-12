@@ -15,7 +15,7 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import { basicMaterial, glassMaterial, twoSideMaterial, lineMaterial } from './basicMaterials'
+import { presetMaterials } from './materials'
 
 import type { temp } from '../types/temp'
 import type { magizTypes } from '../types/magizTypes'
@@ -68,12 +68,10 @@ export default function handleRaw(
             .premultiply(tempMatrix.makeTranslation(...restoreParams.center, 0))
         }
 
-        // 保存边线数据
-        if (showEdge) {
-          result.edge[instanceType.includes('box') ? 'boxMatrix' : 'slopingMatrix'].push(
-            ...matrix.toArray()
-          )
-        }
+        // 默认生成边线，根据参数设置visible属性
+        result.edge[instanceType.includes('box') ? 'boxMatrix' : 'slopingMatrix'].push(
+          ...matrix.toArray()
+        )
 
         // 保存矩阵数据
         saveAs.matrix.push(matrix)
@@ -94,20 +92,50 @@ export default function handleRaw(
   })
 
   // 根据 result 生成体块
-  addInstanceData(buildings, result.instance.box, boxGeom, basicMaterial)
-  addInstanceData(buildings, result.instance.boxGlass, boxGeom, glassMaterial)
-  addInstanceData(buildings, result.instance.sloping, slopingGeom, twoSideMaterial)
-  addInstanceData(buildings, result.instance.slopingGlass, slopingGeom, glassMaterial)
+  addInstanceData(
+    buildings,
+    result.instance.box,
+    boxGeom,
+    presetMaterials.face['Concrete | 混凝土']
+  )
+  addInstanceData(
+    buildings,
+    result.instance.boxGlass,
+    boxGeom,
+    presetMaterials.face['Glass | 玻璃']
+  )
+  addInstanceData(
+    buildings,
+    result.instance.sloping,
+    slopingGeom,
+    presetMaterials.face['Roof | 屋顶']
+  )
+  addInstanceData(
+    buildings,
+    result.instance.slopingGlass,
+    slopingGeom,
+    presetMaterials.face['Glass | 玻璃']
+  )
 
   // 根据 result 生成边线
   const { boxMatrix, slopingMatrix } = result.edge
   if (boxMatrix.length > 0) {
-    const ibg = getEdgeIBG(boxGeom)
-    buildings.add(getInstancedLineSegments(ibg, boxMatrix, lineMaterial))
+    const ils = getInstancedLineSegments(
+      getEdgeIBG(boxGeom),
+      boxMatrix,
+      presetMaterials.edge['Edge | 边线']
+    )
+    ils.visible = showEdge
+    buildings.add(ils)
   }
   if (slopingMatrix.length > 0) {
-    const ibg = getEdgeIBG(getSlopingRoofGeometry())
-    buildings.add(getInstancedLineSegments(ibg, slopingMatrix, lineMaterial))
+    const ils = getInstancedLineSegments(
+      getEdgeIBG(getSlopingRoofGeometry()),
+      slopingMatrix,
+      presetMaterials.edge['Edge | 边线']
+    )
+    ils.visible = showEdge
+    buildings.add(ils)
   }
 
   // 添加模型到场景

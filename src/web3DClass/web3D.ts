@@ -1,16 +1,12 @@
 import { Vector3, Color, Texture, WebGLRenderer, PerspectiveCamera } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
 import handleRaw from './raw'
-import VIEW from './view'
+import View from './view'
 
 import type { temp } from '../types/temp'
 import type { magizTypes } from '../types/magizTypes'
 
-///////////////////// Shader动画 /////////////////////
-import { basicMaterial, glassMaterial, lineMaterial } from './basicMaterials'
-import setMovingMaterial from './movingMaterials'
-
-///////////////////// WEB3D /////////////////////
+///////////////////// Web3D /////////////////////
 // js 必须在的一定数值范围内显示，否则会出现异常。这是3D渲染通病。如按
 // 经纬度计算数值过小，出现部分EdgesGeometry不显示的问题。如离原点过远，会出
 // 现模型旋转时不停闪烁的问题，即使设置logarithmicDepthBuffer 为 true，也
@@ -25,8 +21,6 @@ import setMovingMaterial from './movingMaterials'
 const web3DOptions: magizTypes.webOptions = {
   cameraPosition: [900, 900, 900],
   sunDistance: 10000,
-  shadow: true,
-  time: 10,
   lightColor: [
     { hour: 5, color: '#116', directional: 0, ambient: 0 },
     { hour: 6, color: '#f60', directional: 0.6, ambient: 0.2 },
@@ -37,20 +31,20 @@ const web3DOptions: magizTypes.webOptions = {
     { hour: 19, color: '#116', directional: 0.1, ambient: 0.1 },
     { hour: 24, color: '#000', directional: 0, ambient: 0 },
   ],
+  time: 10,
+  shadow: true,
 }
 
 /** 管理Three.js场景及相关内容的工具类 */
-export default class WEB3D {
+export default class Web3D {
   /** 创建的 Three.js 渲染器实例 */
   renderer: WebGLRenderer
   /** 创建的 Three.js 镜头实例 */
   camera: PerspectiveCamera
   /** 创建的 Three.js 控制器实例 */
   constrols: OrbitControls
-  /** 工具所管理的全部场景，都使用相同的相机 */
-  views: VIEW[]
   /** 当前显示的场景 */
-  playing: VIEW
+  playing: View
   /** 太阳坐标 */
   sunPosition: Vector3
   /** 工具实例的参数 */
@@ -81,8 +75,7 @@ export default class WEB3D {
     }))
 
     renderer.setPixelRatio(window.devicePixelRatio)
-    this.playing = new VIEW(this, this.options.shadow)
-    this.views = [this.playing]
+    this.playing = new View(this, this.options.shadow)
     this.camera = new PerspectiveCamera(45, 1, 1, 1000000000)
     this.camera.position.set(...this.options.cameraPosition)
 
@@ -101,65 +94,46 @@ export default class WEB3D {
     // 按需渲染会增加很多代码合复杂性！
     animate(this)
   }
-  /** 重写材质shader，添加平移动画和边线渲染 */
-  setMovingMaterial() {
-    setMovingMaterial(this.playing, basicMaterial, glassMaterial, lineMaterial)
-  }
-  /** 按时间设置场景的光影 */
-  setTime(
-    /** 按24小时划分一天 */
-    hour: number,
-    /** 仅修改当前显示的场景 */
-    playingOnly = true
-  ) {
+  /** 按24小时划分一天，设置场景的光影 */
+  setTime(hour: number) {
     hour = hour % 24
-    const views = playingOnly ? [this.playing] : this.views
-    views.forEach((v) => {
-      const dl = v.lights.directional
-      const al = v.lights.ambient
-      let ambientIntensity: number
-      let directionalIntensity: number
-      let color: Color
+    const { directional: dl, ambient: al } = this.playing.lights
+    let ambientIntensity: number
+    let directionalIntensity: number
+    let color: Color
 
-      const lightColor = this.options.lightColor
-      lightColor.find((l2, i) => {
-        if (l2.hour > hour) {
-          // 计算颜色与强度
-          const l1 = lightColor[
-            (i === 0 ? lightColor.length : i) - 1
-          ] as (typeof lightColor)[number]
-          const ratio = (hour - l1.hour) / (l2.hour - l1.hour)
-          color = new Color(l1.color).lerp(new Color(l2.color), ratio)
-          directionalIntensity = l1.directional + (l2.directional - l1.directional) * ratio
-          ambientIntensity = l1.ambient + (l2.ambient - l1.ambient) * ratio
+    const lightColor = this.options.lightColor
+    lightColor.find((l2, i) => {
+      if (l2.hour > hour) {
+        // 计算颜色与强度
+        const l1 = lightColor[(i === 0 ? lightColor.length : i) - 1] as (typeof lightColor)[number]
+        const ratio = (hour - l1.hour) / (l2.hour - l1.hour)
+        color = new Color(l1.color).lerp(new Color(l2.color), ratio)
+        directionalIntensity = l1.directional + (l2.directional - l1.directional) * ratio
+        ambientIntensity = l1.ambient + (l2.ambient - l1.ambient) * ratio
 
-          // 设置颜色与强度
-          dl.color.set(color)
-          dl.intensity = directionalIntensity
-          al.color.set(color)
-          al.intensity = ambientIntensity
-          this.renderer.setClearColor(color, (1 - ambientIntensity) * 0.9)
+        // 设置颜色与强度
+        dl.color.set(color)
+        dl.intensity = directionalIntensity
+        al.color.set(color)
+        al.intensity = ambientIntensity
+        this.renderer.setClearColor(color, (1 - ambientIntensity) * 0.9)
 
-          // 夜晚发光？
-          // this.modelMaterials.glass.emissiveIntensity = Math.sin(2 * Math.PI * (ratio + 0.5)) * 3
+        // 夜晚发光？
+        // this.modelMaterials.glass.emissiveIntensity = Math.sin(2 * Math.PI * (ratio + 0.5)) * 3
 
-          // 太阳与 y轴 (up)的极角，12点时为0，6点和18点为 PI/2，24点为 PI
-          const phi = Math.PI * (Math.cos(Math.PI * 2 * (hour / 24)) + 1)
+        // 太阳与 y轴 (up)的极角，12点时为0，6点和18点为 PI/2，24点为 PI
+        const phi = Math.PI * (Math.cos(Math.PI * 2 * (hour / 24)) + 1)
 
-          // 太阳绕Y轴(up)的方位角，正北为0
-          const theta = (-Math.PI * hour) / 12
+        // 太阳绕Y轴(up)的方位角，正北为0
+        const theta = (-Math.PI * hour) / 12
 
-          this.sunPosition.setFromSphericalCoords(
-            this.options.sunDistance,
-            phi < 0 ? 0 : phi,
-            theta
-          )
-          dl.position.copy(this.sunPosition)
-          dl.lookAt(new Vector3())
-          return true
-        }
-        return false
-      })
+        this.sunPosition.setFromSphericalCoords(this.options.sunDistance, phi < 0 ? 0 : phi, theta)
+        dl.position.copy(this.sunPosition)
+        dl.lookAt(new Vector3())
+        return true
+      }
+      return false
     })
   }
   /** 按绑定的DOM设置render和camera尺寸 */
@@ -169,20 +143,14 @@ export default class WEB3D {
     this.camera.aspect = innerWidth / innerHeight
     this.camera.updateProjectionMatrix()
   }
-  /** 清理场景中除设置了 userData.ignored 以外的全部对象 */
-  clean(
-    /** 默认仅清理当前显示的场景 */
-    playingOnly = true
-  ) {
-    playingOnly ? cleanView(this.playing) : this.views.forEach(cleanView)
-  }
+
   /** 清理场景并生成模型，返回总指标 */
   refresh(
     data: magizTypes.rawData,
     options?: Partial<magizTypes.webRefreshOptions>
   ): Promise<{ floorArea: number; maxFloors: number }> {
     return new Promise((resolve, _) => {
-      this.clean()
+      cleanView(this.playing)
       const info = { floorArea: 0, maxFloors: 0 }
       let maxHeight = 0
 
@@ -201,9 +169,13 @@ export default class WEB3D {
       resolve(info)
     })
   }
+
+  setShadow(on: boolean) {
+    this.playing.lights.directional.castShadow = on
+  }
 }
 
-function animate(web3D: WEB3D) {
+function animate(web3D: Web3D) {
   const v = web3D.playing
   web3D.renderer.render(v.scene, web3D.camera)
   for (const f in v.animations) (v.animations[f] as Function)()
@@ -213,7 +185,7 @@ function animate(web3D: WEB3D) {
 }
 
 /** 清理单个场景 */
-function cleanView(v: VIEW) {
+function cleanView(v: View) {
   const removing = v.scene.children.map((x) => x)
   removing.forEach((x) => {
     if (!x.userData.ignored) {
