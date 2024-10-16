@@ -1,6 +1,6 @@
 import { Vector2, Vector3, Raycaster, Quaternion } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import Web3D from './web3D'
+import { View } from './view'
 
 export { OrbitControls, addOrbitControls, showMousePointed }
 
@@ -15,9 +15,9 @@ const orbitControlsOptions = {
 }
 
 /** 添加镜头控制 */
-function addOrbitControls(web3D: Web3D, params?: Partial<typeof orbitControlsOptions>) {
+function addOrbitControls(view: View, params?: Partial<typeof orbitControlsOptions>) {
   const options: typeof orbitControlsOptions = Object.assign(orbitControlsOptions, params)
-  const ctrl = new OrbitControls(web3D.camera, web3D.renderer.domElement)
+  const ctrl = new OrbitControls(view.camera, view.renderer.domElement)
 
   // OrbitControls 可以 saveState() 然后 reset()
   ctrl.zoomToCursor = options.zoomToCursor
@@ -41,18 +41,18 @@ function addOrbitControls(web3D: Web3D, params?: Partial<typeof orbitControlsOpt
     })
   }
 
-  web3D.playing.animations.updateControls = ctrl.update
+  view.animations.updateControls = ctrl.update
   return ctrl
 }
 
 /** 按住 Ctrl 时显示鼠标点的坐标，按住 Shift 时显示相机矩阵，按住 Alt 提示悬停元素的信息 */
-function showMousePointed(web3D: Web3D) {
+function showMousePointed(view: View) {
   function getPointed(event: PointerEvent) {
     const pointer = new Vector2()
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
-    raycaster.setFromCamera(pointer, web3D.camera)
-    return raycaster.intersectObject(web3D.playing.scene)
+    raycaster.setFromCamera(pointer, view.camera)
+    return raycaster.intersectObject(view.scene)
   }
 
   const raycaster = new Raycaster()
@@ -67,7 +67,7 @@ function showMousePointed(web3D: Web3D) {
       const p = new Vector3()
       const q = new Quaternion()
       const s = new Vector3()
-      web3D.camera.matrix.decompose(p, q, s)
+      view.camera.matrix.decompose(p, q, s)
       indicator.innerText = `{p:[${p.toArray()}],q:[${q.toArray()}]}`
     } else if (e.ctrlKey) {
       const i = getPointed(e)[0]

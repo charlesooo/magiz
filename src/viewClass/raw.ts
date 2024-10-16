@@ -15,26 +15,32 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import { presetMaterials } from './materials'
+import { presetFaceMaterials, presetLineMaterials } from './materials'
 
 import type { temp } from '../types/temp'
 import type { magizTypes } from '../types/magizTypes'
+
+export { generateModel }
 
 const boxGeom = new BoxGeometry()
 const slopingGeom = getSlopingRoofGeometry()
 
 /** 将 Magiz 解析的 magizTypes.rawBuilding 转为 Three.js 对象 */
-export default function handleRaw(
-  input: magizTypes.rawData,
+function generateModel(
+  rawModels: magizTypes.rawData,
   scene: Scene,
-  options?: Partial<magizTypes.webRefreshOptions>
+  options?: Partial<magizTypes.generateOptions>
 ) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
+  const showEdge = options?.showEdge ? true : false
+  const grayScale = options?.grayScale ? true : false
+  const inplace = options?.inplace ? true : false
+
+  console.log(showEdge, grayScale, inplace)
+
+  const finalColorMap = getColorMap(rawModels.colorMap, options?.remap)
   const colors: { [name: string]: Color } = {}
-  const showEdge = options?.showEdge || false
-  const grayScale = options?.grayScale || false
-  const inplace = options?.inplace || false
   const tempMatrix = new Matrix4()
   const result: temp.rawInstanceDataResult = {
     instance: {
@@ -50,7 +56,7 @@ export default function handleRaw(
   let instanceType: keyof magizTypes.rawBuilding['data']
 
   // 整合输入的rawBuilding到 result
-  input.models.forEach((rawBuilding) => {
+  rawModels.models.forEach((rawBuilding) => {
     const restoreParams = inplace
       ? { center: rawBuilding.centerRelative, rotate: rawBuilding.rotate }
       : undefined
@@ -76,55 +82,29 @@ export default function handleRaw(
         // 保存矩阵数据
         saveAs.matrix.push(matrix)
 
-        // 断言是因为样式解析后的颜色索引必然对应
-        let c = input.colorMap[inputData.colors[i] as number] as string
-        if (grayScale) {
-          c = input.colorMap[c.includes('G') ? 1 : 0] as string
+        let c = finalColorMap[inputData.colors[i]!]!
+        if (!grayScale) {
+          let color = colors[c]
+          if (!color) {
+            color = new Color(c)
+            colors[c] = color
+          }
+          saveAs.color.push(color)
         }
-        let color = colors[c]
-        if (!color) {
-          color = new Color(c.replace(/ *G$/, ''))
-          colors[c] = color
-        }
-        saveAs.color.push(color)
       })
     }
   })
 
   // 根据 result 生成体块
-  addInstanceData(
-    buildings,
-    result.instance.box,
-    boxGeom,
-    presetMaterials.face['Concrete | 混凝土']
-  )
-  addInstanceData(
-    buildings,
-    result.instance.boxGlass,
-    boxGeom,
-    presetMaterials.face['Glass | 玻璃']
-  )
-  addInstanceData(
-    buildings,
-    result.instance.sloping,
-    slopingGeom,
-    presetMaterials.face['Roof | 屋顶']
-  )
-  addInstanceData(
-    buildings,
-    result.instance.slopingGlass,
-    slopingGeom,
-    presetMaterials.face['Glass | 玻璃']
-  )
+  addInstanceData(buildings, result.instance.box, boxGeom, presetFaceMaterials.solid)
+  addInstanceData(buildings, result.instance.boxGlass, boxGeom, presetFaceMaterials.glass)
+  addInstanceData(buildings, result.instance.sloping, slopingGeom, presetFaceMaterials.roof)
+  addInstanceData(buildings, result.instance.slopingGlass, slopingGeom, presetFaceMaterials.glass)
 
   // 根据 result 生成边线
   const { boxMatrix, slopingMatrix } = result.edge
   if (boxMatrix.length > 0) {
-    const ils = getInstancedLineSegments(
-      getEdgeIBG(boxGeom),
-      boxMatrix,
-      presetMaterials.edge['Edge | 边线']
-    )
+    const ils = getInstancedLineSegments(getEdgeIBG(boxGeom), boxMatrix, presetLineMaterials.edge)
     ils.visible = showEdge
     buildings.add(ils)
   }
@@ -132,7 +112,7 @@ export default function handleRaw(
     const ils = getInstancedLineSegments(
       getEdgeIBG(getSlopingRoofGeometry()),
       slopingMatrix,
-      presetMaterials.edge['Edge | 边线']
+      presetLineMaterials.edge
     )
     ils.visible = showEdge
     buildings.add(ils)
@@ -141,6 +121,20 @@ export default function handleRaw(
   // 添加模型到场景
   buildings.name = 'buildings'
   scene.add(buildings)
+}
+
+function getColorMap(
+  colorMap: magizTypes.rawData['colorMap'],
+  remap: magizTypes.remapColor | undefined
+) {
+  return remap
+    ? colorMap.map(
+        (x) =>
+          remap.face[x as keyof magizTypes.remapColor['face']] ||
+          remap.faceCustom?.find((pair) => pair.from === x)?.to ||
+          x
+      )
+    : colorMap
 }
 
 /** 初始化用于渲染边线的 InstancedBufferGeometry */
@@ -175,7 +169,8 @@ function addInstanceData(
     const i = new InstancedMesh(geom, mat, data.matrix.length)
     data.matrix.forEach((m, n) => {
       i.setMatrixAt(n, m)
-      i.setColorAt(n, data.color[n] as Color)
+      const c = data.color[n]
+      if (c) i.setColorAt(n, c)
     })
     i.castShadow = i.receiveShadow = true
     buildings.add(i)

@@ -9,7 +9,6 @@ import type { styleParsed } from '../types/stylesParsed'
 import type { styleTypes } from '../types/style'
 export {
   rand,
-  sample,
   shuffleArray,
   randomBetween,
   getBounds,
@@ -35,11 +34,6 @@ function rand(seed: Seed) {
   return seed._v ? seededRandom(seed.get()) : Math.random()
 }
 
-/** 数组随机采样。如果数量小于2直接返回 a[0]。如果有种子则按种子随机数采样 */
-function sample<T>(a: T[], seed: Seed) {
-  return a[1] ? a[Math.floor(rand(seed) * a.length)] : a[0]
-}
-
 /** 将数组顺序打乱，返回原数组 */
 function shuffleArray<T>(array: T[], seed: Seed) {
   return array.sort(() => rand(seed) - 0.5)
@@ -51,7 +45,7 @@ function randomBetween(seed: Seed, a: number, b: number, step?: number) {
 
 /** 根据点积计算定界框的最小点和最大点 */
 function getBounds(points2D: Vector2[]) {
-  const pt = points2D[0] as Vector2
+  const pt = points2D[0]!
   const min = pt.clone()
   const max = pt.clone()
   points2D.forEach((v2) => {
@@ -66,8 +60,8 @@ function getBounds(points2D: Vector2[]) {
 function isClockwise(points: [number, number][]) {
   let sum = 0
   for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i] as [number, number]
-    const b = points[i + 1] as [number, number]
+    const a = points[i]!
+    const b = points[i + 1]!
     sum += (b[0] - a[0]) * (b[1] + a[1])
   }
   return sum > 0
@@ -234,8 +228,8 @@ function isPerpendicular(v1: Vector2, v2: Vector2): boolean {
 function isPointInPolygon(point: Vector2, polygon: Vector2[]): boolean {
   let inside = false
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const { x: xi, y: yi } = polygon[i] as Vector2
-    const { x: xj, y: yj } = polygon[j] as Vector2
+    const { x: xi, y: yi } = polygon[i]!
+    const { x: xj, y: yj } = polygon[j]!
     const intersect =
       yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi
     if (intersect) inside = !inside
@@ -274,8 +268,8 @@ function sweepPolygonLines(y: number, lines: temp.line[]) {
   // 保证成对
   if (a.length % 2 === 0)
     for (let i = 0; i < a.length; i += 2) {
-      const a1 = a[i] as Vector2
-      const a2 = a[i + 1] as Vector2
+      const a1 = a[i]!
+      const a2 = a[i + 1]!
       result.push([a1, a2])
     }
   return result

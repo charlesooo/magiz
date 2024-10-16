@@ -1,14 +1,13 @@
 import { Vector2, Matrix4 } from 'three'
 import {
   rand,
-  sample,
   randomBetween,
   sweepPolygonLines,
   rotateLinesAlong,
   matchPolygonLinesAlongX,
 } from './handleMath'
-import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
-import { passControl, Seed } from './utils'
+import { Seed, sample, passControl, pushInstancedData } from './utils'
+import { TEMP, applyTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
@@ -26,7 +25,7 @@ function simplifyMatchData(matchData: temp.match[]) {
     result.push(x)
     // 第一个推送到结果，再比较之后的数据
     for (let i = 1; i < matchData.length; i++) {
-      const current = matchData[i] as temp.match
+      const current = matchData[i]!
       if (current.pairs.length !== x.pairs.length) {
         // 拟合结果的数量发生变化，修改目标设为当前并推送到结果
         x = current
@@ -108,7 +107,7 @@ function handleMatch(
 
     matchData.forEach((data, i) => {
       if (passControl(i, seed, matchParsed.control)) {
-        const { width, pairs } = data
+        const matchDepth = data.width
         let { height, elevation } = data
 
         // 处理height为负的情况
@@ -120,7 +119,7 @@ function handleMatch(
 
         // 非占位
         if (height > 0) {
-          current += width / 2
+          current += matchDepth / 2
 
           // 调整顶部形态
           if (matchParsed.top && tRange > 0) {
@@ -149,25 +148,29 @@ function handleMatch(
             }
           }
 
-          current += width / 2
+          current += matchDepth / 2
           const restoreMatrix = new Matrix4().makeRotationZ(-radian)
 
           // pair 为每个step代表中线的交点
-          pairs.forEach((pair) => {
+          data.pairs.forEach((pair) => {
             // 随机颜色须每个单独sample
-            const color = sample(data.color, seed) || DEFAULT_COLOR
-            const matrix = applyTransform(data, new Matrix4().makeScale(pair.width, width, height))
+            // const mtx = applyTransform(data, new Matrix4().makeScale(pair.width, width, height))
+            //   .premultiply(
+            //     TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
+            //   )
+            //   .premultiply(restoreMatrix)
+
+            const mtx = new Matrix4().makeScale(pair.width, matchDepth, height)
+            applyTransform(data, mtx, TEMP)
+            mtx
               .premultiply(
                 TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
               )
               .premultiply(restoreMatrix)
-
-            const saveAs: magizTypes.instancedData = result.data[color.glass ? 'boxGlass' : 'box']
-            saveAs.matrices.push(matrix.toArray())
-            saveAs.colors.push(color.index)
+            pushInstancedData(result, seed, data.colorID, mtx)
           })
         } else {
-          current += width
+          current += matchDepth
         }
       }
     })
@@ -257,18 +260,14 @@ function handleBoxInside(
             // 计算元素的高度，面积越大(i越大)高度越低
             h *= 1 - i * heightStep
 
-            let matrix = new Matrix4().premultiply(TEMP.makeScale(w, props.d, h))
-
-            matrix = applyTransform(data, matrix)
+            const mtx = new Matrix4().premultiply(TEMP.makeScale(w, props.d, h))
+            applyTransform(data, mtx, TEMP)
+            mtx
               .premultiply(
                 TEMP.makeTranslation(props.x + moveX, props.y + moveY, elevation + h / 2)
               )
               .premultiply(TEMP.makeRotationZ(-radian))
-
-            const color = sample(data.color, seed) || DEFAULT_COLOR
-            const saveAs: magizTypes.instancedData = result.data[color.glass ? 'boxGlass' : 'box']
-            saveAs.matrices.push(matrix.toArray())
-            saveAs.colors.push(color.index)
+            pushInstancedData(result, seed, data.colorID, mtx)
           }
         }
       })
@@ -290,16 +289,12 @@ function handleAdjunct(
       const point = isOnEdge ? randomPointOnEdge(rays, seed) : randomPointInPolygon(rays, seed)
       if (point) {
         boxes.forEach((box) => {
-          const color = sample(box.color, seed) || DEFAULT_COLOR
-          const matrix = new Matrix4()
+          const mtx = new Matrix4()
             .makeTranslation(0, 0, 0.5)
             .premultiply(TEMP.makeScale(box.x, box.y, box.z))
-          applyTransform(box, matrix).premultiply(
-            TEMP.makeTranslation(point.x, point.y, elevation)
-          )
-          const saveAs: magizTypes.instancedData = result.data[color.glass ? 'boxGlass' : 'box']
-          saveAs.matrices.push(matrix.toArray())
-          saveAs.colors.push(color.index)
+          applyTransform(box, mtx, TEMP)
+          mtx.premultiply(TEMP.makeTranslation(point.x, point.y, elevation))
+          pushInstancedData(result, seed, box.colorID, mtx)
         })
       }
     }
@@ -413,15 +408,14 @@ function handleExtrudeByMatch(
   width: number
 ) {
   parsed.forEach((extrudeParams) => {
-    const { color, transform, height, thickness, elevation } = extrudeParams
-    const sampleColor = sample(color, seed) || DEFAULT_COLOR
+    const { colorID, transform, height, thickness, elevation } = extrudeParams
     const matrix = new Matrix4()
-
     if (thickness) {
       // 按偏移后的边线用box构成围墙
       const moveY = thickness < 0 ? -0.5 : 0.5
       const moveZ = height < 0 ? -0.5 : 0.5
-      const saveAs = result.data[sampleColor.glass ? 'boxGlass' : 'box']
+      const { index, glass } = sample(colorID, seed)!
+      const saveAs = result.data[glass ? 'boxGlass' : 'box']
       rays.forEach((loop) => {
         loop.forEach((ray) => {
           const boxMatrix = matrix.clone()
@@ -431,13 +425,10 @@ function handleExtrudeByMatch(
               TEMP.makeScale(ray.direction.length(), Math.abs(thickness), Math.abs(height))
             )
             .premultiply(TEMP.makeRotationZ(ray.direction.angle()))
-
-          applyTransform(extrudeParams, boxMatrix).premultiply(
-            TEMP.makeTranslation(ray.start.x, ray.start.y, elevation)
-          )
-
+          applyTransform(extrudeParams, boxMatrix, TEMP)
+          boxMatrix.premultiply(TEMP.makeTranslation(ray.start.x, ray.start.y, elevation))
           saveAs.matrices.push(boxMatrix.toArray())
-          saveAs.colors.push(sampleColor.index)
+          saveAs.colors.push(index)
         })
       })
     } else {
@@ -445,7 +436,7 @@ function handleExtrudeByMatch(
       const parsedMatchParams: styleParsed.match[] = [
         {
           along: 'WIDTH',
-          flexes: [{ shrink: 0, width, height, transform, color }],
+          flexes: [{ shrink: 0, width, height, transform, colorID }],
           elevation,
           sandwich: false,
           top: undefined,

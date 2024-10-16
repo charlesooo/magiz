@@ -5,11 +5,12 @@ import {
   EquirectangularReflectionMapping,
 } from 'three'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'
+import { presetFaceMaterials } from './materials'
 
-import { presetMaterials } from './materials'
+export { addEnvMap }
 
 /** 为 glassMaterial 添加环境光反射效果 */
-export default function addEnvMap(renderer: WebGLRenderer, exrFile: string) {
+function addEnvMap(renderer: WebGLRenderer, exrFile: string) {
   const pmremGenerator = new PMREMGenerator(renderer)
 
   try {
@@ -19,7 +20,7 @@ export default function addEnvMap(renderer: WebGLRenderer, exrFile: string) {
 
       // 背景设为环境贴图
       // this.playing.scene.background = texture
-      const m = presetMaterials.face['Glass | 玻璃']
+      const m = presetFaceMaterials.glass
       m.envMap = exrCubeRenderTarget.texture
       m.roughness = 0.1
       m.metalness = 1

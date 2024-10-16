@@ -4,33 +4,30 @@ import { degToRad } from 'three/src/math/MathUtils.js'
 import type { temp } from '../types/temp'
 import type { styleParsed } from '../types/stylesParsed'
 
-export { TEMP, DEFAULT_COLOR, applyTransform, handleFacadeElements }
+export { TEMP, applyTransform, handleFacadeElements }
 
 /** 计算过程中的缓存矩阵 */
 const TEMP = new Matrix4()
-
-/** 默认的颜色参数 */
-const DEFAULT_COLOR: styleParsed.colorType = { index: 0, glass: false }
 
 /** 应用 styleParsed.status.transform 到 matrix */
 function applyTransform(
   status: styleParsed.status,
   matrix: Matrix4,
+  temp: Matrix4,
   /** facade 调用时可能需要根据比例缩放x轴移动距离 */
   xRatio = 1
-) {
+): void {
   status.transform?.forEach((t) => {
     if ('rotateX' in t) {
-      matrix.premultiply(TEMP.makeRotationX(degToRad(t.rotateX)))
+      matrix.premultiply(temp.makeRotationX(degToRad(t.rotateX)))
     } else if ('rotateY' in t) {
-      matrix.premultiply(TEMP.makeRotationY(degToRad(t.rotateY)))
+      matrix.premultiply(temp.makeRotationY(degToRad(t.rotateY)))
     } else if ('rotateZ' in t) {
-      matrix.premultiply(TEMP.makeRotationZ(degToRad(t.rotateZ)))
+      matrix.premultiply(temp.makeRotationZ(degToRad(t.rotateZ)))
     } else {
-      matrix.premultiply(TEMP.makeTranslation(t.moveX * xRatio, t.moveY, t.moveZ))
+      matrix.premultiply(temp.makeTranslation(t.moveX * xRatio, t.moveY, t.moveZ))
     }
   })
-  return matrix
 }
 
 /** 根据 styleParsed.box 生成 matrix 与颜色，作为facade元素时x相关数值须进行缩放 */
@@ -58,11 +55,9 @@ function setFacadeBox(
     z = -z
   }
   matrix.premultiply(TEMP.makeScale(x * xRatio, y, z))
+  applyTransform(box, matrix, TEMP, xRatio)
 
-  return {
-    matrix: applyTransform(box, matrix, xRatio),
-    color: box.color || [DEFAULT_COLOR],
-  }
+  return { matrix, colorID: box.colorID }
 }
 
 /** 处理facade中的构成元素(Box或FlexBox)，返回matrix和color，如果有尺寸为0返回空值 */
@@ -81,7 +76,7 @@ function handleFacadeElements(
           y: box.width,
           z: box.height,
           transform: box.transform,
-          color: box.color,
+          colorID: box.colorID,
         },
         xRatio,
         true

@@ -1,7 +1,7 @@
 // const outDir = './dist/'
 const outDir = 'D:/Works/magiz-demo/dist/'
 const outMagiz = outDir + 'magiz.module.min.js'
-const outWeb3D = outDir + 'web3D.module.min.js'
+const outWeb3D = outDir + 'view.module.min.js'
 const outWeb2D = outDir + 'web2D.module.min.js'
 
 
@@ -55,7 +55,7 @@ build({
 });
 
 build({
-  entryPoints: ['src/web3DClass/web3D.ts'],
+  entryPoints: ['src/viewClass/view.ts'],
   bundle: true,
   minify: true,
   format: 'esm',

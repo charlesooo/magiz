@@ -1,8 +1,10 @@
 import { Vector3, MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
-import View from '../web3DClass/view'
+import View from '../viewClass/view'
+
+export { setMovingMaterial }
 
 /** 用于生成模型和相机均固定但视觉上匀速平移的场景 */
-export default function setMovingMaterial(
+function setMovingMaterial(
   view: View,
   faceMaterial: MeshLambertMaterial,
   glassMaterial: MeshStandardMaterial,

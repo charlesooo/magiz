@@ -1,7 +1,20 @@
+import { MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
 import type { styleTypes } from './style'
 
 export namespace magizTypes {
-  /** web3D初始化和默认的参数类型 */
+  type presetGlassFaceType = '_GLASS'
+  type presetSolidFaceType = '_CONCRETE' | '_METAL' | '_WOOD' | '_BRICK' | '_ROOF' | 'GROUND'
+  type presetLineType = 'EDGE'
+
+  type remapColor = {
+    face: { [prop in presetSolidFaceType | presetGlassFaceType]: string }
+    line: { [prop in presetLineType]: string }
+    other: { SKY: string }
+    // 其他自定义的face映射
+    faceCustom?: { from: string; to: string }[]
+  }
+
+  /** view初始化和默认的参数类型 */
   type webOptions = {
     /** 相机位置坐标 */
     cameraPosition: [x: number, y: number, z: number]
@@ -20,13 +33,15 @@ export namespace magizTypes {
     shadow: boolean
   }
 
-  type webRefreshOptions = {
+  type generateOptions = {
     /** 生成白模 */
     grayScale: boolean
     /** 生成边线 */
     showEdge: boolean
     /** 模型按原位生成 */
     inplace: boolean
+    /** 颜色重映射 */
+    remap: remapColor
   }
 
   type tagsDataType = {
@@ -42,6 +57,49 @@ export namespace magizTypes {
     /** 免费样式，始终可用 */
     free: string[]
   }
+
+  /** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */
+  type instancedData = {
+    /** 由16位矩阵构成的数组 */
+    matrices: number[][]
+    /** 颜色索引，对应 rawBuilding.colorMap 中的序号（从数组选中一个序号，如包含了多个表示随机颜色） */
+    colors: number[]
+  }
+
+  /** 模型数据 */
+  type rawBuilding = {
+    /** 建筑生成参数 */
+    params: styleParams
+    /** 建筑模型的经济技术指标 (建筑高度保存在 params) */
+    info: { floorArea: number; floors: number }
+
+    /** 将中心重置到原点并将长边对齐X轴后的平面坐标点 */
+    points: [x: number, y: number][][]
+    /** 还原模型时原平面中心点坐标 */
+    center: [x: number, y: number]
+    /** 重置后的平面中心点坐标，生成多个时可能不在原点 */
+    centerRelative: [x: number, y: number]
+    /** 还原模型时绕Z轴旋转的弧度 */
+    rotate: number
+
+    /** instancedMesh元素的颜色和矩阵数据 */
+    data: {
+      box: instancedData
+      boxGlass: instancedData
+      sloping: instancedData
+      slopingGlass: instancedData
+    }
+  }
+
+  /** 从平面生成模型的全部数据 */
+  type rawData = {
+    /** 模型所用到的全部颜色值，用于索引和统一管理 */
+    colorMap: string[]
+    /** 模型数据 */
+    models: rawBuilding[]
+  }
+
+  ////////////////////////// request /////////////////////////
 
   /** 解析请求 */
   type request = {
@@ -77,54 +135,7 @@ export namespace magizTypes {
     elevation: number
     /** 随机数种子，0表示使用随机值 */
     seed: number
-    /** 平面拟合的宽度 */
-    matchSpacing: number
-  }
-
-  /** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */
-  type instancedData = {
-    /** 由16位矩阵构成的数组 */
-    matrices: number[][]
-    /** 颜色索引，对应 magizTypes.rawBuilding.colorMap 中的序号（从数组选中一个序号，如包含了多个表示随机颜色） */
-    colors: number[]
-  }
-
-  /** 模型数据 */
-  type rawBuilding = {
-    /** 建筑生成参数 */
-    params: styleParams
-    /** 建筑模型的经济技术指标 (建筑高度保存在 params) */
-    info: {
-      /** 建筑面积 */
-      floorArea: number
-      /** 建筑层数 */
-      floors: number
-    }
-
-    /** 将中心重置到原点并将长边对齐X轴后的平面坐标点 */
-    points: [x: number, y: number][][]
-
-    /** 还原模型时原平面中心点坐标 */
-    center: [x: number, y: number]
-    /** 重置后的平面中心点坐标，生成多个时可能不在原点 */
-    centerRelative: [x: number, y: number]
-    /** 还原模型时绕Z轴旋转的弧度 */
-    rotate: number
-
-    /** instancedMesh元素的颜色和矩阵数据 */
-    data: {
-      box: instancedData
-      boxGlass: instancedData
-      sloping: instancedData
-      slopingGlass: instancedData
-    }
-  }
-
-  /** 从平面生成模型的全部数据 */
-  type rawData = {
-    /** 模型所用到的全部颜色值，用于索引和统一管理 */
-    colorMap: string[]
-    /** 模型数据 */
-    models: rawBuilding[]
+    /** 平面拟合的宽度，为0则不进行拟合 */
+    match: number
   }
 }

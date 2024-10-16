@@ -1,3 +1,5 @@
+import type { magizTypes } from './magizTypes'
+
 export namespace styleTypes {
   /** 参数可以是数字或代表公式的字符串 */
   type ns = number | string
@@ -10,6 +12,7 @@ export namespace styleTypes {
   type alongType = 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number
   type randomPlaceType = 'EDGE' | 'AREA'
   type paymentType = 'FREE' | 'BASIC'
+  type colorType = magizTypes.presetSolidFaceType | magizTypes.presetGlassFaceType | string
 
   /** 按总长度等比限定生成范围 */
   type paddingType = {
@@ -66,8 +69,8 @@ export namespace styleTypes {
 
   /** 所有体块的基本状态参数 */
   type status = {
-    /** 定义材质。字符串空格前颜色值，空格后表示玻璃还是实墙（默认为实墙），如: '#ff0000 G'，默认的玻璃材质表示为 'G'。也可以用数组表示随机颜色。 */
-    color?: string | string[]
+    /** 定义材质的颜色值，以"G"结尾表示玻璃（默认为实墙），如: '#ff0000 G' 或 'G'。也可以用数组表示随机颜色。 */
+    color?: colorType | colorType[]
     /** 轴向的旋转和移动组合 */
     transform?: transformType[]
   }
@@ -255,10 +258,8 @@ export namespace styleTypes {
       // 不考虑检查线段长度，通过算法保证长度不足时跳过生成
     }[]
 
-    ///////////////////////////////////////////////////////////////
-
     /** 引用预设样式，非解析参数 */
-    preset?: presetParamsType[]
+    preset?: floorPreset[]
 
     /** 从平面挤出体块 */
     extrude?: extrude[]
@@ -274,6 +275,16 @@ export namespace styleTypes {
     boxInside?: boxInside[]
     /** 在平面内生成box组成的构件 */
     adjunct?: adjunct[]
+  }
+  type floorPreset = {
+    /** 重定义预设的单位 */
+    unit?: { [key: string]: ns }
+    /** 重定义预设的颜色 */
+    color?: { [key: string]: string | string[] }
+    /** 按关键词随机引用样式 */
+    key?: string
+    /** 预设样式的名称 */
+    name?: string
   }
 
   /** 通过 mod.floor = 1 实现单层生成体块，sections只实现在垂直方向上分段，因此没有basic属性 */
@@ -306,34 +317,22 @@ export namespace styleTypes {
     }
   }
 
-  type preset = {
+  /** 自定义样式 */
+  type styles = {
+    /** 可重复利用的预设样式，基本格式：{ [name: string]: { floor: floor[] } } */
+    preset: {
+      /** 样式名称 */
+      [name: string]: stylePreset
+    }
+    /** 建筑样式 */
+    building: { [name: string]: style }
+  }
+  type stylePreset = {
     /** 预设样式变量的默认值 */
     unit?: { [key: string]: ns }
     /** 预设样式颜色的默认值 */
     color?: { [key: string]: string | string[] }
     /** 预设样式的参数组合 */
     floor: floor[]
-  }
-
-  type presetParamsType = {
-    /** 重定义预设的单位 */
-    unit?: { [key: string]: ns }
-    /** 重定义预设的颜色 */
-    color?: { [key: string]: string | string[] }
-    /** 按关键词随机引用样式 */
-    key?: string
-    /** 预设样式的名称 */
-    name?: string
-  }
-
-  /** 自定义样式 */
-  type styles = {
-    /** 可重复利用的预设样式，基本格式：{ [name: string]: { floor: floor[] } } */
-    preset: {
-      /** 样式名称 */
-      [name: string]: preset
-    }
-    /** 建筑样式 */
-    building: { [name: string]: style }
   }
 }

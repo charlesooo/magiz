@@ -1,7 +1,6 @@
 import { Vector2, Matrix4 } from 'three'
-import { sample } from './handleMath'
-import { Seed } from './utils'
-import { TEMP, DEFAULT_COLOR, applyTransform } from './handleBasic'
+import { Seed, pushInstancedData } from './utils'
+import { TEMP, applyTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
@@ -16,21 +15,17 @@ function handleSlopingRoof(
   seed: Seed
 ) {
   parsed.forEach((roofParams) => {
-    const { color, height, overhang, elevation } = roofParams
+    const { height, overhang, elevation } = roofParams
     const { min, max } = bounds
-    const sampleColor = sample(color, seed) || DEFAULT_COLOR
-    const matrix = new Matrix4().makeScale(
+
+    const mtx = new Matrix4().makeScale(
       max.x - min.x + overhang * 2,
       max.y - min.y + overhang * 2,
       Math.abs(height)
     )
+    applyTransform(roofParams, mtx, TEMP)
+    mtx.premultiply(TEMP.makeTranslation(min.x - overhang, min.y - overhang, elevation))
 
-    applyTransform(roofParams, matrix).premultiply(
-      TEMP.makeTranslation(min.x - overhang, min.y - overhang, elevation)
-    )
-
-    const saveAs = result.data[sampleColor.glass ? 'slopingGlass' : 'sloping']
-    saveAs.matrices.push(matrix.toArray())
-    saveAs.colors.push(sampleColor.index)
+    pushInstancedData(result, seed, roofParams.colorID, mtx)
   })
 }

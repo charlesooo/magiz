@@ -1,13 +1,14 @@
 import Mexp from 'math-expression-evaluator'
-import { Seed, passControl } from '../planClass/utils'
-import { sample } from '../planClass/handleMath'
-import mergeStyles from './merge'
+import { sample, Seed, passControl } from '../planClass/utils'
+import { mergeStyles } from './merge'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleTypes } from '../types/style'
 import type { styleParsed } from '../types/stylesParsed'
 
-const mexp = new Mexp()
+export { StyleHandler }
+
+const evaluator = new Mexp()
 
 /** 解析时全局缓存的字典 */
 const GLOBAL: {
@@ -20,15 +21,15 @@ const GLOBAL: {
   COLOR_PRESET: {},
 }
 
-/** 解析时全局临时缓存的结果 */
+/** 全局缓存的解析结果，以便拆分函数 */
 const RESULT: styleParsed.result = {
-  colorMap: [],
+  globalColorMap: [],
   floorCount: 0,
   classified: [],
 }
 
 /** 用于管理多个样式文件的样式库类 */
-export default class StyleHandler {
+class StyleHandler {
   /** 受保护的默认样式 Blocks */
   Blocks: styleTypes.style
   /** 整合后的样式参数 */
@@ -52,12 +53,13 @@ export default class StyleHandler {
     this.merge(styles)
   }
 
-  isValid(name: string, reg: boolean) {
+  /** 输入注册状态，检查样式是否可用 */
+  isValid(name: string, regState: boolean) {
     if (name === 'Blocks') {
       return true
     } else {
       const found = this.data.building[name]
-      return found && (found.type === 'FREE' || reg) ? true : false
+      return found && (found.type === 'FREE' || regState) ? true : false
     }
   }
 
@@ -72,8 +74,7 @@ export default class StyleHandler {
     const result: magizTypes.styleOptions = { paid: [], free: ['Blocks'] }
     const b = this.data.building
     for (const n in b) {
-      const s = b[n] as styleTypes.style
-      s.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
+      b[n]!.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
     }
     return result
   }
@@ -82,12 +83,13 @@ export default class StyleHandler {
   parseStyle(
     /** 控制解析的参数 */
     styleParams: magizTypes.styleParams,
-    /** 全局随机种子 */
-    seed: Seed,
-    /** 如有，按自定义样式 */
-    customStyles?: styleTypes.styles
+    /** 全局共用随机种子以避免碰撞 */
+    globalSeed: Seed,
+    /** 全局缓存 colorMap 以便正确索引 */
+    globalColorMap: string[]
   ): styleParsed.result {
-    RESULT.colorMap = ['#eee', '#bdf G']
+    // 全局缓存colorMap指针
+    RESULT.globalColorMap = globalColorMap
     RESULT.floorCount = 0
     RESULT.classified = []
 
@@ -98,13 +100,12 @@ export default class StyleHandler {
     const elevation = Number(styleParams.elevation || 0)
 
     // 设置随机数种子
-    seed.set(Number(styleParams.seed || 0) || Math.round(Math.random() * 100000))
+    globalSeed.set(Number(styleParams.seed || 0) || Math.round(Math.random() * 100000))
 
-    // 优先按 customStyles 解析
     const styleSelected =
       !styleParams.style || styleParams.style === 'Blocks'
         ? this.Blocks
-        : customStyles?.building[styleParams.style] || this.data.building[styleParams.style]
+        : this.data.building[styleParams.style]
 
     if (styleSelected) {
       /** 内部全局变量，保存解析公式所需的单位 */
@@ -127,9 +128,9 @@ export default class StyleHandler {
       bsh = height - rsh - msh
       bfh = bsh / Math.floor(bsh / bfh)
 
-      parseSection(ss.bottom, false, customStyles, this, elevation, bsh, bfh, seed)
-      parseSection(ss.middle, false, customStyles, this, elevation + bsh, msh, mfh, seed)
-      parseSection(ss.roof, true, customStyles, this, elevation + height - rsh, rsh, rfh, seed)
+      parseSection(ss.bottom, false, this, elevation, bsh, bfh, globalSeed)
+      parseSection(ss.middle, false, this, elevation + bsh, msh, mfh, globalSeed)
+      parseSection(ss.roof, true, this, elevation + height - rsh, rsh, rfh, globalSeed)
     } else {
       console.warn(`${styleParams.style} is invalid, returned empty data`)
     }
@@ -143,23 +144,10 @@ export default class StyleHandler {
 
 /** 解析包含 styleTypes.status 的参数 */
 function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.status & MORE {
-  let colors: string[] = []
-  const c = status.color
-  if (c) {
-    // 仅当字符串时检查是否有预设
-    if (typeof c === 'string') {
-      const pc = GLOBAL.COLOR_PRESET[c]
-      if (pc) {
-        // 如果有对应预设，按预设的颜色值
-        colors = typeof pc === 'string' ? [pc] : pc
-      } else {
-        colors.push(c)
-      }
-    } else {
-      colors = c
-    }
-  }
-
+  let c = status.color
+  // c 可能为预设的颜色名称，先进行解析
+  if (typeof c === 'string') c = GLOBAL.COLOR_PRESET[c] || c
+  const colors = !c ? [''] : typeof c === 'string' ? [c] : c
   return Object.assign(
     {
       transform: status.transform
@@ -179,23 +167,30 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
             }
           })
         : [],
-      color: colors.map((c) => {
-        /** 在colorMap中的序号 */
-        let index = 0
-        let glass = false
-        if (c === 'G') {
-          // 默认的玻璃材质
-          index = 1
-          glass = true
-        } else {
-          glass = /G$/i.test(c)
-          index = RESULT.colorMap.indexOf(c)
-          if (index < 0) {
-            index = RESULT.colorMap.length
-            RESULT.colorMap.push(c)
-          }
+      colorID: colors.map((c) => {
+        const isPresetGlass = /^_GLASS$/.test(c)
+        const cv = isPresetGlass
+          ? '#26f'
+          : /^_CONCRETE$/.test(c)
+          ? '#eee'
+          : /^_METAL$/.test(c)
+          ? '#666'
+          : /^_WOOD$/.test(c)
+          ? '#866'
+          : /^_BRICK$/.test(c)
+          ? '#e99'
+          : /^_ROOF$/.test(c)
+          ? '#333'
+          : /^GROUND$/.test(c)
+          ? '#bbb'
+          : c.replace(/ *G$/, '')
+        // 颜色先加入 colorMap 再从中索引
+        let index = RESULT.globalColorMap.indexOf(cv)
+        if (index < 0) {
+          index = RESULT.globalColorMap.length
+          RESULT.globalColorMap.push(cv)
         }
-        return { index, glass }
+        return { index, glass: isPresetGlass || /G$/i.test(c) }
       }),
     },
     data
@@ -245,7 +240,6 @@ function parseBoxFlex(boxFlex: styleTypes.boxFlex): styleParsed.boxFlex {
 function parseSection(
   section: styleTypes.section | undefined,
   isRoof: boolean,
-  customStyles: styleTypes.styles | undefined,
   styles: StyleHandler,
   sectionElevation: number,
   sectionHeight: number,
@@ -269,67 +263,61 @@ function parseSection(
 
         // 带入参数解析预设样式
         floorParams.preset?.forEach((floorPresetParams) => {
-          const { name, key, unit, color } = floorPresetParams
+          const { name, key } = floorPresetParams
           try {
             /** 预设样式 */
-            let presetData: styleTypes.preset | undefined
-
+            let foundStylePreset: styleTypes.stylePreset | undefined
+            // 先搜索对应名称的样式数据
             if (name) {
               // 按名字指定预设样式
-              presetData = customStyles?.preset[name] || styles.data.preset[name]
+              foundStylePreset = styles.data.preset[name]
             } else if (key) {
-              // 按关键词随机选择预设样式
-              if (customStyles) {
-                const names = Object.keys(customStyles.preset).filter((n) => n.includes(key))
-                if (names.length > 0) {
-                  presetData = customStyles.preset[sample(names, seed) as string]
-                }
-              }
-
-              // 无自定义，或自定义中没有找到预设，在默认中查找
-              if (!presetData) {
+              // 按包含的关键词指定预设样式
+              if (!foundStylePreset) {
                 const names = Object.keys(styles.data.preset).filter((n) => n.includes(key))
                 if (names.length > 0) {
-                  presetData = styles.data.preset[sample(names, seed) as string]
+                  foundStylePreset = styles.data.preset[sample(names, seed)!]
                 }
               }
             }
 
             // 仅在预设参数范围内更新数值
-            if (presetData) {
-              if (presetData.unit) {
+            if (foundStylePreset) {
+              // 将预设的单位换算缓存到全局变量中
+              if (foundStylePreset.unit) {
                 GLOBAL.UNITS_PRESET = {}
-                if (unit) {
-                  for (const key in presetData.unit) {
-                    const inputUnit = unit[key]
+                // 样式逻辑： floorPreset 中的参数须覆盖 stylePreset 中的参数
+                if (floorPresetParams.unit) {
+                  for (const key in foundStylePreset.unit) {
+                    const inputUnit = floorPresetParams.unit[key]
                     GLOBAL.UNITS_PRESET[key] = parse(
-                      // 避免值为 0 时不被解析
-                      inputUnit !== undefined ? inputUnit : presetData.unit[key]
+                      // BUG FIXED: 避免值为 0 时不被解析
+                      inputUnit !== undefined ? inputUnit : foundStylePreset.unit[key]
                     )
                   }
                 } else {
-                  for (const key in presetData.unit) {
-                    GLOBAL.UNITS_PRESET[key] = parse(presetData.unit[key])
+                  for (const key in foundStylePreset.unit) {
+                    GLOBAL.UNITS_PRESET[key] = parse(foundStylePreset.unit[key])
                   }
                 }
               }
-
-              if (presetData.color) {
+              // 将预设的颜色值缓存到全局变量中
+              if (foundStylePreset.color) {
                 GLOBAL.COLOR_PRESET = {}
-                // 如果输入的参数中有color
-                if (color) {
-                  for (const key in presetData.color) {
-                    GLOBAL.COLOR_PRESET[key] =
-                      color[key] || (presetData.color[key] as string | string[])
+                // 样式逻辑： floorPreset 中的参数须覆盖 stylePreset 中的参数
+                if (floorPresetParams.color) {
+                  for (const key in foundStylePreset.color) {
+                    GLOBAL.COLOR_PRESET[key] = (floorPresetParams.color[key] ||
+                      foundStylePreset.color[key])!
                   }
                 } else {
-                  for (const key in presetData.color) {
-                    GLOBAL.COLOR_PRESET[key] = presetData.color[key] as string | string[]
+                  for (const key in foundStylePreset.color) {
+                    GLOBAL.COLOR_PRESET[key] = foundStylePreset.color[key]!
                   }
                 }
               }
 
-              presetData.floor.forEach((f) => {
+              foundStylePreset.floor.forEach((f) => {
                 // 创建预设的深拷贝
                 const fp = Object.assign({}, f)
                 // 如果父级参数有除生成体块外的其他部分，与预设进行整合，以便在预设基础上增加自定义
@@ -751,7 +739,7 @@ function parse(ns?: styleTypes.ns): number {
     ns = replaceUnit(ns, GLOBAL.UNITS_PRESET)
 
     try {
-      n = mexp.eval(ns)
+      n = evaluator.eval(ns)
       // n = eval(ns)
     } catch (error) {
       console.log('[parse fomula]', error, ns, GLOBAL.UNITS, GLOBAL.UNITS_PRESET)

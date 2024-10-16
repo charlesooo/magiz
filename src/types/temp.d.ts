@@ -24,7 +24,7 @@ export namespace temp {
 
   type box = {
     matrix: Matrix4
-    color: styleParsed.colorType[]
+    colorID: styleParsed.colorDataType[]
   }
 
   type match = styleParsed.status & {

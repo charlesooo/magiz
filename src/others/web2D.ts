@@ -1,31 +1,33 @@
-import WEB3D from '../web3DClass/web3D'
+import { View } from '../viewClass/view'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 
 import type { magizTypes } from '../types/magizTypes'
 
+export { Web2D }
+
 const far = 400
 const near = 300
 
-/** 辅助WEB3D显示文字图片信息的渲染器 */
-export default class Web2D {
+/** 辅助View显示文字图片信息的渲染器 */
+class Web2D {
   /** 创建的 Three.js 渲染器实例 */
   renderer: CSS2DRenderer
   /** 缓存生成的对象 */
   tags: CSS2DObject[]
-  /** 绑定 WEB3D */
-  web3D: WEB3D
+  /** 绑定 View */
+  view: View
 
   constructor(
     /** 通过querySelector绑定到Div */
     divID: string,
-    web3D: WEB3D
+    view: View
   ) {
-    this.web3D = web3D
-    web3D.playing.animations['renderMagizTags'] = () => this.render()
+    this.view = view
+    view.animations['renderMagizTags'] = () => this.render()
 
-    const dom = document.querySelector(divID)
+    const dom = document.querySelector<HTMLElement>(divID)
     if (!dom) throw 'ERROR: invalid parentCSSID'
-    this.renderer = new CSS2DRenderer({ element: dom as HTMLElement })
+    this.renderer = new CSS2DRenderer({ element: dom })
     this.tags = []
 
     this.resizeScene()
@@ -43,9 +45,9 @@ export default class Web2D {
   }
 
   render() {
-    if (this.web3D) {
-      const cmr = this.web3D.camera
-      this.renderer.render(this.web3D.playing.scene, cmr)
+    if (this.view) {
+      const cmr = this.view.camera
+      this.renderer.render(this.view.scene, cmr)
 
       this.tags.forEach((t) => {
         const d = t.position.distanceTo(cmr.position)
@@ -66,8 +68,8 @@ export default class Web2D {
     this.tags.forEach((o) => o.removeFromParent())
     this.tags.length = 0
 
-    const { web3D } = this
-    if (web3D) {
+    const { view } = this
+    if (view) {
       data.forEach((d) => {
         const div = document.createElement('div')
         div.className = 'magizTag'
@@ -75,7 +77,7 @@ export default class Web2D {
         const o = new CSS2DObject(div)
         o.position.set(...d.position)
         o.center.set(0.5, 0.5)
-        web3D.playing.scene.add(o)
+        view.scene.add(o)
         this.tags.push(o)
       })
     }

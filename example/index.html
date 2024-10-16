@@ -26,12 +26,12 @@
   </script>
 <script type="module">
   import { Plan, STYLES, styles } from '../dist/magiz.module.min.js'
-  import Web3D from '../dist/web3D.module.min.js'
+  import Web3D from '../dist/view.module.min.js'
 
   // 初始化场景
-  const web3D = new Web3D('#magiz')
+  const view = new Web3D('#magiz')
   // 设置镜头
-  web3D.camera.position.set(100, 50, 100)
+  view.camera.position.set(100, 50, 100)
 
   // 控制建筑样式的参数
   const params = {
@@ -57,9 +57,9 @@
   // 定义一个对象存放生成的数据
   const data = { colorMap: [], models: [] }
   // 建筑平面按样式库生成建筑模型数据
-  plan.toModel(data, styles, { x: 0, y: 0 })
+  plan.toRawModel(data, styles, { x: 0, y: 0 })
   // 用模型数据更新场景
-  web3D.refresh(data, { grayScale: false, showEdge: true })
+  view.refresh(data, { grayScale: false, showEdge: true })
 </script>
 
 </html>

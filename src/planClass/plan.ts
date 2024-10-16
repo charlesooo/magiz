@@ -12,15 +12,16 @@ import {
   handleExtrudeByMatch,
 } from './handleMatchRelated'
 import { offsetRays, rectClampRays } from './handleRays'
-import STYLES from '../styleClass/styles'
+import { StyleHandler } from '../styleClass/styles'
 
 import type { magizTypes } from '../types/magizTypes'
-import type { styleTypes } from '../types/style'
 import type { styleParsed } from '../types/stylesParsed'
 import type { temp } from '../types/temp'
 
+export { Plan }
+
 /** 建筑平面类，包括用于生成模型的相关数据和方法 */
-export default class Plan {
+class Plan {
   /** 每个平面对应一个随机数种子 */
   seed: Seed
   /** 建筑模型生成的参数 */
@@ -57,7 +58,7 @@ export default class Plan {
       // 计算面积
       this.area = ShapeUtils.area(outterLoop)
       for (let i = 1; i < this.orignal.length; i++) {
-        const loop = this.orignal[i] as Vector2[]
+        const loop = this.orignal[i]!
         if (!ShapeUtils.isClockWise(loop)) loop.reverse()
         this.area -= ShapeUtils.area(loop)
       }
@@ -65,7 +66,7 @@ export default class Plan {
       // 计算外边线的矢量，寻找外边线最长的那段
       const longest = new Vector2()
       outterLoop.forEach((current, i) => {
-        const next = outterLoop[i + 1 === outterLoop.length ? 0 : i + 1] as Vector2
+        const next = outterLoop[i + 1 === outterLoop.length ? 0 : i + 1]!
         const v = new Vector2().subVectors(next, current)
         if (v.length() > longest.length()) longest.copy(v)
       })
@@ -79,14 +80,14 @@ export default class Plan {
         loop.map((v2) => v2.sub(this.center).rotateAround(origin, -radian))
       )
 
-      const { min, max } = getBounds(relativePoints[0] as Vector2[])
+      const { min, max } = getBounds(relativePoints[0]!)
       this.relative = {
         radian,
         bounds: { min, max },
         size: { x: max.x - min.x, y: max.y - min.y },
         rays: relativePoints.map((loop) =>
           loop.map((start, i) => {
-            const end = loop[i + 1 === loop.length ? 0 : i + 1] as Vector2
+            const end = loop[i + 1 === loop.length ? 0 : i + 1]!
             const direction = end.clone().sub(start)
             return { start, end, direction }
           })
@@ -103,7 +104,7 @@ export default class Plan {
         floorHeight: 3,
         elevation: 0,
         seed: 0,
-        matchSpacing: 2,
+        match: 2,
       },
       input.params
     )
@@ -118,7 +119,7 @@ export default class Plan {
     outerOnly: boolean,
     rotate?: number
   ): temp.ray[][] {
-    const outter = this.relative.rays[0] as temp.ray[]
+    const outter = this.relative.rays[0]!
     let rays = outerOnly ? [outter] : this.relative.rays
 
     // 计算整体尺寸
@@ -196,24 +197,14 @@ export default class Plan {
     return rays
   }
   /** 按样式库生成建筑模型数据 */
-  toModel(
+  toRawModel(
+    /** 批量生成时统一缓存到 result */
     result: magizTypes.rawData,
     centerOfAll: { x: number; y: number },
-    styles: STYLES,
-    customStyles: styleTypes.styles | undefined,
-    /** 重映射颜色，用于生成controlNet */
-    remapColor: { in: string; out: string }[] | undefined
+    styles: StyleHandler
   ): magizTypes.rawBuilding {
     // 将结果保存到公共变量，以便同时处理多个plan生成
-    const { colorMap, models } = result
-    const styleParsed = styles.parseStyle(this.styleParams, this.seed, customStyles)
-
-    // 将该plan的colorMap合并到 result.colorMap
-    styleParsed.colorMap.forEach((c) => {
-      // 重映射颜色值
-      const color = remapColor?.find((rm) => rm.in === c)?.out || c
-      if (!colorMap.includes(color)) colorMap.push(color)
-    })
+    const styleParsed = styles.parseStyle(this.styleParams, this.seed, result.colorMap)
 
     // 按相对坐标还是源坐标生成
     const building: magizTypes.rawBuilding = {
@@ -235,22 +226,20 @@ export default class Plan {
     styleParsed.classified.forEach((s) => {
       // 保留包含内部孔洞的数据格式，但暂时只处理外边线
       const rays = this.getEdges(s.edgeParams, seed, true)
-
       if (rays[0] && rays[0].length > 0) {
-        const bounds = getBounds(rays[0].map((r) => r.start))
-
-        handleExtrudeByMatch(s.extrude, rays, building, seed, this.styleParams.matchSpacing || 2)
+        handleExtrudeByMatch(s.extrude, rays, building, seed, this.styleParams.match || 2)
         handleMatch(s.match, rays, building, seed)
         handleFacade(s.facade, rays, building, seed)
         handleBoxInside(s.boxInside, rays, building, seed)
         handleAdjunct(s.adjunct, rays, building, seed)
 
+        const bounds = getBounds(rays[0].map((r) => r.start))
         handleClampBox(s.clampBox, bounds, building, seed)
         handleSlopingRoof(s.slopingRoof, bounds, building, seed)
       }
     })
 
-    models.push(building)
+    result.models.push(building)
     return building
   }
 }

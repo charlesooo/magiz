@@ -7,12 +7,11 @@ export namespace styleParsed {
     | { rotateY: number }
     | { rotateZ: number }
     | { moveX: number; moveY: number; moveZ: number }
-  type colorType = { index: number; glass: boolean }
+  type colorDataType = { index: number; glass: boolean }
   type unitType = { [key: string]: number }
-
   type status = {
     transform: transformType[]
-    color: colorType[]
+    colorID: colorDataType[]
   }
 
   type box = status & { x: number; y: number; z: number }
@@ -154,8 +153,8 @@ export namespace styleParsed {
 
   /** 解析样式的结果 */
   type result = {
-    /** 颜色映射尽量前置，以编辑样式时得知颜色总量，或可方便重复利用颜色 */
-    colorMap: string[]
+    /** 颜色映射尽量前置，以编辑样式时得知颜色总数，方便重复利用颜色 */
+    globalColorMap: string[]
     /** 生成的层数 */
     floorCount: number
     /** 参数按边线参数分类保存 */

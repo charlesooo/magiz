@@ -1,7 +1,7 @@
 import { Matrix4, Vector2 } from 'three'
-import { passControl, Seed } from './utils'
-import { sample, getMatchRatioAndCount } from './handleMath'
-import { TEMP, DEFAULT_COLOR, handleFacadeElements } from './handleBasic'
+import { passControl, Seed, pushInstancedData } from './utils'
+import { getMatchRatioAndCount } from './handleMath'
+import { TEMP, handleFacadeElements } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
@@ -22,7 +22,7 @@ function handleFacade(
   seed: Seed
 ) {
   parsed.forEach((facadeParams) => {
-    handleBoxes(result.data, handlePadding(rays, facadeParams.padding), facadeParams, seed)
+    handleBoxes(result, handlePadding(rays, facadeParams.padding), facadeParams, seed)
   })
 }
 
@@ -84,7 +84,7 @@ function handlePadding(rays: temp.ray[][], padding?: styleParsed.paddingType): t
 
 /** 如果有 divide，计算在偏移区内的点阵数据 */
 function handleBoxes(
-  result: magizTypes.rawBuilding['data'],
+  result: magizTypes.rawBuilding,
   lineData: temp.splitted[][],
   partPared: styleParsed.facade,
   seed: Seed
@@ -120,7 +120,7 @@ function handleBoxes(
 /** 在给定的起点、方向、距离内，按间距返回点阵。考虑美观，间距都按参数的近似值。moveZ 在之后结合标高一起计算。如果ray不存在则跳过 */
 function pushDividePoints(
   boxArray: styleParsed.boxArray,
-  result: magizTypes.rawBuilding['data'],
+  result: magizTypes.rawBuilding,
   elevation: number,
   seed: Seed,
   ray?: temp.ray
@@ -148,9 +148,8 @@ function pushDividePoints(
         const { ratio, count } = rc
         const spacingData: spacingDataType[] = []
         spacing.forEach((s) => {
-          let model
+          let model: temp.box[] = []
           if (s.group) {
-            model = [] as temp.box[]
             s.group.forEach((b) => {
               const fe = handleFacadeElements(b, s.space, ratio)
               if (fe) model.push(fe)
@@ -191,7 +190,7 @@ function pushDividePoints(
 function pushData(
   data: spacingDataType[],
   count: number,
-  result: magizTypes.rawBuilding['data'],
+  result: magizTypes.rawBuilding,
   elevation: number,
   direction: Vector2,
   startPoint: Vector2,
@@ -227,17 +226,13 @@ function pushSpacingData(
   distance: number,
   placeMatrix: Matrix4,
   seed: Seed,
-  result: magizTypes.rawBuilding['data']
+  result: magizTypes.rawBuilding
 ) {
   data.model?.forEach((m) => {
-    const newMatrix = m.matrix
+    const mtx = m.matrix
       .clone()
       .premultiply(TEMP.makeTranslation(distance, 0, 0))
       .premultiply(placeMatrix)
-
-    const c = sample(m.color, seed) || DEFAULT_COLOR
-    const saveAs = result[c.glass ? 'boxGlass' : 'box']
-    saveAs.matrices.push(newMatrix.toArray())
-    saveAs.colors.push(c.index)
+    pushInstancedData(result, seed, m.colorID, mtx)
   })
 }

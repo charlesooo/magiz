@@ -1,24 +1,10 @@
+import { Matrix4 } from 'three'
 import { rand } from './handleMath'
 
 import type { styleParsed } from '../types/stylesParsed'
+import type { magizTypes } from '../types/magizTypes'
 
-export { passControl, Seed }
-
-/** 是否通过生成控制器检查 */
-function passControl(i: number, seed: Seed, control?: styleParsed.control) {
-  let pass = true
-  if (control) {
-    const { everyIndex, skipIndex, chance } = control
-    if (
-      (everyIndex && i % everyIndex !== 0) ||
-      (skipIndex && i % skipIndex === 0) ||
-      (chance && rand(seed) > chance)
-    ) {
-      pass = false
-    }
-  }
-  return pass
-}
+export { Seed, passControl, pushInstancedData, sample }
 
 /** 自增随机数种子 */
 class Seed {
@@ -43,7 +29,41 @@ class Seed {
   }
 }
 
+/** 是否通过生成控制器检查 */
+function passControl(i: number, seed: Seed, control?: styleParsed.control) {
+  let pass = true
+  if (control) {
+    const { everyIndex, skipIndex, chance } = control
+    if (
+      (everyIndex && i % everyIndex !== 0) ||
+      (skipIndex && i % skipIndex === 0) ||
+      (chance && rand(seed) > chance)
+    ) {
+      pass = false
+    }
+  }
+  return pass
+}
+
 /** 生成一个100以内的随机整数 */
 function rand100() {
   return Math.round(Math.random() * Math.pow(10, 3))
+}
+
+function pushInstancedData(
+  saveAs: magizTypes.rawBuilding,
+  seed: Seed,
+  colorID: styleParsed.colorDataType[],
+  matrix: Matrix4
+) {
+  const { index, glass } = sample(colorID, seed)!
+  const target: magizTypes.instancedData = saveAs.data[glass ? 'boxGlass' : 'box']
+  target.colors.push(index)
+  target.matrices.push(matrix.toArray())
+}
+
+/** 数组随机采样。如果数量小于2直接返回 a[0]。如果有种子则按种子随机数采样 */
+function sample<T>(a: T[], seed: Seed) {
+  let i = Math.floor(rand(seed) * a.length)
+  return a[i < a.length ? i : 0]
 }
