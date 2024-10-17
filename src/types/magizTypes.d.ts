@@ -2,20 +2,26 @@ import { MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'th
 import type { styleTypes } from './style'
 
 export namespace magizTypes {
+  /** 预设的玻璃颜色 */
   type presetGlassFaceType = '_GLASS'
+  /** 预设的表皮颜色 */
   type presetSolidFaceType = '_CONCRETE' | '_METAL' | '_WOOD' | '_BRICK' | '_ROOF' | 'GROUND'
-  type presetLineType = 'EDGE'
+  /** 预设的其他颜色 */
+  type presetOtherColorType = 'EDGE' | 'SKY'
 
   type remapColor = {
     face: { [prop in presetSolidFaceType | presetGlassFaceType]: string }
-    line: { [prop in presetLineType]: string }
-    other: { SKY: string }
+    other: { [prop in presetOtherColorType]: string }
     // 其他自定义的face映射
-    faceCustom?: { from: string; to: string }[]
+    custom?: { from: string; to: string }[]
   }
 
   /** view初始化和默认的参数类型 */
-  type webOptions = {
+  type viewOptions = {
+    /** 雾气参数 */
+    fog: { color: string; near: number; far: number }
+    /** 方形地面的宽度 */
+    groundSize: number
     /** 相机位置坐标 */
     cameraPosition: [x: number, y: number, z: number]
     /** 光影相关参数，每一项指定某一时间点直射光和环境光的颜色与强度 */
@@ -35,9 +41,9 @@ export namespace magizTypes {
 
   type generateOptions = {
     /** 生成白模 */
-    grayScale: boolean
+    greyScale: boolean
     /** 生成边线 */
-    showEdge: boolean
+    edge: boolean
     /** 模型按原位生成 */
     inplace: boolean
     /** 颜色重映射 */

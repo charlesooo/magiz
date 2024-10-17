@@ -6,7 +6,7 @@ import type { magizTypes } from '../types/magizTypes'
 import type { styleTypes } from '../types/style'
 import type { styleParsed } from '../types/stylesParsed'
 
-export { StyleHandler }
+export { StyleHandler, presetFaceColors }
 
 const evaluator = new Mexp()
 
@@ -142,12 +142,24 @@ class StyleHandler {
 
 //////////////////////////////////////////////////////////
 
+const presetFaceColors: magizTypes.remapColor['face'] = {
+  _GLASS: '#26f',
+  _CONCRETE: '#eee',
+  _METAL: '#666',
+  _WOOD: '#866',
+  _BRICK: '#e99',
+  _ROOF: '#333',
+  GROUND: '#bbb',
+}
+
 /** 解析包含 styleTypes.status 的参数 */
 function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.status & MORE {
   let c = status.color
   // c 可能为预设的颜色名称，先进行解析
   if (typeof c === 'string') c = GLOBAL.COLOR_PRESET[c] || c
-  const colors = !c ? [''] : typeof c === 'string' ? [c] : c
+  // 格式化为默认的颜色名称，特殊情况如：空值|""|"G"
+  if (typeof c === 'string') c = c.trim()
+  const colors = Array.isArray(c) ? c : !c ? ['_CONCRETE'] : c === 'G' ? ['_GLASS'] : [c]
   return Object.assign(
     {
       transform: status.transform
@@ -168,22 +180,17 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
           })
         : [],
       colorID: colors.map((c) => {
-        const isPresetGlass = /^_GLASS$/.test(c)
-        const cv = isPresetGlass
-          ? '#26f'
-          : /^_CONCRETE$/.test(c)
-          ? '#eee'
-          : /^_METAL$/.test(c)
-          ? '#666'
-          : /^_WOOD$/.test(c)
-          ? '#866'
-          : /^_BRICK$/.test(c)
-          ? '#e99'
-          : /^_ROOF$/.test(c)
-          ? '#333'
-          : /^GROUND$/.test(c)
-          ? '#bbb'
-          : c.replace(/ *G$/, '')
+        const isPresetGlass = c === '_GLASS'
+        const cv =
+          isPresetGlass ||
+          c === '_CONCRETE' ||
+          c === '_METAL' ||
+          c === '_WOOD' ||
+          c === '_BRICK' ||
+          c === '_ROOF' ||
+          c === 'GROUND'
+            ? presetFaceColors[c]
+            : c.replace(/ *G$/, '')
         // 颜色先加入 colorMap 再从中索引
         let index = RESULT.globalColorMap.indexOf(cv)
         if (index < 0) {

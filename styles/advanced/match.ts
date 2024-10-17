@@ -294,7 +294,7 @@ export const styles: styleTypes.styles = {
                 {
                   name: '订阅中部开间拟合立面<板宽,窗宽,窗进深,修正高度,修正标高><颜色>',
                   unit: { 板宽: 2, 窗宽: 2, 窗进深: 0.4, 修正标高: -0.5 },
-                  color: { 颜色: '#bbb' },
+                  color: { 颜色: '_BRICK' },
                 },
               ],
             },

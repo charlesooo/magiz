@@ -1,32 +1,25 @@
-import {
-  WebGLRenderer,
-  PMREMGenerator,
-  DataTexture,
-  EquirectangularReflectionMapping,
-} from 'three'
+import { PMREMGenerator, DataTexture, EquirectangularReflectionMapping } from 'three'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'
 import { presetFaceMaterials } from './materials'
+import { View } from './view'
 
-export { addEnvMap }
+export { addGlassEnvMap }
 
 /** 为 glassMaterial 添加环境光反射效果 */
-function addEnvMap(renderer: WebGLRenderer, exrFile: string) {
-  const pmremGenerator = new PMREMGenerator(renderer)
+function addGlassEnvMap(v: View, exrFile: string) {
+  const pmremGenerator = new PMREMGenerator(v.renderer)
+  return new EXRLoader().load(exrFile, (texture: DataTexture) => {
+    texture.mapping = EquirectangularReflectionMapping
+    const exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture)
+    v.envMapTexture = exrCubeRenderTarget.texture
 
-  try {
-    new EXRLoader().load(exrFile, (texture: DataTexture) => {
-      texture.mapping = EquirectangularReflectionMapping
-      const exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture)
+    // 背景设为环境贴图
+    // this.playing.scene.background = texture
 
-      // 背景设为环境贴图
-      // this.playing.scene.background = texture
-      const m = presetFaceMaterials.glass
-      m.envMap = exrCubeRenderTarget.texture
-      m.roughness = 0.1
-      m.metalness = 1
-      m.needsUpdate = true
-    })
-  } catch (error) {
-    console.log('no envMap')
-  }
+    const { glass } = presetFaceMaterials
+    glass.envMap = exrCubeRenderTarget.texture
+    glass.roughness = 0.1
+    glass.metalness = 1
+    glass.needsUpdate = true
+  })
 }

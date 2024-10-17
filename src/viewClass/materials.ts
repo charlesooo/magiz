@@ -1,7 +1,6 @@
 import { DoubleSide, MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
-import type { magizTypes } from '../types/magizTypes'
 
-export { presetFaceMaterials, presetLineMaterials, presetAlias, setMaterialCN }
+export { presetFaceMaterials, presetLineMaterials, setMaterialCN }
 
 const presetFaceMaterials = {
   solid: new MeshLambertMaterial(),
@@ -20,24 +19,6 @@ const presetFaceMaterials = {
 }
 
 const presetLineMaterials = { edge: new LineBasicMaterial({ color: '#000' }) }
-
-const presetAlias: {
-  face: { [prop in keyof magizTypes.remapColor['face']]: string }
-  line: { [prop in keyof magizTypes.remapColor['line']]: string }
-} = {
-  face: {
-    _GLASS: '玻璃 | Glass',
-    _CONCRETE: '混凝土 | Concrete',
-    _METAL: '金属 | Metal',
-    _WOOD: '木材 | Wood',
-    _BRICK: '砖 | Brick',
-    _ROOF: '屋顶 | Roof',
-    GROUND: '地面 | Ground',
-  },
-  line: {
-    EDGE: '边线 | Edge',
-  },
-}
 
 // 通过shader渲染instancedMesh的边线
 presetLineMaterials.edge.onBeforeCompile = (shader) => {

@@ -15,6 +15,7 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
+import { presetFaceColors } from '../styleClass/styles'
 import { presetFaceMaterials, presetLineMaterials } from './materials'
 
 import type { temp } from '../types/temp'
@@ -33,13 +34,10 @@ function generateModel(
 ) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
-  const showEdge = options?.showEdge ? true : false
-  const grayScale = options?.grayScale ? true : false
+  const showEdge = options?.edge ? true : false
+  const greyScale = options?.greyScale ? true : false
   const inplace = options?.inplace ? true : false
-
-  console.log(showEdge, grayScale, inplace)
-
-  const finalColorMap = getColorMap(rawModels.colorMap, options?.remap)
+  const finalColorMap = getFinalColorMap(rawModels.colorMap, options?.remap)
   const colors: { [name: string]: Color } = {}
   const tempMatrix = new Matrix4()
   const result: temp.rawInstanceDataResult = {
@@ -83,7 +81,7 @@ function generateModel(
         saveAs.matrix.push(matrix)
 
         let c = finalColorMap[inputData.colors[i]!]!
-        if (!grayScale) {
+        if (!greyScale) {
           let color = colors[c]
           if (!color) {
             color = new Color(c)
@@ -123,18 +121,21 @@ function generateModel(
   scene.add(buildings)
 }
 
-function getColorMap(
+function getFinalColorMap(
   colorMap: magizTypes.rawData['colorMap'],
   remap: magizTypes.remapColor | undefined
 ) {
-  return remap
-    ? colorMap.map(
-        (x) =>
-          remap.face[x as keyof magizTypes.remapColor['face']] ||
-          remap.faceCustom?.find((pair) => pair.from === x)?.to ||
-          x
-      )
-    : colorMap
+  // 获取remap
+  const finalRemap: { from: string; to: string }[] = []
+  if (remap) {
+    let ks = Object.keys(remap.face) as (keyof typeof remap.face)[]
+    ks.forEach((k) => {
+      const c = remap.face[k]
+      if (c) finalRemap.push({ from: presetFaceColors[k], to: c })
+    })
+    if (remap.custom) remap.custom.forEach((r) => finalRemap.push(r))
+  }
+  return colorMap.map((x) => finalRemap.find((r) => r.from === x)?.to || x)
 }
 
 /** 初始化用于渲染边线的 InstancedBufferGeometry */

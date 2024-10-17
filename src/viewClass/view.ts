@@ -34,9 +34,12 @@ export { View }
 // 从 instancedMesh 到 Mesh 用 SceneUtils.createMeshesFromInstancedMesh
 // https://threejs.org/docs/#examples/zh/utils/SceneUtils
 
-const viewOptions: magizTypes.webOptions = {
+const viewOptions: magizTypes.viewOptions = {
+  fog: { color: '#fff', near: 900, far: 5000 },
+  groundSize: 5000,
   cameraPosition: [200, 10, 200],
   sunDistance: 10000,
+
   lightColor: [
     { hour: 5, color: '#116', directional: 0, ambient: 0 },
     { hour: 6, color: '#f60', directional: 0.6, ambient: 0.2 },
@@ -73,18 +76,18 @@ class View {
   /** 太阳坐标 */
   sunPosition: Vector3
   /** 工具实例的参数 */
-  options: magizTypes.webOptions
+  options: magizTypes.viewOptions
   /** 绑定DOM元素，并生成用于Three.js渲染场景的canvas元素 */
   parent: Element
   /** 绑定材质用于镜面材质的环境反射效果 */
-  envTexture?: Texture
+  envMapTexture: Texture | null
 
   /** 创建管理工具实例 */
   constructor(
     /** 通过querySelector绑定Canvas到Div */
     divID: string,
     /** 初始化工具实例的参数 */
-    options?: Partial<magizTypes.webOptions>
+    options?: Partial<magizTypes.viewOptions>
   ) {
     const dom = document.querySelector(divID)
     if (!dom) throw 'ERROR: invalid parentCSSID'
@@ -94,6 +97,7 @@ class View {
     this.scene = new Scene()
     this.ignored = new Group()
     this.animations = {}
+    this.envMapTexture = null
     this.options = Object.assign(viewOptions, options)
     this.renderer = new WebGLRenderer({
       // logarithmicDepthBuffer: true,
@@ -228,8 +232,6 @@ class View {
       const info = { floorArea: 0, maxFloors: 0 }
       let maxHeight = 0
 
-      console.log(options)
-
       // 生成建筑
       generateModel(data, this.scene, options)
 
@@ -251,8 +253,9 @@ class View {
   }
 
   /** 添加指定大小的地面 */
-  addGround(size: number) {
-    const geom = new PlaneGeometry(size, size).rotateX(-Math.PI / 2)
+  addGround() {
+    const s = this.options.groundSize
+    const geom = new PlaneGeometry(s, s).rotateX(-Math.PI / 2)
     const ground = new Mesh(geom, presetFaceMaterials.ground)
     ground.renderOrder = -1
     ground.receiveShadow = true
@@ -260,7 +263,8 @@ class View {
   }
 
   /** 添加雾气效果 */
-  addFog(near: number, far: number, color = '#fff') {
+  addFog() {
+    const { color, near, far } = this.options.fog
     this.scene.fog = new Fog(color, near, far)
   }
 }
