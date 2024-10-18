@@ -2,6 +2,7 @@ import {
   Matrix4,
   Group,
   Color,
+  MeshBasicMaterial,
   MeshLambertMaterial,
   MeshStandardMaterial,
   LineBasicMaterial,
@@ -15,8 +16,8 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import { presetFaceColors } from '../styleClass/styles'
-import { presetFaceMaterials, presetLineMaterials } from './materials'
+import { presetFaceColors } from '../classStyle/styleHandler'
+import { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials } from './materials'
 
 import type { temp } from '../types/temp'
 import type { magizTypes } from '../types/magizTypes'
@@ -34,11 +35,8 @@ function generateModel(
 ) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
-  const showEdge = options?.edge ? true : false
-  const greyScale = options?.greyScale ? true : false
-  const inplace = options?.inplace ? true : false
   const finalColorMap = getFinalColorMap(rawModels.colorMap, options?.remap)
-  const colors: { [name: string]: Color } = {}
+  const cacheColors: { [name: string]: Color } = {}
   const tempMatrix = new Matrix4()
   const result: temp.rawInstanceDataResult = {
     instance: {
@@ -54,13 +52,15 @@ function generateModel(
   let instanceType: keyof magizTypes.rawBuilding['data']
 
   // 整合输入的rawBuilding到 result
+  const inplace = options?.inplace ? true : false
+  const greyScale = options?.greyScale ? true : false
   rawModels.models.forEach((rawBuilding) => {
     const restoreParams = inplace
       ? { center: rawBuilding.centerRelative, rotate: rawBuilding.rotate }
       : undefined
     for (instanceType in rawBuilding.data) {
       const inputData = rawBuilding.data[instanceType]
-      const saveAs = result.instance[instanceType]
+      const rawData = result.instance[instanceType]
 
       inputData.matrices.forEach((m, i) => {
         const matrix = new Matrix4().fromArray(m)
@@ -78,46 +78,49 @@ function generateModel(
         )
 
         // 保存矩阵数据
-        saveAs.matrix.push(matrix)
+        rawData.matrix.push(matrix)
 
         let c = finalColorMap[inputData.colors[i]!]!
         if (!greyScale) {
-          let color = colors[c]
+          let color = cacheColors[c]
           if (!color) {
             color = new Color(c)
-            colors[c] = color
+            cacheColors[c] = color
           }
-          saveAs.color.push(color)
+          rawData.color.push(color)
         }
       })
     }
   })
 
   // 根据 result 生成体块
-  addInstanceData(buildings, result.instance.box, boxGeom, presetFaceMaterials.solid)
-  addInstanceData(buildings, result.instance.boxGlass, boxGeom, presetFaceMaterials.glass)
-  addInstanceData(buildings, result.instance.sloping, slopingGeom, presetFaceMaterials.roof)
-  addInstanceData(buildings, result.instance.slopingGlass, slopingGeom, presetFaceMaterials.glass)
+  const useMaterials = options?.basicMaterial ? basicFaceMaterials : presetFaceMaterials
+  buildInstance(buildings, result, 'box', boxGeom, useMaterials.solid)
+  buildInstance(buildings, result, 'boxGlass', boxGeom, useMaterials.glass)
+  buildInstance(buildings, result, 'sloping', slopingGeom, useMaterials.roof)
+  buildInstance(buildings, result, 'slopingGlass', slopingGeom, useMaterials.glass)
 
   // 根据 result 生成边线
-  const { boxMatrix, slopingMatrix } = result.edge
-  if (boxMatrix.length > 0) {
-    const ils = getInstancedLineSegments(getEdgeIBG(boxGeom), boxMatrix, presetLineMaterials.edge)
-    ils.visible = showEdge
-    buildings.add(ils)
-  }
-  if (slopingMatrix.length > 0) {
-    const ils = getInstancedLineSegments(
-      getEdgeIBG(getSlopingRoofGeometry()),
-      slopingMatrix,
-      presetLineMaterials.edge
-    )
-    ils.visible = showEdge
-    buildings.add(ils)
+  if (options?.edge) {
+    const { boxMatrix, slopingMatrix } = result.edge
+    if (boxMatrix.length > 0) {
+      buildings.add(
+        getInstancedLineSegments(getEdgeIBG(boxGeom), boxMatrix, presetOtherMaterials.edge)
+      )
+    }
+    if (slopingMatrix.length > 0) {
+      buildings.add(
+        getInstancedLineSegments(
+          getEdgeIBG(getSlopingRoofGeometry()),
+          slopingMatrix,
+          presetOtherMaterials.edge
+        )
+      )
+    }
   }
 
   // 添加模型到场景
-  buildings.name = 'buildings'
+  buildings.userData.magizType = 'buildings'
   scene.add(buildings)
 }
 
@@ -125,7 +128,7 @@ function getFinalColorMap(
   colorMap: magizTypes.rawData['colorMap'],
   remap: magizTypes.remapColor | undefined
 ) {
-  // 获取remap
+  // 获取 finalRemap
   const finalRemap: { from: string; to: string }[] = []
   if (remap) {
     let ks = Object.keys(remap.face) as (keyof typeof remap.face)[]
@@ -159,13 +162,15 @@ function getInstancedLineSegments(
   return ls
 }
 
-/** 设置instancedMesh的matrix与color */
-function addInstanceData(
+/** 生成一个 instancedMesh，设置其matrix和color */
+function buildInstance(
   buildings: Group,
-  data: temp.rawInstanceData,
+  result: temp.rawInstanceDataResult,
+  type: keyof temp.rawInstanceDataResult['instance'],
   geom: BufferGeometry,
-  mat: MeshLambertMaterial | MeshStandardMaterial
+  mat: MeshBasicMaterial | MeshLambertMaterial | MeshStandardMaterial
 ) {
+  const data = result.instance[type]
   if (data.matrix.length > 0) {
     const i = new InstancedMesh(geom, mat, data.matrix.length)
     data.matrix.forEach((m, n) => {
@@ -174,6 +179,7 @@ function addInstanceData(
       if (c) i.setColorAt(n, c)
     })
     i.castShadow = i.receiveShadow = true
+    i.userData.magizType = type
     buildings.add(i)
   }
 }

@@ -14,7 +14,7 @@ import {
   Fog,
 } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
-import { presetFaceMaterials } from './materials'
+import { presetOtherMaterials } from './materials'
 import { generateModel } from './raw'
 
 import type { temp } from '../types/temp'
@@ -35,7 +35,7 @@ export { View }
 // https://threejs.org/docs/#examples/zh/utils/SceneUtils
 
 const viewOptions: magizTypes.viewOptions = {
-  fog: { color: '#fff', near: 900, far: 5000 },
+  fog: { near: 900, far: 5000 },
   groundSize: 5000,
   cameraPosition: [200, 10, 200],
   sunDistance: 10000,
@@ -61,7 +61,7 @@ class View {
   /** 创建的 Three.js 镜头实例 */
   camera: PerspectiveCamera
   /** 创建的 Three.js 控制器实例 */
-  constrols: OrbitControls
+  controls: OrbitControls
   /** 创建的 Three.js 场景 */
   scene: Scene
   /** 场景中不被自动清理的的元素（如光、地面、Helpers） */
@@ -79,8 +79,13 @@ class View {
   options: magizTypes.viewOptions
   /** 绑定DOM元素，并生成用于Three.js渲染场景的canvas元素 */
   parent: Element
-  /** 绑定材质用于镜面材质的环境反射效果 */
-  envMapTexture: Texture | null
+  /** 缓存特殊的重映射数据，用于还原 */
+  remapCache: {
+    envMapTexture: Texture | null
+    edge: Color
+    ground: Color
+    lightFogSky: Color
+  }
 
   /** 创建管理工具实例 */
   constructor(
@@ -97,14 +102,24 @@ class View {
     this.scene = new Scene()
     this.ignored = new Group()
     this.animations = {}
-    this.envMapTexture = null
     this.options = Object.assign(viewOptions, options)
     this.renderer = new WebGLRenderer({
       // logarithmicDepthBuffer: true,
+      preserveDrawingBuffer: true,
       antialias: true,
       canvas,
     })
     this.renderer.setPixelRatio(window.devicePixelRatio)
+
+    // 重映射相关设置
+    this.remapCache = {
+      envMapTexture: null,
+      edge: new Color('#333'),
+      ground: new Color('#bbb'),
+      lightFogSky: new Color('#fff'),
+    }
+    presetOtherMaterials.ground.color.copy(this.remapCache.ground)
+    presetOtherMaterials.edge.color.copy(this.remapCache.edge)
 
     // 阴影设置案例 https://threejs.org/docs/index.html?q=DirectionalLight#api/en/lights/shadows/DirectionalLightShadow
     // 部分材质不会产生阴影 https://threejs.org/manual/#zh/materials
@@ -139,7 +154,7 @@ class View {
 
     this.camera = new PerspectiveCamera(45, 1, 1, 1000000000)
     this.camera.position.set(...this.options.cameraPosition)
-    this.constrols = addOrbitControls(this)
+    this.controls = addOrbitControls(this)
 
     // 先初始化太阳位置才能设置时间
     this.sunPosition = new Vector3()
@@ -158,6 +173,10 @@ class View {
     camera.bottom = -(camera.top = height)
     camera.left = -(camera.right = width)
     camera.updateProjectionMatrix()
+  }
+
+  setShadow(on: boolean) {
+    this.lights.directional.castShadow = on
   }
 
   /** 按24小时划分一天，设置场景的光影 */
@@ -183,7 +202,9 @@ class View {
         dl.intensity = directionalIntensity
         al.color.set(color)
         al.intensity = ambientIntensity
-        this.renderer.setClearColor(color, (1 - ambientIntensity) * 0.9)
+        this.renderer.setClearColor(color)
+        // 缓存到 remapCache
+        this.remapCache.lightFogSky.copy(color)
 
         // 设置fog颜色
         if (this.scene.fog) this.scene.fog.color = color
@@ -243,29 +264,27 @@ class View {
         if (info.maxFloors < floors) info.maxFloors = floors
         if (maxHeight < h) maxHeight = h
       })
-
       resolve(info)
     })
-  }
-
-  setShadow(on: boolean) {
-    this.lights.directional.castShadow = on
   }
 
   /** 添加指定大小的地面 */
   addGround() {
     const s = this.options.groundSize
     const geom = new PlaneGeometry(s, s).rotateX(-Math.PI / 2)
-    const ground = new Mesh(geom, presetFaceMaterials.ground)
+    const ground = new Mesh(geom, presetOtherMaterials.ground)
     ground.renderOrder = -1
     ground.receiveShadow = true
     this.ignored.add(ground)
+
+    // 缓存到 remapCache
+    this.remapCache.ground.copy(presetOtherMaterials.ground.color)
   }
 
   /** 添加雾气效果 */
   addFog() {
-    const { color, near, far } = this.options.fog
-    this.scene.fog = new Fog(color, near, far)
+    const { near, far } = this.options.fog
+    this.scene.fog = new Fog(this.remapCache.lightFogSky, near, far)
   }
 }
 

@@ -12,7 +12,7 @@ import {
   handleExtrudeByMatch,
 } from './handleMatchRelated'
 import { offsetRays, rectClampRays } from './handleRays'
-import { StyleHandler } from '../styleClass/styles'
+import { StyleHandler } from '../classStyle/styleHandler'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'

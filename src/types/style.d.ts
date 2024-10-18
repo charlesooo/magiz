@@ -12,7 +12,7 @@ export namespace styleTypes {
   type alongType = 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number
   type randomPlaceType = 'EDGE' | 'AREA'
   type paymentType = 'FREE' | 'BASIC'
-  type colorType = magizTypes.presetSolidFaceType | magizTypes.presetGlassFaceType | string
+  type colorType = magizTypes.presetFaceType | magizTypes.presetGlassType | string
 
   /** 按总长度等比限定生成范围 */
   type paddingType = {

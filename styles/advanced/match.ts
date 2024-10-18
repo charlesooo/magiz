@@ -5,7 +5,7 @@ export const styles: styleTypes.styles = {
     ///////////////// using basic.ts /////////////////
     '订阅中部45度拟合立面<出挑><横板>': {
       unit: { 出挑: 1 },
-      color: { 横板: '#bbb' },
+      color: { 横板: '_WOOD' },
       floor: [
         {
           floorRange: [{ top: -1 }],
@@ -70,16 +70,14 @@ export const styles: styleTypes.styles = {
                 },
                 {
                   name: '订阅屋顶女儿墙<高度,厚度,缩进,抬升><颜色>',
-                  color: { 颜色: '#a86' },
+                  color: { 颜色: '_WOOD' },
                 },
               ],
             },
           ],
         },
         middle: {
-          floor: [
-            { preset: [{ name: '订阅中部45度拟合立面<出挑><横板>', color: { 横板: '#555' } }] },
-          ],
+          floor: [{ preset: [{ name: '订阅中部45度拟合立面<出挑><横板>' }] }],
         },
         bottom: {
           height: '0.15BH',
@@ -89,7 +87,7 @@ export const styles: styleTypes.styles = {
               preset: [
                 {
                   name: '订阅底部角柱A<柱宽比例,厚度,降低><角柱,柱子,楼板,门,挑檐>',
-                  color: { 角柱: '#a86' },
+                  color: { 角柱: '_WOOD' },
                   unit: { 降低: 1 },
                 },
               ],
@@ -122,7 +120,6 @@ export const styles: styleTypes.styles = {
               preset: [
                 {
                   name: '订阅中部45度拟合立面<出挑><横板>',
-                  color: { 横板: '#a86' },
                   unit: { 出挑: 0.4 },
                 },
               ],
@@ -137,7 +134,7 @@ export const styles: styleTypes.styles = {
               preset: [
                 {
                   name: '订阅底部立面A<间距,柱宽,格宽,降低><柱,格,楼板,门,挑檐>',
-                  color: { 柱: '#666', 格: '#eee', 楼板: '#a86', 门: '#fff' },
+                  color: { 柱: '#666', 格: '#eee', 楼板: '_WOOD', 门: '#fff' },
                   unit: { 降低: 1 },
                 },
               ],
@@ -177,8 +174,8 @@ export const styles: styleTypes.styles = {
             {
               setEdges: [{ offset: { x: 0.5 } }],
               extrude: [
-                { height: -1, color: '#a86' },
-                { once: true, height: -1, color: '#a86', transform: [{ moveZ: '1SH' }] },
+                { height: -1, color: '_WOOD' },
+                { once: true, height: -1, color: '_WOOD', transform: [{ moveZ: '1SH' }] },
               ],
               facade: [
                 {
@@ -206,7 +203,7 @@ export const styles: styleTypes.styles = {
               preset: [
                 {
                   name: '订阅底部立面A<间距,柱宽,格宽,降低><柱,格,楼板,门,挑檐>',
-                  color: { 柱: '#fff', 楼板: '#a86', 门: '#a86' },
+                  color: { 柱: '#fff', 楼板: '_WOOD', 门: '_WOOD' },
                   unit: { 降低: 1 },
                 },
               ],
@@ -241,7 +238,7 @@ export const styles: styleTypes.styles = {
             {
               floorRange: [{ top: -1 }],
               setEdges: [{ offset: { x: 0.5, y: -1 } }],
-              extrude: [{ height: -1, color: '#a86' }],
+              extrude: [{ height: -1, color: '_WOOD' }],
             },
           ],
         },
@@ -255,7 +252,7 @@ export const styles: styleTypes.styles = {
                 {
                   name: '订阅底部角柱A<柱宽比例,厚度,降低><角柱,柱子,楼板,门,挑檐>',
                   unit: { 柱宽比例: 0.1, 降低: 1 },
-                  color: { 角柱: '#fff', 柱子: '#fff', 门: '#a86' },
+                  color: { 角柱: '#fff', 柱子: '#fff', 门: '_WOOD' },
                 },
               ],
             },
@@ -294,7 +291,7 @@ export const styles: styleTypes.styles = {
                 {
                   name: '订阅中部开间拟合立面<板宽,窗宽,窗进深,修正高度,修正标高><颜色>',
                   unit: { 板宽: 2, 窗宽: 2, 窗进深: 0.4, 修正标高: -0.5 },
-                  color: { 颜色: '_BRICK' },
+                  color: { 颜色: '_WOOD' },
                 },
               ],
             },
@@ -312,7 +309,7 @@ export const styles: styleTypes.styles = {
               preset: [
                 {
                   name: '订阅底部立面A<间距,柱宽,格宽,降低><柱,格,楼板,门,挑檐>',
-                  color: { 柱: '#bbb', 格: '#fff', 楼板: '#666', 门: '#a86' },
+                  color: { 柱: '#bbb', 格: '#fff', 楼板: '#666', 门: '_WOOD' },
                   unit: { 间距: 5, 柱宽: 2, 降低: 1 },
                 },
               ],
@@ -357,11 +354,11 @@ export const styles: styleTypes.styles = {
               floorRange: [{ top: 0.15, asRatio: true }],
               // scaleEdges: 0.5,
               extrude: [
-                { height: -1, color: '#a86' },
+                { height: -1, color: '_WOOD' },
                 {
                   once: true,
                   height: -1,
-                  color: '#a86',
+                  color: '_WOOD',
                   transform: [{ moveZ: '1SH' }],
                 },
               ],
@@ -372,7 +369,7 @@ export const styles: styleTypes.styles = {
               extrude: [
                 {
                   height: -1,
-                  color: '#a86',
+                  color: '_WOOD',
                   transform: [{ moveZ: '1FH' }],
                 },
               ],
@@ -453,11 +450,11 @@ export const styles: styleTypes.styles = {
             {
               setEdges: [{ offset: -0.5 }],
               extrude: [
-                { height: -1, color: '#a86' },
+                { height: -1, color: '_WOOD' },
                 {
                   once: true,
                   height: -1,
-                  color: '#a86',
+                  color: '_WOOD',
                   transform: [{ moveZ: '1SH' }],
                 },
               ],
@@ -473,7 +470,7 @@ export const styles: styleTypes.styles = {
                 {
                   name: '订阅底部立面A<间距,柱宽,格宽,降低><柱,格,楼板,门,挑檐>',
                   unit: { 柱宽: 2, 降低: 1 },
-                  color: { 柱: '#666', 格: '#666', 楼板: '#a86', 门: '#a86' },
+                  color: { 柱: '#666', 格: '#666', 楼板: '_WOOD', 门: '_WOOD' },
                 },
               ],
             },

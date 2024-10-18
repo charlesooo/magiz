@@ -11,7 +11,7 @@ function addGlassEnvMap(v: View, exrFile: string) {
   return new EXRLoader().load(exrFile, (texture: DataTexture) => {
     texture.mapping = EquirectangularReflectionMapping
     const exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture)
-    v.envMapTexture = exrCubeRenderTarget.texture
+    v.remapCache.envMapTexture = exrCubeRenderTarget.texture
 
     // 背景设为环境贴图
     // this.playing.scene.background = texture

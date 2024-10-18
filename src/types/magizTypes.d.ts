@@ -3,14 +3,14 @@ import type { styleTypes } from './style'
 
 export namespace magizTypes {
   /** 预设的玻璃颜色 */
-  type presetGlassFaceType = '_GLASS'
+  type presetGlassType = '_GLASS'
   /** 预设的表皮颜色 */
-  type presetSolidFaceType = '_CONCRETE' | '_METAL' | '_WOOD' | '_BRICK' | '_ROOF' | 'GROUND'
+  type presetFaceType = '_CONCRETE' | '_METAL' | '_WOOD' | '_BRICK' | '_ROOF'
   /** 预设的其他颜色 */
-  type presetOtherColorType = 'EDGE' | 'SKY'
+  type presetOtherColorType = 'GROUND' | 'EDGE' | 'SKY'
 
   type remapColor = {
-    face: { [prop in presetSolidFaceType | presetGlassFaceType]: string }
+    face: { [prop in presetFaceType | presetGlassType]: string }
     other: { [prop in presetOtherColorType]: string }
     // 其他自定义的face映射
     custom?: { from: string; to: string }[]
@@ -19,7 +19,7 @@ export namespace magizTypes {
   /** view初始化和默认的参数类型 */
   type viewOptions = {
     /** 雾气参数 */
-    fog: { color: string; near: number; far: number }
+    fog: { near: number; far: number }
     /** 方形地面的宽度 */
     groundSize: number
     /** 相机位置坐标 */
@@ -46,6 +46,8 @@ export namespace magizTypes {
     edge: boolean
     /** 模型按原位生成 */
     inplace: boolean
+    /** 是否使用无光照效果的基本材质 */
+    basicMaterial: boolean
     /** 颜色重映射 */
     remap: remapColor
   }

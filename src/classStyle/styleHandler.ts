@@ -1,5 +1,5 @@
 import Mexp from 'math-expression-evaluator'
-import { sample, Seed, passControl } from '../planClass/utils'
+import { sample, Seed, passControl } from '../classPlan/utils'
 import { mergeStyles } from './merge'
 
 import type { magizTypes } from '../types/magizTypes'
@@ -149,7 +149,6 @@ const presetFaceColors: magizTypes.remapColor['face'] = {
   _WOOD: '#866',
   _BRICK: '#e99',
   _ROOF: '#333',
-  GROUND: '#bbb',
 }
 
 /** 解析包含 styleTypes.status 的参数 */
@@ -187,8 +186,7 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
           c === '_METAL' ||
           c === '_WOOD' ||
           c === '_BRICK' ||
-          c === '_ROOF' ||
-          c === 'GROUND'
+          c === '_ROOF'
             ? presetFaceColors[c]
             : c.replace(/ *G$/, '')
         // 颜色先加入 colorMap 再从中索引

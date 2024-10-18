@@ -1,4 +1,4 @@
-import { View } from '../viewClass/view'
+import { View } from '../classView/view'
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 
 import type { magizTypes } from '../types/magizTypes'

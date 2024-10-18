@@ -1,5 +1,5 @@
 import { Vector3, MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
-import View from '../viewClass/view'
+import { View } from '../classView/view'
 
 export { setMovingMaterial }
 

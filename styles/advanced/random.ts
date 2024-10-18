@@ -30,7 +30,7 @@ export const styles: styleTypes.styles = {
               extrude: [
                 {
                   height: '0.6FH',
-                  color: '#a86',
+                  color: '_WOOD',
                   transform: [{ moveZ: '-0.2FH' }],
                 },
               ],
@@ -51,7 +51,7 @@ export const styles: styleTypes.styles = {
               preset: [
                 {
                   name: '订阅中段随机垂直墙板<墙宽,窗宽,降低,概率><墙板>',
-                  color: { 墙板: '#555' },
+                  color: { 墙板: '_WOOD' },
                 },
               ],
             },
@@ -69,7 +69,7 @@ export const styles: styleTypes.styles = {
                     角柱: '#666',
                     柱子: '#666',
                     楼板: '#333',
-                    门: '#a86',
+                    门: '_WOOD',
                   },
                 },
               ],
@@ -90,7 +90,7 @@ export const styles: styleTypes.styles = {
               preset: [
                 {
                   name: '订阅屋顶女儿墙<高度,厚度,缩进,抬升><颜色>',
-                  color: { 颜色: '#a86' },
+                  color: { 颜色: '_WOOD' },
                 },
               ],
             },
@@ -125,7 +125,7 @@ export const styles: styleTypes.styles = {
                 {
                   name: '订阅中段随机垂直墙板<墙宽,窗宽,降低,概率><墙板>',
                   unit: { 窗宽: 4, 降低: 0.5 },
-                  color: { 墙板: '#a86' },
+                  color: { 墙板: '_WOOD' },
                 },
               ],
             },
@@ -143,8 +143,8 @@ export const styles: styleTypes.styles = {
                   color: {
                     角柱: '#666',
                     柱子: '#666',
-                    楼板: '#a86',
-                    门: '#a86',
+                    楼板: '_WOOD',
+                    门: '_WOOD',
                   },
                 },
               ],
@@ -218,7 +218,7 @@ export const styles: styleTypes.styles = {
                     角柱: '#666',
                     柱子: ['#888', '#bbb', '#eee'],
                     楼板: '#333',
-                    门: '#a86',
+                    门: '_WOOD',
                   },
                 },
               ],

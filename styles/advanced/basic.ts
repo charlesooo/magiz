@@ -34,7 +34,7 @@ export const styles: styleTypes.styles = {
     },
     '订阅屋顶女儿墙<高度,厚度,缩进,抬升><颜色>': {
       unit: { 高度: 1.5, 厚度: 0.2, 缩进: 0, 抬升: 0 },
-      color: { 颜色: '#fff' },
+      color: { 颜色: '' },
       floor: [
         {
           setEdges: [{ offset: '1缩进' }],

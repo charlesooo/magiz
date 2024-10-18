@@ -1,49 +1,7 @@
 import { Vector2, Vector3, Raycaster, Quaternion } from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { View } from './view'
 
-export { OrbitControls, addOrbitControls, showMousePointed }
-
-const orbitControlsOptions = {
-  /** 速度大于 0 会自动旋转镜头 */
-  autoRotateSpeed: 0,
-  /** 缩放距离小于 zoomMinDistance 会持续向前移动 */
-  zoomMinDistance: 0,
-  zoomToCursor: false,
-  enableDamping: false,
-  enablePan: false,
-}
-
-/** 添加镜头控制 */
-function addOrbitControls(view: View, params?: Partial<typeof orbitControlsOptions>) {
-  const options: typeof orbitControlsOptions = Object.assign(orbitControlsOptions, params)
-  const ctrl = new OrbitControls(view.camera, view.renderer.domElement)
-
-  // OrbitControls 可以 saveState() 然后 reset()
-  ctrl.zoomToCursor = options.zoomToCursor
-  ctrl.enableDamping = options.enableDamping
-  ctrl.enablePan = options.enablePan
-  ctrl.maxDistance = 10000
-
-  const rotateSpeed = options.autoRotateSpeed
-  const zoomMinDistance = options.zoomMinDistance
-  if (rotateSpeed > 0) {
-    ctrl.autoRotateSpeed = rotateSpeed
-    ctrl.autoRotate = true
-  }
-  if (zoomMinDistance > 0) {
-    ctrl.addEventListener('change', () => {
-      if (ctrl.getDistance() < zoomMinDistance) {
-        const v = new Vector3()
-        ctrl.object.getWorldDirection(v)
-        ctrl.target.add(v.setLength(9))
-      }
-    })
-  }
-
-  view.animations.updateControls = ctrl.update
-  return ctrl
-}
+export { showMousePointed }
 
 /** 按住 Ctrl 时显示鼠标点的坐标，按住 Shift 时显示相机矩阵，按住 Alt 提示悬停元素的信息 */
 function showMousePointed(view: View) {
