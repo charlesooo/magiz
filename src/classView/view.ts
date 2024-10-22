@@ -15,6 +15,7 @@ import {
 } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
 import { presetOtherMaterials } from './materials'
+import { presetColors, presetLight } from '../classStyle/color'
 import { generateModel } from './raw'
 
 import type { temp } from '../types/temp'
@@ -37,19 +38,9 @@ export { View }
 const viewOptions: magizTypes.viewOptions = {
   fog: { near: 900, far: 5000 },
   groundSize: 5000,
-  cameraPosition: [200, 10, 200],
+  cameraPosition: [200, 10, -200],
   sunDistance: 10000,
-
-  lightColor: [
-    { hour: 5, color: '#116', directional: 0, ambient: 0 },
-    { hour: 6, color: '#f60', directional: 0.6, ambient: 0.2 },
-    { hour: 9, color: '#fff', directional: 2, ambient: 0.6 },
-    { hour: 12, color: '#fff', directional: 2, ambient: 0.6 },
-    { hour: 16, color: '#fff', directional: 2, ambient: 0.6 },
-    { hour: 18, color: '#d33', directional: 0.6, ambient: 0.2 },
-    { hour: 19, color: '#116', directional: 0.1, ambient: 0.1 },
-    { hour: 24, color: '#000', directional: 0, ambient: 0 },
-  ],
+  lightColor: presetLight,
   time: 10,
   shadow: true,
 }
@@ -79,8 +70,8 @@ class View {
   options: magizTypes.viewOptions
   /** 绑定DOM元素，并生成用于Three.js渲染场景的canvas元素 */
   parent: Element
-  /** 缓存特殊的重映射数据，用于还原 */
-  remapCache: {
+  /** 独立缓存重映射相关数据用于还原 */
+  remapCaching: {
     envMapTexture: Texture | null
     edge: Color
     ground: Color
@@ -112,14 +103,13 @@ class View {
     this.renderer.setPixelRatio(window.devicePixelRatio)
 
     // 重映射相关设置
-    this.remapCache = {
+    const { other } = presetColors
+    this.remapCaching = {
       envMapTexture: null,
-      edge: new Color('#333'),
-      ground: new Color('#bbb'),
-      lightFogSky: new Color('#fff'),
+      edge: new Color(other.EDGE),
+      ground: new Color(other.GROUND),
+      lightFogSky: new Color(other.SKY),
     }
-    presetOtherMaterials.ground.color.copy(this.remapCache.ground)
-    presetOtherMaterials.edge.color.copy(this.remapCache.edge)
 
     // 阴影设置案例 https://threejs.org/docs/index.html?q=DirectionalLight#api/en/lights/shadows/DirectionalLightShadow
     // 部分材质不会产生阴影 https://threejs.org/manual/#zh/materials
@@ -203,8 +193,8 @@ class View {
         al.color.set(color)
         al.intensity = ambientIntensity
         this.renderer.setClearColor(color)
-        // 缓存到 remapCache
-        this.remapCache.lightFogSky.copy(color)
+        // 缓存到 remapCaching
+        this.remapCaching.lightFogSky.copy(color)
 
         // 设置fog颜色
         if (this.scene.fog) this.scene.fog.color = color
@@ -277,14 +267,14 @@ class View {
     ground.receiveShadow = true
     this.ignored.add(ground)
 
-    // 缓存到 remapCache
-    this.remapCache.ground.copy(presetOtherMaterials.ground.color)
+    // 缓存到 remapCaching
+    this.remapCaching.ground.copy(presetOtherMaterials.ground.color)
   }
 
   /** 添加雾气效果 */
   addFog() {
     const { near, far } = this.options.fog
-    this.scene.fog = new Fog(this.remapCache.lightFogSky, near, far)
+    this.scene.fog = new Fog(this.remapCaching.lightFogSky, near, far)
   }
 }
 

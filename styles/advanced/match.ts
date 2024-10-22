@@ -8,7 +8,7 @@ export const styles: styleTypes.styles = {
       color: { 横板: '_WOOD' },
       floor: [
         {
-          floorRange: [{ top: -1 }],
+          floor: { range: [{ top: -1 }] },
           // scaleEdges: '-1出挑',
           extrude: [{ height: -1, color: '横板' }],
         },
@@ -172,7 +172,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              setEdges: [{ offset: { x: 0.5 } }],
+              edge: [{ offset: 0.5 }],
               extrude: [
                 { height: -1, color: '_WOOD' },
                 { once: true, height: -1, color: '_WOOD', transform: [{ moveZ: '1SH' }] },
@@ -199,7 +199,7 @@ export const styles: styleTypes.styles = {
           floorHeight: 5,
           floor: [
             {
-              setEdges: [{ offset: 0.5 }],
+              edge: [{ offset: 0.5 }],
               preset: [
                 {
                   name: '订阅底部立面A<间距,柱宽,格宽,降低><柱,格,楼板,门,挑檐>',
@@ -236,8 +236,8 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ top: -1 }],
-              setEdges: [{ offset: { x: 0.5, y: -1 } }],
+              floor: { range: [{ top: -1 }] },
+              edge: [{ offset: { x: 0.5, y: -1 } }],
               extrude: [{ height: -1, color: '_WOOD' }],
             },
           ],
@@ -247,7 +247,7 @@ export const styles: styleTypes.styles = {
           floorHeight: 5,
           floor: [
             {
-              setEdges: [{ offset: 0.5 }],
+              edge: [{ offset: 0.5 }],
               preset: [
                 {
                   name: '订阅底部角柱A<柱宽比例,厚度,降低><角柱,柱子,楼板,门,挑檐>',
@@ -257,7 +257,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              setEdges: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
+              edge: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
               extrude: [{ height: '1BH' }],
             },
           ],
@@ -286,7 +286,7 @@ export const styles: styleTypes.styles = {
         middle: {
           floor: [
             {
-              setEdges: [{ offset: -0.5 }],
+              edge: [{ offset: -0.5 }],
               preset: [
                 {
                   name: '订阅中部开间拟合立面<板宽,窗宽,窗进深,修正高度,修正标高><颜色>',
@@ -296,7 +296,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ top: -1 }],
+              floor: { range: [{ top: -1 }] },
               extrude: [{ height: -1 }],
             },
           ],
@@ -341,7 +341,7 @@ export const styles: styleTypes.styles = {
         middle: {
           floor: [
             {
-              floorRange: [{ top: 0.15, asRatio: true }],
+              floor: { range: [{ top: 0.15, asRatio: true }] },
               preset: [
                 {
                   name: '订阅中部开间拟合立面<板宽,窗宽,窗进深,修正高度,修正标高><颜色>',
@@ -351,7 +351,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ top: 0.15, asRatio: true }],
+              floor: { range: [{ top: 0.15, asRatio: true }] },
               // scaleEdges: 0.5,
               extrude: [
                 { height: -1, color: '_WOOD' },
@@ -364,7 +364,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ top: 0.15, asRatio: true, reverse: true }],
+              floor: { range: [{ top: 0.15, asRatio: true, reverse: true }] },
               // scaleEdges: 1,
               extrude: [
                 {
@@ -375,7 +375,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ top: 0.15, asRatio: true, reverse: true }],
+              floor: { range: [{ top: 0.15, asRatio: true, reverse: true }] },
               extrude: [{ once: true, height: '1SH-1', color: 'G' }],
               facade: [
                 {
@@ -410,7 +410,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              setEdges: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
+              edge: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
               extrude: [{ once: true, height: '1BH' }],
             },
           ],
@@ -448,7 +448,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              setEdges: [{ offset: -0.5 }],
+              edge: [{ offset: -0.5 }],
               extrude: [
                 { height: -1, color: '_WOOD' },
                 {

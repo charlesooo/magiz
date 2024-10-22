@@ -12,7 +12,7 @@ export const styles: styleTypes.styles = {
               preset: [{ name: '订阅屋顶随机设备<高度,抬升><颜色A,颜色B>' }],
             },
             {
-              setEdges: [{ offset: 1 }],
+              edge: [{ offset: 1 }],
               preset: [
                 {
                   name: '订阅屋顶女儿墙<高度,厚度,缩进,抬升><颜色>',
@@ -25,8 +25,8 @@ export const styles: styleTypes.styles = {
         middle: {
           floor: [
             {
-              floorRange: [{ bottom: 1 }],
-              setEdges: [{ offset: -1 }],
+              floor: { range: [{ bottom: 1 }] },
+              edge: [{ offset: -1 }],
               extrude: [
                 {
                   height: '0.6FH',
@@ -36,7 +36,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              setEdges: [{ offset: -1 }],
+              edge: [{ offset: -1 }],
               extrude: [
                 { once: true, height: 0.5, color: '#333' },
                 {
@@ -99,7 +99,7 @@ export const styles: styleTypes.styles = {
         middle: {
           floor: [
             {
-              setEdges: [{ offset: -1 }],
+              edge: [{ offset: -1 }],
               extrude: [
                 { height: -1, color: '#666' },
                 {
@@ -162,7 +162,7 @@ export const styles: styleTypes.styles = {
               preset: [{ name: '订阅屋顶随机设备<高度,抬升><颜色A,颜色B>' }],
             },
             {
-              setEdges: [{ offset: 1 }],
+              edge: [{ offset: 1 }],
               preset: [
                 {
                   name: '订阅屋顶女儿墙<高度,厚度,缩进,抬升><颜色>',
@@ -175,17 +175,17 @@ export const styles: styleTypes.styles = {
         middle: {
           floor: [
             {
-              floorRange: [{ bottom: 1 }],
-              setEdges: [{ offset: { x: -1, y: 2 } }],
+              floor: { range: [{ bottom: 1 }] },
+              edge: [{ offset: { x: -1, y: 2 } }],
               extrude: [{ height: -1, color: '#fff' }],
             },
             {
-              floorRange: [{ bottom: 1 }],
-              setEdges: [{ offset: { x: 2, y: -1 } }],
+              floor: { range: [{ bottom: 1 }] },
+              edge: [{ offset: { x: 2, y: -1 } }],
               extrude: [{ height: -1, color: '#fff' }],
             },
             {
-              setEdges: [{ offset: -0.5 }],
+              edge: [{ offset: -0.5 }],
               extrude: [
                 { once: true, height: 0.5, color: '#333' },
                 {
@@ -253,12 +253,12 @@ export const styles: styleTypes.styles = {
             },
             // 底部装饰横板
             {
-              setEdges: [{ offset: { x: -1, y: 2 } }],
+              edge: [{ offset: { x: -1, y: 2 } }],
               extrude: [{ once: true, height: -1 }],
             },
             {
-              floorRange: [{ bottom: 1 }],
-              setEdges: [{ along: 'WIDTH' }],
+              floor: { range: [{ bottom: 1 }] },
+              edge: [{ along: 'WIDTH' }],
               facade: [
                 {
                   padding: { start: 1, end: 4, asRatio: false },
@@ -335,7 +335,7 @@ export const styles: styleTypes.styles = {
             },
             // 玻璃幕墙
             {
-              setEdges: [{ offset: 0.75 }],
+              edge: [{ offset: 0.75 }],
               facade: [
                 {
                   once: true,

@@ -6,12 +6,12 @@ import { View } from './view'
 export { addGlassEnvMap }
 
 /** 为 glassMaterial 添加环境光反射效果 */
-function addGlassEnvMap(v: View, exrFile: string) {
-  const pmremGenerator = new PMREMGenerator(v.renderer)
+function addGlassEnvMap(view: View, exrFile: string) {
+  const pmremGenerator = new PMREMGenerator(view.renderer)
   return new EXRLoader().load(exrFile, (texture: DataTexture) => {
     texture.mapping = EquirectangularReflectionMapping
     const exrCubeRenderTarget = pmremGenerator.fromEquirectangular(texture)
-    v.remapCache.envMapTexture = exrCubeRenderTarget.texture
+    view.remapCaching.envMapTexture = exrCubeRenderTarget.texture
 
     // 背景设为环境贴图
     // this.playing.scene.background = texture

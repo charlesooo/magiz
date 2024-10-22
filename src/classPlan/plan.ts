@@ -5,12 +5,8 @@ import { rand, getBounds, isAlongAxis } from './handleMath'
 import { handleSlopingRoof } from './handleSlopingRoof'
 import { handleClampBox } from './handleClampBox'
 import { handleFacade } from './handleFacade'
-import {
-  handleMatch,
-  handleBoxInside,
-  handleAdjunct,
-  handleExtrudeByMatch,
-} from './handleMatchRelated'
+import { handleMatch, handleBoxInside, handleAdjunct } from './handleMatchRelated'
+import { handleExtrude } from './handleExtrude'
 import { offsetRays, rectClampRays } from './handleRays'
 import { StyleHandler } from '../classStyle/styleHandler'
 
@@ -114,7 +110,7 @@ class Plan {
 
   /** 根据样式参数中的 setEdges 处理边线向量并生成新的向量数组。不处理内部的边线。 */
   getEdges(
-    params: styleParsed.handleEdgesType,
+    edgeParams: styleParsed.handleEdgesType,
     seed: Seed,
     outerOnly: boolean,
     rotate?: number
@@ -126,14 +122,11 @@ class Plan {
     const { min, max } = getBounds(outter.map((line) => line.start))
     const size = { x: max.x - min.x, y: max.y - min.y }
 
-    // 如果有scale，先整体缩放边线
-    // if (params.scale) rays = scaleRays(rays, getScaleRatio(size, params.scale))
-
     // 再处理边线
-    params.set?.forEach((p) => {
-      if (p.offset) {
+    edgeParams.forEach((p) => {
+      if ('offset' in p) {
         rays = offsetRays(rays, size, p.offset)
-      } else if (p.clamp) {
+      } else if ('clamp' in p) {
         const bounds = getBounds(outter.map((line) => line.start))
         const rects = getClampedRects(bounds, p.clamp)
         rays = rectClampRays(rays, rects)
@@ -196,14 +189,14 @@ class Plan {
 
     return rays
   }
-  /** 按样式库生成建筑模型数据 */
+  /** 按平面和样式生成可序列化的建筑模型数据 */
   toRawModel(
     /** 批量生成时统一缓存到 result */
     result: magizTypes.rawData,
     centerOfAll: { x: number; y: number },
     styles: StyleHandler
   ): magizTypes.rawBuilding {
-    // 将结果保存到公共变量，以便同时处理多个plan生成
+    // 将结果保存到公共变量，以便同时处理多个plan生成，以及每个平面都正确映射colorMap
     const styleParsed = styles.parseStyle(this.styleParams, this.seed, result.colorMap)
 
     // 按相对坐标还是源坐标生成
@@ -214,28 +207,29 @@ class Plan {
       centerRelative: [this.center.x - centerOfAll.x, this.center.y - centerOfAll.y],
       params: this.styleParams,
       rotate: this.relative.radian,
-      data: {
+      instanced: {
         box: { matrices: [], colors: [] },
         boxGlass: { matrices: [], colors: [] },
         sloping: { matrices: [], colors: [] },
         slopingGlass: { matrices: [], colors: [] },
       },
+      extruded: { solid: [], glass: [] },
     }
 
     const seed = this.seed
-    styleParsed.classified.forEach((s) => {
+    styleParsed.classifiedByEdge.forEach((data) => {
       // 保留包含内部孔洞的数据格式，但暂时只处理外边线
-      const rays = this.getEdges(s.edgeParams, seed, true)
+      const rays = this.getEdges(data.edgeParams, seed, true)
       if (rays[0] && rays[0].length > 0) {
-        handleExtrudeByMatch(s.extrude, rays, building, seed, this.styleParams.match || 2)
-        handleMatch(s.match, rays, building, seed)
-        handleFacade(s.facade, rays, building, seed)
-        handleBoxInside(s.boxInside, rays, building, seed)
-        handleAdjunct(s.adjunct, rays, building, seed)
+        handleExtrude(data.extrude, rays, building, seed, this.styleParams.match)
+        handleMatch(data.match, rays, building, seed)
+        handleFacade(data.facade, rays, building, seed)
+        handleBoxInside(data.boxInside, rays, building, seed)
+        handleAdjunct(data.adjunct, rays, building, seed)
 
         const bounds = getBounds(rays[0].map((r) => r.start))
-        handleClampBox(s.clampBox, bounds, building, seed)
-        handleSlopingRoof(s.slopingRoof, bounds, building, seed)
+        handleClampBox(data.clampBox, bounds, building, seed)
+        handleSlopingRoof(data.slopingRoof, bounds, building, seed)
       }
     })
 
@@ -247,7 +241,7 @@ class Plan {
 /** 根据参数返回偏移后的定界框 */
 function getClampedRects(
   bounds: { min: Vector2; max: Vector2 },
-  params: styleParsed.clampRangeType
+  params: styleParsed.clampEdgeType['clamp']
 ): { min: Vector2; max: Vector2 }[] {
   const min = bounds.min.clone()
   const max = bounds.max.clone()

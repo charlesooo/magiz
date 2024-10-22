@@ -23,15 +23,21 @@ export namespace styleParsed {
     chance: number
   }
 
-  type clampRangeType = {
-    xMin: number
-    xMax: number
-    yMin: number
-    yMax: number
-    xCentral: number
-    yCentral: number
-    asRatio: boolean
-    reverse: boolean
+  type offsetEdgeType = {
+    offset: { x: number; y: number; asRatio: boolean }
+  }
+
+  type clampEdgeType = {
+    clamp: {
+      xMin: number
+      xMax: number
+      yMin: number
+      yMax: number
+      xCentral: number
+      yCentral: number
+      asRatio: boolean
+      reverse: boolean
+    }
   }
 
   type boxArray = {
@@ -57,20 +63,12 @@ export namespace styleParsed {
   }
 
   /** 解析styleTypes.floor与边线相关的参数 */
-  type handleEdgesType = {
-    set:
-      | {
-          offset: { x: number; y: number; asRatio: boolean } | undefined
-          clamp: clampRangeType | undefined
-          along: styleTypes.alongType | undefined
-        }[]
-      | undefined
-  }
+  type handleEdgesType = (offsetEdgeType | clampEdgeType | styleTypes.alongEdgeType)[]
 
   type extrude = status & {
-    height: number
-    thickness: number
     elevation: number
+    height: number
+    toWall: number
   }
 
   type slopingRoof = status & {
@@ -91,7 +89,7 @@ export namespace styleParsed {
   }
 
   type match = {
-    along: styleTypes.alongType | undefined
+    along: styleTypes.alongEdgeType['along'] | undefined
     flexes: boxFlex[]
     top:
       | {
@@ -118,7 +116,7 @@ export namespace styleParsed {
     widthRatio: [min: number, max: number]
     depthRatio: [min: number, max: number]
     heightRatio: [min: number, max: number]
-    along: styleTypes.alongType | undefined
+    along: styleTypes.alongEdgeType['along'] | undefined
     elevation: number
   }
 
@@ -132,8 +130,8 @@ export namespace styleParsed {
   type resultClassified = {
     /** 解析后边线相关的参数 */
     edgeParams: handleEdgesType
-    /** handleEdgesType保存为JSON，用于按此参数分类存储 */
-    edgesJSON: string
+    /** handleEdgesType保存为JSON，用于按此参数分类存储生成的模型元素 */
+    edgeParamsStampJSON: string
 
     /** 从平面挤出体块 */
     extrude: extrude[]
@@ -153,11 +151,11 @@ export namespace styleParsed {
 
   /** 解析样式的结果 */
   type result = {
-    /** 颜色映射尽量前置，以编辑样式时得知颜色总数，方便重复利用颜色 */
-    globalColorMap: string[]
+    /** 全局缓存的colorMap指针，颜色映射尽量前置，以方便索引和重复利用颜色 */
+    colorMapPTR: string[]
     /** 生成的层数 */
     floorCount: number
     /** 参数按边线参数分类保存 */
-    classified: resultClassified[]
+    classifiedByEdge: resultClassified[]
   }
 }

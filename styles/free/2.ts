@@ -178,7 +178,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ bottom: 1 }],
+              floor: { range: [{ bottom: 1 }] },
               // scaleEdges: 0.5,
               extrude: [{ height: -0.6 }],
             },
@@ -221,7 +221,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ bottom: 1 }],
+              floor: { range: [{ bottom: 1 }] },
               // scaleEdges: 0.5,
               extrude: [{ height: -0.6 }],
             },
@@ -276,7 +276,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              floorRange: [{ bottom: 1 }],
+              floor: { range: [{ bottom: 1 }] },
               // scaleEdges: 0.5,
               extrude: [{ height: -0.6 }],
             },

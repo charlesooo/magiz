@@ -358,7 +358,11 @@ function matchPolygonLinesAlongX(
 }
 
 /** 根据along旋转由Plane生成的lines数据，默认按 WIDTH */
-function rotateLinesAlong(rays: temp.ray[], seed: Seed, along?: styleTypes.alongType) {
+function rotateLinesAlong(
+  rays: temp.ray[],
+  seed: Seed,
+  along?: styleTypes.alongEdgeType['along']
+) {
   let radian = 0
   if (along === 'RANDOM') {
     radian = Math.PI * 2 * rand(seed)

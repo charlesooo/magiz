@@ -221,11 +221,11 @@ export const styles: styleTypes.styles = {
           height: 2,
           floor: [
             {
-              extrude: [{ height: 1.5, thickness: 0.4 }, { height: 0.4 }],
+              extrude: [{ height: 1.5, toWall: 0.4 }, { height: 0.4 }],
             },
             {
-              floorNumber: 1,
-              setEdges: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
+              floor: { number: 1 },
+              edge: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
               preset: [{ name: '马赛公寓屋顶通风塔<数量>' }],
               boxInside: [
                 {
@@ -254,8 +254,8 @@ export const styles: styleTypes.styles = {
             },
             // 竖向两段中间的格栅
             {
-              setEdges: [{ clamp: { xMax: 0.5 } }],
-              floorRange: [{ bottom: 0.35, top: 0.5, asRatio: true }],
+              edge: [{ clamp: { xMax: 0.5 } }],
+              floor: { range: [{ bottom: 0.35, top: 0.5, asRatio: true }] },
               facade: [
                 {
                   proto: [
@@ -268,29 +268,31 @@ export const styles: styleTypes.styles = {
             },
             // 竖向分两段的立面阳台
             {
-              setEdges: [{ clamp: { xMax: 0.5 } }],
-              floorRange: [
-                { bottom: 0.35, asRatio: true, reverse: true },
-                { top: 0.5, asRatio: true, reverse: true },
-              ],
+              edge: [{ clamp: { xMax: 0.5 } }],
+              floor: {
+                range: [
+                  { bottom: 0.35, asRatio: true, reverse: true },
+                  { top: 0.5, asRatio: true, reverse: true },
+                ],
+              },
               preset: [{ name: '马赛公寓撞色立面阳台<出挑><颜色组合>' }],
             },
             {
-              setEdges: [{ clamp: { xMin: 0.6, xMax: 0.1 } }],
+              edge: [{ clamp: { xMin: 0.6, xMax: 0.1 } }],
               preset: [{ name: '马赛公寓撞色立面阳台<出挑><颜色组合>' }],
             },
             {
-              setEdges: [{ clamp: { xMin: 0.9 } }, { along: 'DEPTH' }],
+              edge: [{ clamp: { xMin: 0.9 } }, { along: 'DEPTH' }],
               preset: [{ name: '马赛公寓撞色立面阳台<出挑><颜色组合>' }],
             },
             // 中部方窗
             {
-              setEdges: [{ clamp: { xMin: 0.5, xMax: 0.4 } }],
+              edge: [{ clamp: { xMin: 0.5, xMax: 0.4 } }],
               preset: [{ name: '马赛公寓中段方窗<墙高,柱宽,间距><墙颜色>' }],
             },
             // 端部板墙
             {
-              setEdges: [{ clamp: { xMin: 0.9 } }, { along: 'WIDTH' }],
+              edge: [{ clamp: { xMin: 0.9 } }, { along: 'WIDTH' }],
               facade: [
                 {
                   once: true,
@@ -309,7 +311,7 @@ export const styles: styleTypes.styles = {
           floor: [
             // 倾斜底板
             {
-              setEdges: [{ offset: 2 }],
+              edge: [{ offset: 2 }],
               facade: [
                 {
                   once: true,
@@ -334,7 +336,7 @@ export const styles: styleTypes.styles = {
             },
             // 架空层斜柱
             {
-              setEdges: [
+              edge: [
                 { offset: 4 },
                 { along: 'WIDTH' },
                 { clamp: { xMin: 0.45, xMax: 0.4, reverse: true } },
@@ -371,7 +373,7 @@ export const styles: styleTypes.styles = {
             },
             // 中部通高贯穿体块
             {
-              setEdges: [{ offset: 3 }, { clamp: { xMin: 0.5, xMax: 0.45 } }],
+              edge: [{ offset: 3 }, { clamp: { xMin: 0.5, xMax: 0.45 } }],
               clampBox: [{ once: true, height: '1BH+12' }],
             },
           ],

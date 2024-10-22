@@ -54,16 +54,29 @@ export namespace temp {
 
   type rawInstanceData = { color: Color[]; matrix: Matrix4[] }
 
+  type rawExtrudedData = rawInstanceData & {
+    /** offset以后的几何很可能与单纯缩放不同，须使用独立的几何体 */
+    geom: BufferGeometry
+    /** 对应了全部matrix的 InstancedBufferAttribute，用于生成边线 */
+    edgeAttr: number[]
+  }
+
   type rawInstanceDataResult = {
-    instance: {
+    /** 玻璃和实体材质须分成两个instance */
+    instanced: {
       box: rawInstanceData
       boxGlass: rawInstanceData
       sloping: rawInstanceData
       slopingGlass: rawInstanceData
     }
-    edge: {
-      boxMatrix: number[]
-      slopingMatrix: number[]
+    /** 玻璃和实体的边线可以公用，因此独立保存边线数据 */
+    instancedEdge: {
+      boxAttribute: number[]
+      slopingAttribute: number[]
+    }
+    extruded: {
+      solid: rawExtrudedData[]
+      glass: rawExtrudedData[]
     }
   }
 }

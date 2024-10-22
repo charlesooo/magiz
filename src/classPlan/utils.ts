@@ -57,7 +57,7 @@ function pushInstancedData(
   matrix: Matrix4
 ) {
   const { index, glass } = sample(colorID, seed)!
-  const target: magizTypes.instancedData = saveAs.data[glass ? 'boxGlass' : 'box']
+  const target: magizTypes.instancedData = saveAs.instanced[glass ? 'boxGlass' : 'box']
   target.colors.push(index)
   target.matrices.push(matrix.toArray())
 }

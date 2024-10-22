@@ -1,5 +1,5 @@
 import { Vector2, Matrix4 } from 'three'
-import { TEMP, applyTransform } from './handleBasic'
+import { TEMP, applyBasicTransform } from './handleBasic'
 import { Seed, pushInstancedData } from './utils'
 
 import type { styleParsed } from '../types/stylesParsed'
@@ -21,7 +21,7 @@ function handleClampBox(
     const mtx = new Matrix4().makeTranslation(0.5, 0.5, 0.5)
     if (height < 0) mtx.premultiply(TEMP.makeTranslation(0, 0, -1))
     mtx.premultiply(TEMP.makeScale(max.x - min.x, max.y - min.y, Math.abs(height)))
-    applyTransform(clampParams, mtx, TEMP)
+    applyBasicTransform(clampParams, mtx, TEMP)
     mtx.premultiply(TEMP.makeTranslation(min.x, min.y, elevation))
     pushInstancedData(result, seed, colorID, mtx)
   })

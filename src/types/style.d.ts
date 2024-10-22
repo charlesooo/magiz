@@ -8,8 +8,6 @@ export namespace styleTypes {
   type paddingAreaType = 'BOTH' | 'START' | 'END' | 'MIDDLE'
   type topLikeType = 'ROUGH' | 'HILL' | 'VALLEY'
   type bottomLikeType = 'ROUGH' | 'TUNNEL'
-  /** 按朝向生成。平面轴向WIDTH|DEPTH|RANDOM */
-  type alongType = 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number
   type randomPlaceType = 'EDGE' | 'AREA'
   type paymentType = 'FREE' | 'BASIC'
   type colorType = magizTypes.presetFaceType | magizTypes.presetGlassType | string
@@ -25,9 +23,6 @@ export namespace styleTypes {
     /** 默认按比例 */
     asRatio?: boolean
   }
-
-  /** 边线缩放或偏移 */
-  type scaleOrOffset = { x?: ns; y?: ns; asRatio?: boolean } | ns
 
   /** 将元素变形拆解为基本项目。例如按X轴旋转和按Y轴旋转，前后组合的不同，变形的结果也不同 */
   type transformType =
@@ -48,23 +43,31 @@ export namespace styleTypes {
     reverse?: boolean
   }
 
-  type clampRangeType = {
-    /** 沿X轴坐标最小的边向内偏移，默认按比例 */
-    xMin?: ns
-    /** 沿X轴坐标最大的边向内偏移，默认按比例  */
-    xMax?: ns
-    /** 沿Y轴坐标最小的边向内偏移，默认按比例  */
-    yMin?: ns
-    /** 沿Y轴坐标最大的边向内偏移，默认按比例  */
-    yMax?: ns
-    /** 沿X轴向中间偏移到指定宽度，默认按比例  */
-    xCentral?: ns
-    /** 沿Y轴向中间偏移到指定宽度，默认按比例  */
-    yCentral?: ns
-    /** 默认按比例 */
-    asRatio?: boolean
-    /** 反向选择 */
-    reverse?: boolean
+  /** 边线缩放或偏移 */
+  type offsetEdgeType = { offset: ns | { x: ns; y: ns; asRatio?: boolean } }
+
+  /** 按朝向生成。平面轴向WIDTH|DEPTH|RANDOM */
+  type alongEdgeType = { along: 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number }
+
+  type clampEdgeType = {
+    clamp: {
+      /** 沿X轴坐标最小的边向内偏移，默认按比例 */
+      xMin?: ns
+      /** 沿X轴坐标最大的边向内偏移，默认按比例  */
+      xMax?: ns
+      /** 沿Y轴坐标最小的边向内偏移，默认按比例  */
+      yMin?: ns
+      /** 沿Y轴坐标最大的边向内偏移，默认按比例  */
+      yMax?: ns
+      /** 沿X轴向中间偏移到指定宽度，默认按比例  */
+      xCentral?: ns
+      /** 沿Y轴向中间偏移到指定宽度，默认按比例  */
+      yCentral?: ns
+      /** 默认按比例 */
+      asRatio?: boolean
+      /** 反向选择 */
+      reverse?: boolean
+    }
   }
 
   /** 所有体块的基本状态参数 */
@@ -140,8 +143,8 @@ export namespace styleTypes {
   type extrude = status & {
     /** 挤出的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
     height: ns
-    /** 有厚度时用box构成围墙，反之用box拟合挤出平面 */
-    thickness?: ns
+    /** 用box构成围墙，数值为围墙厚度 */
+    toWall?: ns
     /** 仅在该段的底部生成一次 */
     once?: boolean
   }
@@ -175,11 +178,9 @@ export namespace styleTypes {
   }
 
   /** 用 box 拟合挤出的平面。按特定方向依次连续排列元素，元素的宽度设为该方向上的切面与平面交叉线段的长度 */
-  type match = {
+  type match = Partial<alongEdgeType> & {
     /** 构件原型，按组成元素的宽度进行拟合 */
     flexes: boxFlex[]
-    /** 沿特定边线生成，省略则按随机角度 */
-    along?: alongType
     /** 调整顶部形态 */
     top?: {
       /** 形态 */
@@ -207,7 +208,7 @@ export namespace styleTypes {
   }
 
   /** 根据平面拟合的 rectangle 挤出为 box */
-  type boxInside = {
+  type boxInside = Partial<alongEdgeType> & {
     /** 构件原型，按组成元素的宽度进行拟合 */
     flex: boxFlex
     /** 生成的数量 */
@@ -218,9 +219,6 @@ export namespace styleTypes {
     widthRatio?: [min: ns, max: ns] | ns
     /** 按拟合尺寸及比例区间修改构件的尺寸 */
     heightRatio?: [min: ns, max: ns] | ns
-
-    /** 沿特定边线生成，默认按 WIDTH */
-    along?: alongType
     /** 仅在该段的底部生成一次 */
     once?: boolean
   }
@@ -238,25 +236,17 @@ export namespace styleTypes {
   }
 
   type floor = {
-    /** 竖向生成控制参数 */
-    floorControl?: control
-    /** 指定具体层数，优先于其他选项，影响解析时的单位 SH */
-    floorNumber?: ns
-    /** 从顶部和底部向内偏移，选择范围内的楼层 */
-    floorRange?: floorRangeType[]
-
-    ///////// 边线相关修改须前置，以便extrude、facade等抽象为预设 /////////
-
+    /** 按楼层控制竖向生成 */
+    floor?: {
+      /** 指定具体层数，影响其他选项和解析时的计算单位 SH */
+      number?: ns
+      /** 从顶部和底部向内偏移，选择范围内的楼层，每个范围都单独计算单位 SH */
+      range?: floorRangeType[]
+      /** 按楼层序号生成 */
+      control?: control
+    }
     /** 根据参数组合修改边线，每条按 offset|clamp|along 的顺序，仅有一项生效 */
-    setEdges?: {
-      /** 精确偏移边线，不影响 extrude，默认不按比例 */
-      offset?: scaleOrOffset
-      /** 按定界框向内偏移，选择在范围内的边线 */
-      clamp?: clampRangeType
-      /** 按轴向筛选边线 (不考虑世界轴向以简化逻辑) */
-      along?: alongType
-      // 不考虑检查线段长度，通过算法保证长度不足时跳过生成
-    }[]
+    edge?: (offsetEdgeType | clampEdgeType | alongEdgeType)[]
 
     /** 引用预设样式，非解析参数 */
     preset?: floorPreset[]

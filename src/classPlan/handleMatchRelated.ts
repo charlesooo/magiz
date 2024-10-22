@@ -7,15 +7,13 @@ import {
   matchPolygonLinesAlongX,
 } from './handleMath'
 import { Seed, sample, passControl, pushInstancedData } from './utils'
-import { TEMP, applyTransform } from './handleBasic'
+import { TEMP, applyBasicTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
 import type { temp } from '../types/temp'
 
-export { handleMatch, handleBoxInside, handleAdjunct, handleExtrudeByMatch }
-
-// TODO: handleExtrudeByMatch 可缓存计算结果以减少重复计算
+export { handleMatch, handleBoxInside, handleAdjunct }
 
 /** 首尾对齐的结果进行合并 */
 function simplifyMatchData(matchData: temp.match[]) {
@@ -154,14 +152,14 @@ function handleMatch(
           // pair 为每个step代表中线的交点
           data.pairs.forEach((pair) => {
             // 随机颜色须每个单独sample
-            // const mtx = applyTransform(data, new Matrix4().makeScale(pair.width, width, height))
+            // const mtx = applyBasicTransform(data, new Matrix4().makeScale(pair.width, width, height))
             //   .premultiply(
             //     TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
             //   )
             //   .premultiply(restoreMatrix)
 
             const mtx = new Matrix4().makeScale(pair.width, matchDepth, height)
-            applyTransform(data, mtx, TEMP)
+            applyBasicTransform(data, mtx, TEMP)
             mtx
               .premultiply(
                 TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
@@ -261,7 +259,7 @@ function handleBoxInside(
             h *= 1 - i * heightStep
 
             const mtx = new Matrix4().premultiply(TEMP.makeScale(w, props.d, h))
-            applyTransform(data, mtx, TEMP)
+            applyBasicTransform(data, mtx, TEMP)
             mtx
               .premultiply(
                 TEMP.makeTranslation(props.x + moveX, props.y + moveY, elevation + h / 2)
@@ -292,7 +290,7 @@ function handleAdjunct(
           const mtx = new Matrix4()
             .makeTranslation(0, 0, 0.5)
             .premultiply(TEMP.makeScale(box.x, box.y, box.z))
-          applyTransform(box, mtx, TEMP)
+          applyBasicTransform(box, mtx, TEMP)
           mtx.premultiply(TEMP.makeTranslation(point.x, point.y, elevation))
           pushInstancedData(result, seed, box.colorID, mtx)
         })
@@ -396,55 +394,4 @@ function matching(
       }
     })
   }
-}
-
-/** 平面多边形用box拟合以轻量化模型 */
-function handleExtrudeByMatch(
-  parsed: styleParsed.extrude[],
-  rays: temp.ray[][],
-  result: magizTypes.rawBuilding,
-  seed: Seed,
-  /** 用box拟合挤出平面的块厚度 */
-  width: number
-) {
-  parsed.forEach((extrudeParams) => {
-    const { colorID, transform, height, thickness, elevation } = extrudeParams
-    const matrix = new Matrix4()
-    if (thickness) {
-      // 按偏移后的边线用box构成围墙
-      const moveY = thickness < 0 ? -0.5 : 0.5
-      const moveZ = height < 0 ? -0.5 : 0.5
-      const { index, glass } = sample(colorID, seed)!
-      const saveAs = result.data[glass ? 'boxGlass' : 'box']
-      rays.forEach((loop) => {
-        loop.forEach((ray) => {
-          const boxMatrix = matrix.clone()
-          boxMatrix
-            .premultiply(TEMP.makeTranslation(0.5, moveY, moveZ))
-            .premultiply(
-              TEMP.makeScale(ray.direction.length(), Math.abs(thickness), Math.abs(height))
-            )
-            .premultiply(TEMP.makeRotationZ(ray.direction.angle()))
-          applyTransform(extrudeParams, boxMatrix, TEMP)
-          boxMatrix.premultiply(TEMP.makeTranslation(ray.start.x, ray.start.y, elevation))
-          saveAs.matrices.push(boxMatrix.toArray())
-          saveAs.colors.push(index)
-        })
-      })
-    } else {
-      // 按偏移后的边线用box拟合挤出平面
-      const parsedMatchParams: styleParsed.match[] = [
-        {
-          along: 'WIDTH',
-          flexes: [{ shrink: 0, width, height, transform, colorID }],
-          elevation,
-          sandwich: false,
-          top: undefined,
-          bottom: undefined,
-          control: undefined,
-        },
-      ]
-      handleMatch(parsedMatchParams, rays, result, seed, true)
-    }
-  })
 }

@@ -7,6 +7,6 @@
 */
 
 import { Plan } from './classPlan/plan'
-import { styleHandler } from '../styles'
+import { styles } from '../styles'
 
-export { Plan, styleHandler }
+export { Plan, styles }

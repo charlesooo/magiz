@@ -548,15 +548,15 @@ export const styles: styleTypes.styles = {
         middle: {
           floor: [
             {
-              setEdges: [{ clamp: { xCentral: 1.2, asRatio: false } }],
+              edge: [{ clamp: { xCentral: 1.2, asRatio: false } }],
               preset: [{ name: '新中式别墅横向门搭配竖向划分入户门<><颜色>' }],
             },
             {
-              setEdges: [{ clamp: { xCentral: 2, asRatio: false, reverse: true } }],
+              edge: [{ clamp: { xCentral: 2, asRatio: false, reverse: true } }],
               preset: [{ name: '新中式别墅横向划分立面窗<墙板高,墙板降低><浅色,深色>' }],
             },
             {
-              setEdges: [{ clamp: { xCentral: 3, asRatio: false } }],
+              edge: [{ clamp: { xCentral: 3, asRatio: false } }],
               preset: [{ name: '新中式别墅门廊阳台线脚<出挑,板厚><颜色>' }],
             },
           ],
@@ -565,7 +565,7 @@ export const styles: styleTypes.styles = {
           height: 3,
           floor: [
             {
-              setEdges: [{ clamp: { xCentral: 2, asRatio: false } }],
+              edge: [{ clamp: { xCentral: 2, asRatio: false } }],
               preset: [
                 {
                   unit: { 总高: '1BH-2.6' },
@@ -574,7 +574,7 @@ export const styles: styleTypes.styles = {
               ],
             },
             {
-              setEdges: [{ clamp: { xCentral: 2, asRatio: false, reverse: true } }],
+              edge: [{ clamp: { xCentral: 2, asRatio: false, reverse: true } }],
               preset: [
                 {
                   unit: { 总高: '1BH-2.6' },
@@ -595,7 +595,7 @@ export const styles: styleTypes.styles = {
               extrude: [{ once: true, height: '1BH-2.5', color: 'G' }],
             },
             {
-              setEdges: [{ clamp: { xCentral: 3, asRatio: false } }],
+              edge: [{ clamp: { xCentral: 3, asRatio: false } }],
               preset: [
                 { name: '新中式别墅门廊柱<出挑,柱高><颜色>' },
                 { name: '新中式别墅门廊三级台阶<出挑>' },

@@ -7,8 +7,8 @@ export const styles: styleTypes.styles = {
       color: { 颜色A: '#eee', 颜色B: ['#666', '#333'] },
       floor: [
         {
-          floorNumber: 1,
-          setEdges: [{ offset: { x: 0.1, y: 0.1, asRatio: true } }],
+          floor: { number: 1 },
+          edge: [{ offset: { x: 0.1, y: 0.1, asRatio: true } }],
           match: [
             {
               flexes: [
@@ -37,11 +37,11 @@ export const styles: styleTypes.styles = {
       color: { 颜色: '' },
       floor: [
         {
-          setEdges: [{ offset: '1缩进' }],
+          edge: [{ offset: '1缩进' }],
           extrude: [
             {
               height: '1高度',
-              thickness: '1厚度',
+              toWall: '1厚度',
               color: '颜色',
               transform: [{ moveZ: '1抬升' }],
             },
@@ -167,12 +167,12 @@ export const styles: styleTypes.styles = {
         },
         // 楼板
         {
-          floorRange: [{ bottom: 1 }],
+          floor: { range: [{ bottom: 1 }] },
           extrude: [{ height: -1, color: '楼板' }],
         },
         // 幕墙
         {
-          setEdges: [{ offset: '0.5厚度+0.3' }],
+          edge: [{ offset: '0.5厚度+0.3' }],
           facade: [
             {
               once: true,
@@ -271,12 +271,12 @@ export const styles: styleTypes.styles = {
           ],
         },
         {
-          setEdges: [{ offset: -0.2 }],
-          floorRange: [{ bottom: 1 }],
+          edge: [{ offset: -0.2 }],
+          floor: { range: [{ bottom: 1 }] },
           extrude: [{ height: -1, color: '楼板' }],
         },
         {
-          setEdges: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
+          edge: [{ offset: { x: 0.1, y: 0.1, asRatio: true } }],
           extrude: [{ once: true, height: '1SH' }],
         },
       ],
@@ -355,7 +355,7 @@ export const styles: styleTypes.styles = {
         },
         {
           // scaleEdges: 0.5,
-          floorRange: [{ bottom: 1 }],
+          floor: { range: [{ bottom: 1 }] },
           extrude: [{ height: -1, color: '浅色' }],
         },
       ],

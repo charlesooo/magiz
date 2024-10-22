@@ -1,6 +1,6 @@
 import { Vector2, Matrix4 } from 'three'
 import { Seed, pushInstancedData } from './utils'
-import { TEMP, applyTransform } from './handleBasic'
+import { TEMP, applyBasicTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleParsed } from '../types/stylesParsed'
@@ -23,7 +23,7 @@ function handleSlopingRoof(
       max.y - min.y + overhang * 2,
       Math.abs(height)
     )
-    applyTransform(roofParams, mtx, TEMP)
+    applyBasicTransform(roofParams, mtx, TEMP)
     mtx.premultiply(TEMP.makeTranslation(min.x - overhang, min.y - overhang, elevation))
 
     pushInstancedData(result, seed, roofParams.colorID, mtx)

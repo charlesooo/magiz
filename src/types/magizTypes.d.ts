@@ -1,4 +1,3 @@
-import { MeshLambertMaterial, MeshStandardMaterial, LineBasicMaterial } from 'three'
 import type { styleTypes } from './style'
 
 export namespace magizTypes {
@@ -7,11 +6,11 @@ export namespace magizTypes {
   /** 预设的表皮颜色 */
   type presetFaceType = '_CONCRETE' | '_METAL' | '_WOOD' | '_BRICK' | '_ROOF'
   /** 预设的其他颜色 */
-  type presetOtherColorType = 'GROUND' | 'EDGE' | 'SKY'
+  type presetOtherType = 'GROUND' | 'EDGE' | 'SKY'
 
-  type remapColor = {
+  type presetColor = {
     face: { [prop in presetFaceType | presetGlassType]: string }
-    other: { [prop in presetOtherColorType]: string }
+    other: { [prop in presetOtherType]: string }
     // 其他自定义的face映射
     custom?: { from: string; to: string }[]
   }
@@ -49,7 +48,7 @@ export namespace magizTypes {
     /** 是否使用无光照效果的基本材质 */
     basicMaterial: boolean
     /** 颜色重映射 */
-    remap: remapColor
+    remap: presetColor
   }
 
   type tagsDataType = {
@@ -73,6 +72,8 @@ export namespace magizTypes {
     /** 颜色索引，对应 rawBuilding.colorMap 中的序号（从数组选中一个序号，如包含了多个表示随机颜色） */
     colors: number[]
   }
+  /** 生成挤出 instancedMesh 的数据 */
+  type extrudedInstancedData = instancedData & { loop: [x: number, y: number][] }
 
   /** 模型数据 */
   type rawBuilding = {
@@ -91,11 +92,15 @@ export namespace magizTypes {
     rotate: number
 
     /** instancedMesh元素的颜色和矩阵数据 */
-    data: {
+    instanced: {
       box: instancedData
       boxGlass: instancedData
       sloping: instancedData
       slopingGlass: instancedData
+    }
+    extruded: {
+      solid: extrudedInstancedData[]
+      glass: extrudedInstancedData[]
     }
   }
 
@@ -112,7 +117,7 @@ export namespace magizTypes {
   /** 解析请求 */
   type request = {
     /** 成组的解析请求 */
-    data: requestData[]
+    requests: requestData[]
     /** 显示单个 requestData，为 data 中的序号 */
     focus: number
   }

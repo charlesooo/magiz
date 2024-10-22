@@ -4,28 +4,28 @@ import { degToRad } from 'three/src/math/MathUtils.js'
 import type { temp } from '../types/temp'
 import type { styleParsed } from '../types/stylesParsed'
 
-export { TEMP, applyTransform, handleFacadeElements }
+export { TEMP, applyBasicTransform, handleFacadeElements }
 
 /** 计算过程中的缓存矩阵 */
 const TEMP = new Matrix4()
 
 /** 应用 styleParsed.status.transform 到 matrix */
-function applyTransform(
+function applyBasicTransform(
   status: styleParsed.status,
   matrix: Matrix4,
-  temp: Matrix4,
+  tempMatrix: Matrix4,
   /** facade 调用时可能需要根据比例缩放x轴移动距离 */
   xRatio = 1
 ): void {
   status.transform?.forEach((t) => {
     if ('rotateX' in t) {
-      matrix.premultiply(temp.makeRotationX(degToRad(t.rotateX)))
+      matrix.premultiply(tempMatrix.makeRotationX(degToRad(t.rotateX)))
     } else if ('rotateY' in t) {
-      matrix.premultiply(temp.makeRotationY(degToRad(t.rotateY)))
+      matrix.premultiply(tempMatrix.makeRotationY(degToRad(t.rotateY)))
     } else if ('rotateZ' in t) {
-      matrix.premultiply(temp.makeRotationZ(degToRad(t.rotateZ)))
+      matrix.premultiply(tempMatrix.makeRotationZ(degToRad(t.rotateZ)))
     } else {
-      matrix.premultiply(temp.makeTranslation(t.moveX * xRatio, t.moveY, t.moveZ))
+      matrix.premultiply(tempMatrix.makeTranslation(t.moveX * xRatio, t.moveY, t.moveZ))
     }
   })
 }
@@ -55,7 +55,7 @@ function setFacadeBox(
     z = -z
   }
   matrix.premultiply(TEMP.makeScale(x * xRatio, y, z))
-  applyTransform(box, matrix, TEMP, xRatio)
+  applyBasicTransform(box, matrix, TEMP, xRatio)
 
   return { matrix, colorID: box.colorID }
 }

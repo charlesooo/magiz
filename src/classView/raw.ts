@@ -6,6 +6,9 @@ import {
   MeshLambertMaterial,
   MeshStandardMaterial,
   LineBasicMaterial,
+  Vector2,
+  Shape,
+  ExtrudeGeometry,
   EdgesGeometry,
   LineSegments,
   BufferGeometry,
@@ -16,7 +19,7 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import { presetFaceColors } from '../classStyle/styleHandler'
+import { presetColors } from '../classStyle/color'
 import { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials } from './materials'
 
 import type { temp } from '../types/temp'
@@ -27,6 +30,17 @@ export { generateModel }
 const boxGeom = new BoxGeometry()
 const slopingGeom = getSlopingRoofGeometry()
 
+type SharedRawToInstancedType = {
+  /** 计算时公用的临时矩阵 */
+  tempMatrix: Matrix4
+  /** 公用的经重映射后的最终颜色映射表 */
+  finalColorMap: string[]
+  /** 根据finalColorMap生成的公用颜色对象 */
+  finalColors: { [name: string]: Color }
+  /** 模型材质风格参数 */
+  greyScale: boolean
+}
+
 /** 将 Magiz 解析的 magizTypes.rawBuilding 转为 Three.js 对象 */
 function generateModel(
   rawModels: magizTypes.rawData,
@@ -35,88 +49,72 @@ function generateModel(
 ) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
-  const finalColorMap = getFinalColorMap(rawModels.colorMap, options?.remap)
-  const cacheColors: { [name: string]: Color } = {}
-  const tempMatrix = new Matrix4()
-  const result: temp.rawInstanceDataResult = {
-    instance: {
+  const rawToInstancedParams: SharedRawToInstancedType = {
+    tempMatrix: new Matrix4(),
+    finalColorMap: getFinalColorMap(rawModels.colorMap, options?.remap),
+    finalColors: {},
+    greyScale: options?.greyScale || false,
+  }
+
+  const tempResult: temp.rawInstanceDataResult = {
+    instanced: {
       box: { color: [], matrix: [] },
       boxGlass: { color: [], matrix: [] },
       sloping: { color: [], matrix: [] },
       slopingGlass: { color: [], matrix: [] },
     },
-    edge: { boxMatrix: [], slopingMatrix: [] },
+    instancedEdge: { boxAttribute: [], slopingAttribute: [] },
+    extruded: { solid: [], glass: [] },
   }
 
-  // 模型元素类型
-  let instanceType: keyof magizTypes.rawBuilding['data']
-
-  // 整合输入的rawBuilding到 result
+  // STEP.1.将可序列化的rawModels转为生成所需threeJS数据到 tempResult
   const inplace = options?.inplace ? true : false
-  const greyScale = options?.greyScale ? true : false
+
   rawModels.models.forEach((rawBuilding) => {
     const restoreParams = inplace
       ? { center: rawBuilding.centerRelative, rotate: rawBuilding.rotate }
       : undefined
-    for (instanceType in rawBuilding.data) {
-      const inputData = rawBuilding.data[instanceType]
-      const rawData = result.instance[instanceType]
-
-      inputData.matrices.forEach((m, i) => {
-        const matrix = new Matrix4().fromArray(m)
-
-        // 还原位置和旋转
-        if (restoreParams) {
-          matrix
-            .premultiply(tempMatrix.makeRotationZ(restoreParams.rotate))
-            .premultiply(tempMatrix.makeTranslation(...restoreParams.center, 0))
-        }
-
-        // 默认生成边线，根据参数设置visible属性
-        result.edge[instanceType.includes('box') ? 'boxMatrix' : 'slopingMatrix'].push(
-          ...matrix.toArray()
-        )
-
-        // 保存矩阵数据
-        rawData.matrix.push(matrix)
-
-        let c = finalColorMap[inputData.colors[i]!]!
-        if (!greyScale) {
-          let color = cacheColors[c]
-          if (!color) {
-            color = new Color(c)
-            cacheColors[c] = color
-          }
-          rawData.color.push(color)
-        }
-      })
-    }
+    rawToInstancedTemp(rawBuilding.instanced, tempResult, restoreParams, rawToInstancedParams)
+    rawToExtrudedTemp(rawBuilding.extruded, tempResult, restoreParams, rawToInstancedParams)
   })
 
-  // 根据 result 生成体块
+  // STEP.2.根据 tempResult 生成proto体块
   const useMaterials = options?.basicMaterial ? basicFaceMaterials : presetFaceMaterials
-  buildInstance(buildings, result, 'box', boxGeom, useMaterials.solid)
-  buildInstance(buildings, result, 'boxGlass', boxGeom, useMaterials.glass)
-  buildInstance(buildings, result, 'sloping', slopingGeom, useMaterials.roof)
-  buildInstance(buildings, result, 'slopingGlass', slopingGeom, useMaterials.glass)
+  addInstance('box', tempResult.instanced.box, buildings, boxGeom, useMaterials.solid)
+  addInstance('boxGlass', tempResult.instanced.boxGlass, buildings, boxGeom, useMaterials.glass)
+  addInstance('sloping', tempResult.instanced.sloping, buildings, slopingGeom, useMaterials.roof)
+  addInstance(
+    'slopingGlass',
+    tempResult.instanced.slopingGlass,
+    buildings,
+    slopingGeom,
+    useMaterials.glass
+  )
+  // STEP.3.根据 tempResult 生成extruded体块
+  tempResult.extruded.solid.forEach((data) => {
+    addInstance('extrudedSolid', data, buildings, data.geom, useMaterials.solid)
+  })
+  tempResult.extruded.glass.forEach((data) => {
+    addInstance('extrudedGlass', data, buildings, data.geom, useMaterials.glass)
+  })
 
-  // 根据 result 生成边线
+  // STEP.4.根据 tempResult 生成边线
   if (options?.edge) {
-    const { boxMatrix, slopingMatrix } = result.edge
-    if (boxMatrix.length > 0) {
-      buildings.add(
-        getInstancedLineSegments(getEdgeIBG(boxGeom), boxMatrix, presetOtherMaterials.edge)
-      )
-    }
-    if (slopingMatrix.length > 0) {
-      buildings.add(
-        getInstancedLineSegments(
-          getEdgeIBG(getSlopingRoofGeometry()),
-          slopingMatrix,
-          presetOtherMaterials.edge
-        )
-      )
-    }
+    const edgeMat = presetOtherMaterials.edge
+    addInstancedEdges(tempResult.instancedEdge.boxAttribute, buildings, boxGeom, edgeMat)
+    addInstancedEdges(
+      tempResult.instancedEdge.slopingAttribute,
+      buildings,
+      getSlopingRoofGeometry(),
+      edgeMat
+    )
+
+    tempResult.extruded.solid.forEach((data) => {
+      addInstancedEdges(data.edgeAttr, buildings, data.geom, edgeMat)
+    })
+    tempResult.extruded.glass.forEach((data) => {
+      addInstancedEdges(data.edgeAttr, buildings, data.geom, edgeMat)
+    })
   }
 
   // 添加模型到场景
@@ -124,64 +122,153 @@ function generateModel(
   scene.add(buildings)
 }
 
+/** 一次生成多个的时候，通过restoreParams还原位置和旋转 */
+function getInstanceMatrix(
+  m: number[],
+  restoreParams: { center: [x: number, y: number]; rotate: number } | undefined,
+  tempMatrix: Matrix4
+) {
+  const matrix = new Matrix4().fromArray(m)
+  if (restoreParams) {
+    matrix
+      .premultiply(tempMatrix.makeRotationZ(restoreParams.rotate))
+      .premultiply(tempMatrix.makeTranslation(...restoreParams.center, 0))
+  }
+  return matrix
+}
+
+/** 转换rawBuilding.instanced为threeJS数据到result */
+function rawToInstancedTemp(
+  raw: magizTypes.rawBuilding['instanced'],
+  result: temp.rawInstanceDataResult,
+  restoreParams: { center: [x: number, y: number]; rotate: number } | undefined,
+  params: SharedRawToInstancedType
+) {
+  let instanceType: keyof magizTypes.rawBuilding['instanced']
+  const { tempMatrix, finalColorMap, finalColors, greyScale } = params
+  for (instanceType in raw) {
+    const instancedData = raw[instanceType]
+    const resultRawData = result.instanced[instanceType]
+
+    instancedData.matrices.forEach((m, i) => {
+      const matrix = getInstanceMatrix(m, restoreParams, tempMatrix)
+      // 最终作为 InstancedBufferAttribute 绑定到边线模型上
+      result.instancedEdge[
+        instanceType.includes('box') ? 'boxAttribute' : 'slopingAttribute'
+      ].push(...matrix.toArray())
+      // 保存矩阵数据
+      resultRawData.matrix.push(matrix)
+      // 保存颜色数据
+      if (!greyScale) {
+        const c = finalColorMap[instancedData.colors[i] || 0]
+        if (c) {
+          let color = finalColors[c]
+          if (!color) {
+            color = new Color(c)
+            finalColors[c] = color
+          }
+          resultRawData.color.push(color)
+        }
+      }
+    })
+  }
+}
+
+const extrudeParams = { depth: 1, bevelEnabled: false }
+
+function rawToExtrudedTemp(
+  raw: magizTypes.rawBuilding['extruded'],
+  result: temp.rawInstanceDataResult,
+  restoreParams: { center: [x: number, y: number]; rotate: number } | undefined,
+  params: SharedRawToInstancedType
+) {
+  const { tempMatrix, finalColorMap, finalColors, greyScale } = params
+  let key: keyof typeof raw
+  for (key in raw) {
+    raw[key].forEach((extrudedInstancedData) => {
+      const shape = new Shape(extrudedInstancedData.loop.map((pt) => new Vector2(...pt)))
+      const geom = new ExtrudeGeometry(shape, extrudeParams)
+      const resultRawData: temp.rawExtrudedData = { geom, edgeAttr: [], matrix: [], color: [] }
+      extrudedInstancedData.matrices.forEach((matrixArray, i) => {
+        const matrix = getInstanceMatrix(matrixArray, restoreParams, tempMatrix)
+        // 最终作为 InstancedBufferAttribute 绑定到边线模型上
+        resultRawData.edgeAttr.push(...matrixArray)
+        // 保存矩阵数据
+        resultRawData.matrix.push(matrix)
+        // 保存颜色数据
+        if (!greyScale) {
+          const c = finalColorMap[extrudedInstancedData.colors[i] || 0]
+          if (c) {
+            let color = finalColors[c]
+            if (!color) {
+              color = new Color(c)
+              finalColors[c] = color
+            }
+            resultRawData.color.push(color)
+          }
+        }
+      })
+      result.extruded[key].push(resultRawData)
+    })
+  }
+}
+
 function getFinalColorMap(
   colorMap: magizTypes.rawData['colorMap'],
-  remap: magizTypes.remapColor | undefined
+  remap: magizTypes.presetColor | undefined
 ) {
   // 获取 finalRemap
   const finalRemap: { from: string; to: string }[] = []
   if (remap) {
-    let ks = Object.keys(remap.face) as (keyof typeof remap.face)[]
-    ks.forEach((k) => {
+    let k: keyof magizTypes.presetColor['face']
+    for (k in remap.face) {
       const c = remap.face[k]
-      if (c) finalRemap.push({ from: presetFaceColors[k], to: c })
-    })
+      if (c) finalRemap.push({ from: presetColors.face[k], to: c })
+    }
     if (remap.custom) remap.custom.forEach((r) => finalRemap.push(r))
   }
   return colorMap.map((x) => finalRemap.find((r) => r.from === x)?.to || x)
 }
 
-/** 初始化用于渲染边线的 InstancedBufferGeometry */
-function getEdgeIBG(geom: BufferGeometry) {
-  const eg = new EdgesGeometry(geom)
-  const eibg = new InstancedBufferGeometry()
-  eibg.setAttribute('position', eg.getAttribute('position'))
-  eg.dispose()
-  return eibg
-}
-
-function getInstancedLineSegments(
-  ibg: InstancedBufferGeometry,
-  matrixData: number[],
+function addInstancedEdges(
+  matrixAttribute: number[],
+  building: Group,
+  geom: BufferGeometry,
   edgeShaderMaterial: LineBasicMaterial
 ) {
-  ibg.setAttribute('matrix', new InstancedBufferAttribute(new Float32Array(matrixData), 16))
-  ibg.instanceCount = matrixData.length / 16
-  const ls = new LineSegments(ibg, edgeShaderMaterial)
-  ls.frustumCulled = false
-  return ls
+  if (matrixAttribute.length > 0) {
+    const eg = new EdgesGeometry(geom)
+    const eibg = new InstancedBufferGeometry()
+    const ls = new LineSegments(eibg, edgeShaderMaterial)
+    eibg.setAttribute('position', eg.getAttribute('position'))
+    eibg.setAttribute(
+      'matrix',
+      new InstancedBufferAttribute(new Float32Array(matrixAttribute), 16)
+    )
+    eibg.instanceCount = matrixAttribute.length / 16
+    eg.dispose()
+    ls.frustumCulled = false
+    building.add(ls)
+  }
 }
 
-/** 生成一个 instancedMesh，设置其matrix和color */
-function buildInstance(
+/** 添加 instancedMesh 到场景，设置其matrix和color */
+function addInstance(
+  type: string,
+  data: temp.rawInstanceData,
   buildings: Group,
-  result: temp.rawInstanceDataResult,
-  type: keyof temp.rawInstanceDataResult['instance'],
   geom: BufferGeometry,
   mat: MeshBasicMaterial | MeshLambertMaterial | MeshStandardMaterial
 ) {
-  const data = result.instance[type]
-  if (data.matrix.length > 0) {
-    const i = new InstancedMesh(geom, mat, data.matrix.length)
-    data.matrix.forEach((m, n) => {
-      i.setMatrixAt(n, m)
-      const c = data.color[n]
-      if (c) i.setColorAt(n, c)
-    })
-    i.castShadow = i.receiveShadow = true
-    i.userData.magizType = type
-    buildings.add(i)
-  }
+  const iMesh = new InstancedMesh(geom, mat, data.matrix.length)
+  data.matrix.forEach((m, n) => {
+    iMesh.setMatrixAt(n, m)
+    const c = data.color[n]
+    if (c) iMesh.setColorAt(n, c)
+  })
+  iMesh.castShadow = iMesh.receiveShadow = true
+  iMesh.userData.magizType = type
+  buildings.add(iMesh)
 }
 
 /** 生成尺寸为 1x1x1 ，最小点为原点，顶部缩进 indentRatio 的坡屋顶 */

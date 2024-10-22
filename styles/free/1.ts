@@ -7,11 +7,11 @@ export const styles: styleTypes.styles = {
       color: { 颜色: '#eee' },
       floor: [
         {
-          setEdges: [{ offset: '1缩进' }],
+          edge: [{ offset: '1缩进' }],
           extrude: [
             {
               height: '1高度',
-              thickness: '1厚度',
+              toWall: '1厚度',
               color: '颜色',
               transform: [{ moveZ: '1抬升' }],
             },
@@ -23,14 +23,14 @@ export const styles: styleTypes.styles = {
       unit: { 楼板缩进: 0.5, 板厚: 0.6 },
       floor: [
         {
-          setEdges: [{ offset: -0.4 }],
+          edge: [{ offset: -0.4 }],
           extrude: [
             { once: true, height: '-1板厚', transform: [{ moveZ: '1SH' }] },
             { once: true, height: '-1板厚' },
           ],
         },
         {
-          setEdges: [{ offset: '1楼板缩进' }],
+          edge: [{ offset: '1楼板缩进' }],
           extrude: [{ height: '-1板厚' }],
         },
         {
@@ -42,8 +42,8 @@ export const styles: styleTypes.styles = {
       unit: { 柱宽: 1, 间距: 4, 楼板缩进: 0.5 },
       floor: [
         {
-          setEdges: [{ offset: '1楼板缩进' }],
-          floorRange: [{ top: -1 }],
+          edge: [{ offset: '1楼板缩进' }],
+          floor: { range: [{ top: -1 }] },
           extrude: [{ height: -0.6 }],
         },
         {
@@ -105,15 +105,15 @@ export const styles: styleTypes.styles = {
       unit: { 楼板缩进: 0.5, 板厚: 1.2 },
       floor: [
         {
-          setEdges: [{ offset: '1楼板缩进' }],
-          floorRange: [{ bottom: 1, top: -1 }],
+          edge: [{ offset: '1楼板缩进' }],
+          floor: { range: [{ bottom: 1, top: -1 }] },
           extrude: [{ height: '-1板厚' }],
         },
         {
           extrude: [{ once: true, height: '1SH-1板厚', color: 'G' }],
         },
         {
-          setEdges: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
+          edge: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
           extrude: [{ once: true, height: '1BH+4' }],
         },
       ],
@@ -122,8 +122,8 @@ export const styles: styleTypes.styles = {
       unit: { 柱宽: 1, 窗宽: 2, 楼板缩进: 0.5, 板厚: 1.2, 降低: 0 },
       floor: [
         {
-          setEdges: [{ offset: '1楼板缩进' }],
-          floorRange: [{ bottom: 1, top: -1 }],
+          edge: [{ offset: '1楼板缩进' }],
+          floor: { range: [{ bottom: 1, top: -1 }] },
           extrude: [{ height: '-1板厚' }],
         },
         {
@@ -145,7 +145,7 @@ export const styles: styleTypes.styles = {
           ],
         },
         {
-          setEdges: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
+          edge: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
           extrude: [{ once: true, height: '1BH+4' }],
         },
       ],
@@ -183,12 +183,12 @@ export const styles: styleTypes.styles = {
           ],
         },
         {
-          floorRange: [{ top: -1, bottom: 1 }],
+          floor: { range: [{ top: -1, bottom: 1 }] },
           // scaleEdges: -1,
           extrude: [{ height: -0.6 }],
         },
         {
-          setEdges: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
+          edge: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
           extrude: [{ once: true, height: '1BH+4' }],
         },
       ],
@@ -197,11 +197,11 @@ export const styles: styleTypes.styles = {
       unit: { 缩进: 3 },
       floor: [
         {
-          floorRange: [{ bottom: 1 }],
+          floor: { range: [{ bottom: 1 }] },
           extrude: [{ height: -0.6 }, { height: 1, color: 'G' }],
         },
         {
-          setEdges: [{ offset: 0.4 }],
+          edge: [{ offset: 0.4 }],
           facade: [
             {
               once: true,
@@ -219,11 +219,11 @@ export const styles: styleTypes.styles = {
           ],
         },
         {
-          setEdges: [{ offset: '1缩进' }],
+          edge: [{ offset: '1缩进' }],
           extrude: [{ once: true, height: '1SH', color: 'G' }],
         },
         {
-          setEdges: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
+          edge: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
           extrude: [{ once: true, height: '1BH+4' }],
         },
       ],
@@ -271,8 +271,8 @@ export const styles: styleTypes.styles = {
         },
         // 楼板
         {
-          setEdges: [{ offset: 1 }],
-          floorRange: [{ bottom: 1 }],
+          edge: [{ offset: 1 }],
+          floor: { range: [{ bottom: 1 }] },
           extrude: [{ height: -1 }],
         },
         // 幕墙
@@ -280,7 +280,7 @@ export const styles: styleTypes.styles = {
           extrude: [{ once: true, height: '1SH', color: 'G' }],
         },
         {
-          setEdges: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
+          edge: [{ offset: { x: 0.1, y: 0.2, asRatio: true } }],
           extrude: [{ once: true, height: '1BH+4' }],
         },
       ],

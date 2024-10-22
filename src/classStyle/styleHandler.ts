@@ -1,12 +1,13 @@
 import Mexp from 'math-expression-evaluator'
 import { sample, Seed, passControl } from '../classPlan/utils'
+import { presetColors } from './color'
 import { mergeStyles } from './merge'
 
 import type { magizTypes } from '../types/magizTypes'
 import type { styleTypes } from '../types/style'
 import type { styleParsed } from '../types/stylesParsed'
 
-export { StyleHandler, presetFaceColors }
+export { StyleHandler }
 
 const evaluator = new Mexp()
 
@@ -23,9 +24,9 @@ const GLOBAL: {
 
 /** 全局缓存的解析结果，以便拆分函数 */
 const RESULT: styleParsed.result = {
-  globalColorMap: [],
+  colorMapPTR: [],
   floorCount: 0,
-  classified: [],
+  classifiedByEdge: [],
 }
 
 /** 用于管理多个样式文件的样式库类 */
@@ -85,13 +86,12 @@ class StyleHandler {
     styleParams: magizTypes.styleParams,
     /** 全局共用随机种子以避免碰撞 */
     globalSeed: Seed,
-    /** 全局缓存 colorMap 以便正确索引 */
+    /** 全局缓存 colorMap 以便生成多个时正确索引 */
     globalColorMap: string[]
   ): styleParsed.result {
-    // 全局缓存colorMap指针
-    RESULT.globalColorMap = globalColorMap
+    RESULT.colorMapPTR = globalColorMap
     RESULT.floorCount = 0
-    RESULT.classified = []
+    RESULT.classifiedByEdge = []
 
     // 确保输入的参数为数字
     const height = Number(styleParams.height)
@@ -128,9 +128,9 @@ class StyleHandler {
       bsh = height - rsh - msh
       bfh = bsh / Math.floor(bsh / bfh)
 
-      parseSection(ss.bottom, false, this, elevation, bsh, bfh, globalSeed)
-      parseSection(ss.middle, false, this, elevation + bsh, msh, mfh, globalSeed)
-      parseSection(ss.roof, true, this, elevation + height - rsh, rsh, rfh, globalSeed)
+      parseSection('bottom', ss, this, elevation, bsh, bfh, globalSeed)
+      parseSection('middle', ss, this, elevation + bsh, msh, mfh, globalSeed)
+      parseSection('roof', ss, this, elevation + height - rsh, rsh, rfh, globalSeed)
     } else {
       console.warn(`${styleParams.style} is invalid, returned empty data`)
     }
@@ -141,15 +141,6 @@ class StyleHandler {
 }
 
 //////////////////////////////////////////////////////////
-
-const presetFaceColors: magizTypes.remapColor['face'] = {
-  _GLASS: '#26f',
-  _CONCRETE: '#eee',
-  _METAL: '#666',
-  _WOOD: '#866',
-  _BRICK: '#e99',
-  _ROOF: '#333',
-}
 
 /** 解析包含 styleTypes.status 的参数 */
 function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.status & MORE {
@@ -187,13 +178,13 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
           c === '_WOOD' ||
           c === '_BRICK' ||
           c === '_ROOF'
-            ? presetFaceColors[c]
+            ? presetColors.face[c]
             : c.replace(/ *G$/, '')
         // 颜色先加入 colorMap 再从中索引
-        let index = RESULT.globalColorMap.indexOf(cv)
+        let index = RESULT.colorMapPTR.indexOf(cv)
         if (index < 0) {
-          index = RESULT.globalColorMap.length
-          RESULT.globalColorMap.push(cv)
+          index = RESULT.colorMapPTR.length
+          RESULT.colorMapPTR.push(cv)
         }
         return { index, glass: isPresetGlass || /G$/i.test(c) }
       }),
@@ -243,30 +234,31 @@ function parseBoxFlex(boxFlex: styleTypes.boxFlex): styleParsed.boxFlex {
 
 /** 解析样式的段，须调用 styles  */
 function parseSection(
-  section: styleTypes.section | undefined,
-  isRoof: boolean,
+  key: keyof styleTypes.style['section'],
+  sections: styleTypes.style['section'],
   styles: StyleHandler,
   sectionElevation: number,
   sectionHeight: number,
   floorHeight: number,
   seed: Seed
 ) {
+  const section = sections[key]
   if (section) {
     GLOBAL.UNITS.FH = floorHeight
     let floorCount = 0
-    if (isRoof) {
+    if (key === 'roof') {
       floorCount = 1
     } else {
-      floorCount = Math.round(sectionHeight / GLOBAL.UNITS.FH)
+      floorCount = Math.round(sectionHeight / floorHeight)
       RESULT.floorCount += floorCount
     }
 
     if (floorCount > 0) {
       section.floor?.forEach((floorParams) => {
-        // 解析样式
+        // 先解析除预设外的样式参数
         parseFloor(floorCount, floorHeight, sectionHeight, sectionElevation, floorParams, seed)
 
-        // 带入参数解析预设样式
+        // 然后处理预设样式相关参数
         floorParams.preset?.forEach((floorPresetParams) => {
           const { name, key } = floorPresetParams
           try {
@@ -322,25 +314,29 @@ function parseSection(
                 }
               }
 
-              foundStylePreset.floor.forEach((f) => {
+              foundStylePreset.floor.forEach((presetFloorParams) => {
                 // 创建预设的深拷贝
-                const fp = Object.assign({}, f)
-                // 如果父级参数有除生成体块外的其他部分，与预设进行整合，以便在预设基础上增加自定义
-                if (floorParams.floorControl) fp.floorControl = floorParams.floorControl
-                if (floorParams.floorNumber) fp.floorNumber = floorParams.floorNumber
-                if (floorParams.floorRange) fp.floorRange = floorParams.floorRange
+                const presetClone = Object.assign({}, presetFloorParams)
+                // 父级层数控制参数覆盖预设控制参数
+                if (floorParams.floor) presetClone.floor = floorParams.floor
+                // 父级边线控制参数与预设叠加
+                presetClone.edge = [...(floorParams.edge || []), ...(presetClone.edge || [])]
 
-                // 边线控制可以叠加
-                fp.setEdges = [...(floorParams.setEdges || []), ...(fp.setEdges || [])]
-
-                parseFloor(floorCount, floorHeight, sectionHeight, sectionElevation, fp, seed)
+                parseFloor(
+                  floorCount,
+                  floorHeight,
+                  sectionHeight,
+                  sectionElevation,
+                  presetClone,
+                  seed
+                )
               })
               GLOBAL.COLOR_PRESET = GLOBAL.UNITS_PRESET = {}
             } else {
               console.warn('can not find preset:', name)
             }
           } catch (error) {
-            console.warn('handle preset error:', name, error)
+            console.error('handle preset error:', name, error)
           }
         })
       })
@@ -352,23 +348,23 @@ function parseSection(
 
 function parseFloor(
   /** 根据段高和层高拟合计算的层数 */
-  floorCount: number,
-  /** 层高 */
+  totalFloors: number,
   floorHeight: number,
-  /** 段高 */
   sectionHeight: number,
   sectionElevation: number,
   floorParams: styleTypes.floor,
   seed: Seed
 ) {
-  const control = parseControl(floorParams.floorControl)
+  const control = parseControl(floorParams.floor?.control)
   const edgeParams = parseEdgeParams(floorParams)
 
-  const edgesJSON = JSON.stringify(edgeParams)
-  const found = RESULT.classified.find((s) => s.edgesJSON === edgesJSON)
-  const saveAs: styleParsed.resultClassified = found || {
+  const edgeParamsStampJSON = JSON.stringify(edgeParams)
+  const foundSameEdge = RESULT.classifiedByEdge.find(
+    (s) => s.edgeParamsStampJSON === edgeParamsStampJSON
+  )
+  const saveAs: styleParsed.resultClassified = foundSameEdge || {
     edgeParams,
-    edgesJSON,
+    edgeParamsStampJSON,
     extrude: [],
     slopingRoof: [],
     clampBox: [],
@@ -377,24 +373,24 @@ function parseFloor(
     boxInside: [],
     adjunct: [],
   }
-  if (!found) RESULT.classified.push(saveAs)
+  if (!foundSameEdge) RESULT.classifiedByEdge.push(saveAs)
 
   // 修改层数范围
-  const { floorNumber, floorRange } = floorParams
-  const ranges = limitFloorRange(0, floorCount, floorNumber, floorRange)
-
+  const ranges = getFloorRanges(
+    totalFloors,
+    floorHeight,
+    sectionHeight,
+    floorParams.floor?.number,
+    floorParams.floor?.range
+  )
   ranges.forEach((range) => {
-    const total = range[1] - range[0]
-
-    // 修改层数后 SH 也变了
-    GLOBAL.UNITS.SH = floorNumber || floorRange ? total * floorHeight : sectionHeight
-
+    // 每个范围都单独计算 SH
+    GLOBAL.UNITS.SH = range.sectionHeight
     // 遍历每一层，按标高修改参数的 move.z，结果保存到 result
-    for (let i = range[0]; i < range[1]; i++) {
+    for (let i = range.bf; i < range.tf; i++) {
       if (passControl(i, seed, control)) {
-        const isOnce = i === range[0]
+        const isOnce = i === range.bf
         const floorElevation = sectionElevation + i * floorHeight
-
         parseExtrude(floorElevation, isOnce, saveAs, floorParams.extrude)
         parseSlopingRoof(floorElevation, isOnce, saveAs, floorParams.slopingRoof)
         parseClampBox(floorElevation, isOnce, saveAs, floorParams.clampBox)
@@ -408,80 +404,66 @@ function parseFloor(
 }
 
 /** 按 range 将floors重新分段 */
-function limitFloorRange(
-  bottomFloor: number,
-  topFloor: number,
-  count: styleTypes.floor['floorNumber'],
-  range: styleTypes.floor['floorRange']
-) {
-  const result: [bottom: number, top: number][] = []
+function getFloorRanges(
+  totalFloors: number,
+  floorHeight: number,
+  sectionHeight: number,
+  byCount: styleTypes.ns | undefined,
+  byRange: styleTypes.floorRangeType[] | undefined
+): { bf: number; tf: number; sectionHeight: number }[] {
+  const result: ReturnType<typeof getFloorRanges> = []
+  let tf = totalFloors
+  let bf = 0
+  if (byCount) {
+    tf = parse(byCount)
+    sectionHeight = tf * floorHeight
+  }
 
-  if (count) {
-    result.push([bottomFloor, bottomFloor + parse(count)])
-  } else if (range) {
-    const total = topFloor - bottomFloor
-    range.forEach((r) => {
-      const { asRatio, bottom, top, reverse } = r
+  if (byRange) {
+    byRange.forEach((range) => {
+      const { asRatio, bottom, top, reverse } = range
       const bn = parse(bottom)
       const tn = parse(top)
-      let bf = bottomFloor
-      let tf = topFloor
 
       if (reverse) {
         if (asRatio) {
-          if (bn) tf = bf + Math.round(total * bn)
-          if (tn) bf = tf - Math.round(total * tn)
+          if (bn) tf = bf + Math.round(totalFloors * bn)
+          if (tn) bf = tf - Math.round(totalFloors * tn)
         } else {
           if (bn) tf = bf + bn
           if (tn) bf = tf - tn
         }
       } else {
         if (asRatio) {
-          if (bn) bf += Math.round(total * bn)
-          if (tn) tf -= Math.round(total * tn)
+          if (bn) bf += Math.round(totalFloors * bn)
+          if (tn) tf -= Math.round(totalFloors * tn)
         } else {
           if (bn) bf += bn
           if (tn) tf -= tn
         }
       }
 
-      if (bf < tf) result.push([bf, tf])
+      if (bf < tf) result.push({ bf, tf, sectionHeight: (tf - bf) * floorHeight })
     })
   } else {
-    result.push([bottomFloor, topFloor])
+    result.push({ bf: 0, tf, sectionHeight })
   }
   return result
 }
 
 /** 解析 styleTypes.floor 中边线相关的参数 */
 function parseEdgeParams(params: styleTypes.floor): styleParsed.handleEdgesType {
-  return {
-    set: params.setEdges?.map((setEdges) => {
-      const { offset, clamp, along } = setEdges
-      return {
-        offset: parseOffsetOrScale(offset),
-        clamp: parseClamp(clamp),
-        along,
-      }
-    }),
-  }
-}
-
-/** 解析偏移边线参数 */
-function parseOffsetOrScale(params?: styleTypes.scaleOrOffset) {
-  if (params) {
-    if (typeof params === 'object') {
-      return {
-        x: parse(params.x),
-        y: parse(params.y),
-        asRatio: params.asRatio ? true : false,
-      }
+  const result: styleParsed.handleEdgesType = []
+  params.edge?.forEach((modEdges) => {
+    if ('offset' in modEdges) {
+      result.push(parseOffsetEdge(modEdges))
+    } else if ('along' in modEdges) {
+      result.push(modEdges)
     } else {
-      const v = parse(params)
-      return { x: v, y: v, asRatio: false }
+      result.push(parseClamp(modEdges))
     }
-  }
-  return undefined
+  })
+  return result
 }
 
 function parseExtrude(
@@ -492,12 +474,12 @@ function parseExtrude(
 ) {
   if (extrudes) {
     extrudes.forEach((extrudeParams) => {
-      const { once, height, thickness } = extrudeParams
+      const { once, height, toWall } = extrudeParams
       if (!once || isOnce) {
         saveAs.extrude.push(
           parseStatus(extrudeParams, {
-            thickness: parse(thickness),
             height: parse(height),
+            toWall: parse(toWall),
             elevation,
           })
         )
@@ -706,20 +688,30 @@ function parseAdjuncts(
   }
 }
 
-function parseClamp(params?: styleTypes.clampRangeType): styleParsed.clampRangeType | undefined {
-  if (params) {
-    return {
-      xMin: parse(params.xMin),
-      xMax: parse(params.xMax),
-      yMin: parse(params.yMin),
-      yMax: parse(params.yMax),
-      xCentral: parse(params.xCentral),
-      yCentral: parse(params.yCentral),
-      asRatio: typeof params.asRatio === 'boolean' ? params.asRatio : true,
-      reverse: params.reverse || false,
-    }
+/** 解析偏移边线参数 */
+function parseOffsetEdge(params: styleTypes.offsetEdgeType): styleParsed.offsetEdgeType {
+  const { offset } = params
+  if (typeof offset === 'object') {
+    return { offset: { x: parse(offset.x), y: parse(offset.y), asRatio: offset.asRatio || false } }
   } else {
-    return undefined
+    const x = parse(offset)
+    return { offset: { x, y: x, asRatio: false } }
+  }
+}
+
+function parseClamp(params: styleTypes.clampEdgeType): styleParsed.clampEdgeType {
+  const { clamp } = params
+  return {
+    clamp: {
+      xMin: parse(clamp.xMin),
+      xMax: parse(clamp.xMax),
+      yMin: parse(clamp.yMin),
+      yMax: parse(clamp.yMax),
+      xCentral: parse(clamp.xCentral),
+      yCentral: parse(clamp.yCentral),
+      asRatio: typeof clamp.asRatio === 'boolean' ? clamp.asRatio : true,
+      reverse: clamp.reverse || false,
+    },
   }
 }
 
