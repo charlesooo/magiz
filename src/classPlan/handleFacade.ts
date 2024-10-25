@@ -1,5 +1,5 @@
 import { Matrix4, Vector2 } from 'three'
-import { passControl, Seed, pushInstancedData } from './utils'
+import { passControl, Seed, pushBoxData } from './utils'
 import { getMatchRatioAndCount } from './handleMath'
 import { TEMP, handleFacadeElements } from './handleBasic'
 
@@ -233,6 +233,6 @@ function pushSpacingData(
       .clone()
       .premultiply(TEMP.makeTranslation(distance, 0, 0))
       .premultiply(placeMatrix)
-    pushInstancedData(result, seed, m.colorID, mtx)
+    pushBoxData(result, seed, m.colorID, mtx)
   })
 }

@@ -1,4 +1,4 @@
-import type { styleTypes } from '../types/style'
+import type { styleTypes } from '../types/styleTypes'
 
 export { mergeStyles }
 

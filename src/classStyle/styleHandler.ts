@@ -4,7 +4,7 @@ import { presetColors } from './color'
 import { mergeStyles } from './merge'
 
 import type { magizTypes } from '../types/magizTypes'
-import type { styleTypes } from '../types/style'
+import type { styleTypes } from '../types/styleTypes'
 import type { styleParsed } from '../types/stylesParsed'
 
 export { StyleHandler }
@@ -496,10 +496,11 @@ function parseSlopingRoof(
 ) {
   if (slopingRoofs) {
     slopingRoofs.forEach((roofParams) => {
-      const { once, height, overhang } = roofParams
+      const { once, form, height, overhang } = roofParams
       if (!once || isOnce) {
         saveAs.slopingRoof.push(
           parseStatus(roofParams, {
+            form,
             overhang: parse(overhang),
             height: parse(height),
             elevation,

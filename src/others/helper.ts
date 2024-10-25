@@ -15,7 +15,7 @@ function showMousePointed(view: View) {
 
   const raycaster = new Raycaster()
   const indicator = document.createElement('a')
-  indicator.setAttribute('style', 'position:fixed;bottom:9px;left:9px')
+  indicator.setAttribute('style', 'position:fixed;top:9px;left:9px')
   document.body.appendChild(indicator)
   document.addEventListener('pointermove', (e) => {
     if (e.altKey) {

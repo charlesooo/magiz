@@ -1,4 +1,4 @@
-import type { styleTypes } from '../../src/types/style'
+import type { styleTypes } from '../../src/types/styleTypes'
 
 export const styles: styleTypes.styles = {
   preset: {
@@ -7,7 +7,9 @@ export const styles: styleTypes.styles = {
       color: { 颜色: '#863', 屋顶颜色: '#666' },
       floor: [
         {
-          slopingRoof: [{ height: '1高度-0.3', color: '屋顶颜色', transform: [{ moveZ: 0.3 }] }],
+          slopingRoof: [
+            { form: '4', height: '1高度-0.3', color: '屋顶颜色', transform: [{ moveZ: 0.3 }] },
+          ],
         },
         {
           // scaleEdges: '-1出挑',

@@ -1,4 +1,4 @@
-import type { styleTypes } from './style'
+import type { styleTypes } from './styleTypes'
 
 export namespace magizTypes {
   /** 预设的玻璃颜色 */
@@ -95,8 +95,10 @@ export namespace magizTypes {
     instanced: {
       box: instancedData
       boxGlass: instancedData
-      sloping: instancedData
-      slopingGlass: instancedData
+      slope2: instancedData
+      slope2Glass: instancedData
+      slope4: instancedData
+      slope4Glass: instancedData
     }
     extruded: {
       solid: extrudedInstancedData[]

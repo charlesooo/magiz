@@ -2,9 +2,7 @@ import {
   Matrix4,
   Group,
   Color,
-  MeshBasicMaterial,
-  MeshLambertMaterial,
-  MeshStandardMaterial,
+  Material,
   LineBasicMaterial,
   Vector2,
   Shape,
@@ -28,7 +26,16 @@ import type { magizTypes } from '../types/magizTypes'
 export { generateModel }
 
 const boxGeom = new BoxGeometry()
-const slopingGeom = getSlopingRoofGeometry()
+const slopeGeom: { '2'?: BufferGeometry; '4'?: BufferGeometry } = {}
+/** 坡屋顶的原型仅在使用时才缓存并加载 */
+function getSlopeGeom(type: '2' | '4') {
+  let g = slopeGeom[type]
+  if (!g) {
+    g = type === '2' ? getSlope2() : getSlope4()
+    slopeGeom[type] = g
+  }
+  return g
+}
 
 type SharedRawToInstancedType = {
   /** 计算时公用的临时矩阵 */
@@ -60,10 +67,12 @@ function generateModel(
     instanced: {
       box: { color: [], matrix: [] },
       boxGlass: { color: [], matrix: [] },
-      sloping: { color: [], matrix: [] },
-      slopingGlass: { color: [], matrix: [] },
+      slope2: { color: [], matrix: [] },
+      slope2Glass: { color: [], matrix: [] },
+      slope4: { color: [], matrix: [] },
+      slope4Glass: { color: [], matrix: [] },
     },
-    instancedEdge: { boxAttribute: [], slopingAttribute: [] },
+    instancedEdge: { boxAttribute: [], slope2Attribute: [], slope4Attribute: [] },
     extruded: { solid: [], glass: [] },
   }
 
@@ -80,16 +89,20 @@ function generateModel(
 
   // STEP.2.根据 tempResult 生成proto体块
   const useMaterials = options?.basicMaterial ? basicFaceMaterials : presetFaceMaterials
-  addInstance('box', tempResult.instanced.box, buildings, boxGeom, useMaterials.solid)
-  addInstance('boxGlass', tempResult.instanced.boxGlass, buildings, boxGeom, useMaterials.glass)
-  addInstance('sloping', tempResult.instanced.sloping, buildings, slopingGeom, useMaterials.roof)
-  addInstance(
-    'slopingGlass',
-    tempResult.instanced.slopingGlass,
-    buildings,
-    slopingGeom,
-    useMaterials.glass
-  )
+  function addInstanceByKey(
+    key: keyof temp.rawInstanceDataResult['instanced'],
+    geom: BufferGeometry,
+    mat: Material
+  ) {
+    addInstance(key, tempResult.instanced[key], buildings, geom, mat)
+  }
+
+  addInstanceByKey('box', boxGeom, useMaterials.solid)
+  addInstanceByKey('boxGlass', boxGeom, useMaterials.glass)
+  addInstanceByKey('slope2', getSlopeGeom('2'), useMaterials.roof)
+  addInstanceByKey('slope4', getSlopeGeom('4'), useMaterials.roof)
+  addInstanceByKey('slope2Glass', getSlopeGeom('2'), useMaterials.glass)
+  addInstanceByKey('slope4Glass', getSlopeGeom('4'), useMaterials.glass)
   // STEP.3.根据 tempResult 生成extruded体块
   tempResult.extruded.solid.forEach((data) => {
     addInstance('extrudedSolid', data, buildings, data.geom, useMaterials.solid)
@@ -103,9 +116,15 @@ function generateModel(
     const edgeMat = presetOtherMaterials.edge
     addInstancedEdges(tempResult.instancedEdge.boxAttribute, buildings, boxGeom, edgeMat)
     addInstancedEdges(
-      tempResult.instancedEdge.slopingAttribute,
+      tempResult.instancedEdge.slope2Attribute,
       buildings,
-      getSlopingRoofGeometry(),
+      getSlopeGeom('2'),
+      edgeMat
+    )
+    addInstancedEdges(
+      tempResult.instancedEdge.slope4Attribute,
+      buildings,
+      getSlopeGeom('4'),
       edgeMat
     )
 
@@ -154,7 +173,11 @@ function rawToInstancedTemp(
       const matrix = getInstanceMatrix(m, restoreParams, tempMatrix)
       // 最终作为 InstancedBufferAttribute 绑定到边线模型上
       result.instancedEdge[
-        instanceType.includes('box') ? 'boxAttribute' : 'slopingAttribute'
+        instanceType.includes('box')
+          ? 'boxAttribute'
+          : instanceType.includes('slope2')
+          ? 'slope2Attribute'
+          : 'slope4Attribute'
       ].push(...matrix.toArray())
       // 保存矩阵数据
       resultRawData.matrix.push(matrix)
@@ -258,7 +281,7 @@ function addInstance(
   data: temp.rawInstanceData,
   buildings: Group,
   geom: BufferGeometry,
-  mat: MeshBasicMaterial | MeshLambertMaterial | MeshStandardMaterial
+  mat: Material
 ) {
   const iMesh = new InstancedMesh(geom, mat, data.matrix.length)
   data.matrix.forEach((m, n) => {
@@ -271,40 +294,67 @@ function addInstance(
   buildings.add(iMesh)
 }
 
-/** 生成尺寸为 1x1x1 ，最小点为原点，顶部缩进 indentRatio 的坡屋顶 */
-function getSlopingRoofGeometry(indentRatio: number = 0.2) {
+/** 生成尺寸为 1x1x1，最小点为原点，顶部缩进 indentRatio 的四坡顶 */
+function getSlope4(indentRatio: number = 0.2) {
   const geometry = new BufferGeometry()
-  const p1 = [indentRatio, 0.5, 1]
-  const p2 = [1 - indentRatio, 0.5, 1]
-  const c1 = [0, 0, 0]
-  const c2 = [1, 0, 0]
-  const c3 = [1, 1, 0]
-  const c4 = [0, 1, 0]
+  const t1 = [indentRatio, 0.5, 1]
+  const t2 = [1 - indentRatio, 0.5, 1]
+  const r1 = [0, 0, 0]
+  const r2 = [1, 0, 0]
+  const r3 = [1, 1, 0]
+  const r4 = [0, 1, 0]
   const vertices = new Float32Array([
-    ...c2,
-    ...p1,
-    ...c1,
-    ...c2,
-    ...p2,
-    ...p1,
-    ...c4,
-    ...p2,
-    ...c3,
-    ...c4,
-    ...p1,
-    ...p2,
-    ...c1,
-    ...p1,
-    ...c4,
-    ...c3,
-    ...p2,
-    ...c2,
+    ...r2,
+    ...t1,
+    ...r1,
+    ...r2,
+    ...t2,
+    ...t1,
+    ...r4,
+    ...t2,
+    ...r3,
+    ...r4,
+    ...t1,
+    ...t2,
+    ...r1,
+    ...t1,
+    ...r4,
+    ...r3,
+    ...t2,
+    ...r2,
+  ])
+  return geometry.setAttribute('position', new BufferAttribute(vertices, 3))
+}
+
+/** 生成尺寸为 1x1x1，山墙一角为原点的双坡顶 */
+function getSlope2() {
+  /** 按1x1x1出檐 */
+  const geometry = new BufferGeometry()
+  const t1 = [0, 0.5, 1]
+  const t2 = [1, 0.5, 1]
+  const r1 = [0, 0, 0]
+  const r2 = [1, 0, 0]
+  const r3 = [1, 1, 0]
+  const r4 = [0, 1, 0]
+  const vertices = new Float32Array([
+    ...r2,
+    ...t1,
+    ...r1,
+    ...r2,
+    ...t2,
+    ...t1,
+    ...r4,
+    ...t2,
+    ...r3,
+    ...r4,
+    ...t1,
+    ...t2,
   ])
 
   return geometry.setAttribute('position', new BufferAttribute(vertices, 3))
 }
 
-/** 将平面点转为高度为1的 ExtrudeGeometry */
+/** 将带孔洞的平面点转为高度为1的 ExtrudeGeometry */
 // function toExtrudedGeometry(v2Points: Vector2[][]) {
 //   const shape = new Shape(v2Points[0])
 //   for (let i = 1; i < v2Points.length; i++) {

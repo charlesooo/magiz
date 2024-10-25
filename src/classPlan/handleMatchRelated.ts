@@ -6,7 +6,7 @@ import {
   rotateLinesAlong,
   matchPolygonLinesAlongX,
 } from './handleMath'
-import { Seed, sample, passControl, pushInstancedData } from './utils'
+import { Seed, sample, passControl, pushBoxData } from './utils'
 import { TEMP, applyBasicTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
@@ -165,7 +165,7 @@ function handleMatch(
                 TEMP.makeTranslation(pair.center.x, pair.center.y, elevation + moveH + height / 2)
               )
               .premultiply(restoreMatrix)
-            pushInstancedData(result, seed, data.colorID, mtx)
+            pushBoxData(result, seed, data.colorID, mtx)
           })
         } else {
           current += matchDepth
@@ -265,7 +265,7 @@ function handleBoxInside(
                 TEMP.makeTranslation(props.x + moveX, props.y + moveY, elevation + h / 2)
               )
               .premultiply(TEMP.makeRotationZ(-radian))
-            pushInstancedData(result, seed, data.colorID, mtx)
+            pushBoxData(result, seed, data.colorID, mtx)
           }
         }
       })
@@ -292,7 +292,7 @@ function handleAdjunct(
             .premultiply(TEMP.makeScale(box.x, box.y, box.z))
           applyBasicTransform(box, mtx, TEMP)
           mtx.premultiply(TEMP.makeTranslation(point.x, point.y, elevation))
-          pushInstancedData(result, seed, box.colorID, mtx)
+          pushBoxData(result, seed, box.colorID, mtx)
         })
       }
     }

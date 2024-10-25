@@ -1,4 +1,4 @@
-import type { styleTypes } from './style'
+import type { styleTypes } from './styleTypes'
 
 export namespace styleParsed {
   type paddingType = { start: number; middle: number; end: number; asRatio: boolean }
@@ -72,6 +72,7 @@ export namespace styleParsed {
   }
 
   type slopingRoof = status & {
+    form: '2' | '4'
     height: number
     overhang: number
     elevation: number

@@ -4,7 +4,7 @@ import { rand } from './handleMath'
 import type { styleParsed } from '../types/stylesParsed'
 import type { magizTypes } from '../types/magizTypes'
 
-export { Seed, passControl, pushInstancedData, sample }
+export { Seed, passControl, pushBoxData, sample }
 
 /** 自增随机数种子 */
 class Seed {
@@ -50,7 +50,7 @@ function rand100() {
   return Math.round(Math.random() * Math.pow(10, 3))
 }
 
-function pushInstancedData(
+function pushBoxData(
   saveAs: magizTypes.rawBuilding,
   seed: Seed,
   colorID: styleParsed.colorDataType[],

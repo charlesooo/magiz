@@ -6,7 +6,7 @@ import { Seed } from './utils'
 
 import type { temp } from '../types/temp'
 import type { styleParsed } from '../types/stylesParsed'
-import type { styleTypes } from '../types/style'
+import type { styleTypes } from '../types/styleTypes'
 export {
   rand,
   shuffleArray,

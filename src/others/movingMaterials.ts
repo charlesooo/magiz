@@ -3,7 +3,7 @@ import { View } from '../classView/view'
 
 export { setMovingMaterial }
 
-/** 用于生成模型和相机均固定但视觉上匀速平移的场景 */
+/** 用于生成模型和相机不变，但视觉上匀速平移的场景 */
 function setMovingMaterial(
   view: View,
   faceMaterial: MeshLambertMaterial,

@@ -3,13 +3,13 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 
 import type { magizTypes } from '../types/magizTypes'
 
-export { Web2D }
+export { ViewTag }
 
 const far = 400
 const near = 300
 
-/** 辅助View显示文字图片信息的渲染器 */
-class Web2D {
+/** 给View中的模型添加信息标签 */
+class ViewTag {
   /** 创建的 Three.js 渲染器实例 */
   renderer: CSS2DRenderer
   /** 缓存生成的对象 */

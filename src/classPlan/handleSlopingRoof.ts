@@ -1,5 +1,5 @@
 import { Vector2, Matrix4 } from 'three'
-import { Seed, pushInstancedData } from './utils'
+import { Seed, sample } from './utils'
 import { TEMP, applyBasicTransform } from './handleBasic'
 
 import type { magizTypes } from '../types/magizTypes'
@@ -15,7 +15,7 @@ function handleSlopingRoof(
   seed: Seed
 ) {
   parsed.forEach((roofParams) => {
-    const { height, overhang, elevation } = roofParams
+    const { form, height, overhang, elevation } = roofParams
     const { min, max } = bounds
 
     const mtx = new Matrix4().makeScale(
@@ -26,6 +26,12 @@ function handleSlopingRoof(
     applyBasicTransform(roofParams, mtx, TEMP)
     mtx.premultiply(TEMP.makeTranslation(min.x - overhang, min.y - overhang, elevation))
 
-    pushInstancedData(result, seed, roofParams.colorID, mtx)
+    const { index, glass } = sample(roofParams.colorID, seed)!
+    const target: magizTypes.instancedData =
+      result.instanced[
+        form === '2' ? (glass ? 'slope2Glass' : 'slope2') : glass ? 'slope4Glass' : 'slope4'
+      ]
+    target.colors.push(index)
+    target.matrices.push(mtx.toArray())
   })
 }

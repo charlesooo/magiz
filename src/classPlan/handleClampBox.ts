@@ -1,6 +1,6 @@
 import { Vector2, Matrix4 } from 'three'
 import { TEMP, applyBasicTransform } from './handleBasic'
-import { Seed, pushInstancedData } from './utils'
+import { Seed, pushBoxData } from './utils'
 
 import type { styleParsed } from '../types/stylesParsed'
 import type { magizTypes } from '../types/magizTypes'
@@ -23,6 +23,6 @@ function handleClampBox(
     mtx.premultiply(TEMP.makeScale(max.x - min.x, max.y - min.y, Math.abs(height)))
     applyBasicTransform(clampParams, mtx, TEMP)
     mtx.premultiply(TEMP.makeTranslation(min.x, min.y, elevation))
-    pushInstancedData(result, seed, colorID, mtx)
+    pushBoxData(result, seed, colorID, mtx)
   })
 }

@@ -66,13 +66,16 @@ export namespace temp {
     instanced: {
       box: rawInstanceData
       boxGlass: rawInstanceData
-      sloping: rawInstanceData
-      slopingGlass: rawInstanceData
+      slope2: rawInstanceData
+      slope2Glass: rawInstanceData
+      slope4: rawInstanceData
+      slope4Glass: rawInstanceData
     }
     /** 玻璃和实体的边线可以公用，因此独立保存边线数据 */
     instancedEdge: {
       boxAttribute: number[]
-      slopingAttribute: number[]
+      slope2Attribute: number[]
+      slope4Attribute: number[]
     }
     extruded: {
       solid: rawExtrudedData[]

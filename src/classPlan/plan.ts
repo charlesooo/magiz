@@ -210,8 +210,10 @@ class Plan {
       instanced: {
         box: { matrices: [], colors: [] },
         boxGlass: { matrices: [], colors: [] },
-        sloping: { matrices: [], colors: [] },
-        slopingGlass: { matrices: [], colors: [] },
+        slope2: { matrices: [], colors: [] },
+        slope2Glass: { matrices: [], colors: [] },
+        slope4: { matrices: [], colors: [] },
+        slope4Glass: { matrices: [], colors: [] },
       },
       extruded: { solid: [], glass: [] },
     }

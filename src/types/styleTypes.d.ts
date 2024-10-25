@@ -151,6 +151,8 @@ export namespace styleTypes {
 
   /** 根据 boundingBox 生成坡屋顶 */
   type slopingRoof = status & {
+    /** 双坡或四坡 */
+    form: '2' | '4'
     /** 坡屋顶的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
     height: ns
     /** 檐口出挑距离 */

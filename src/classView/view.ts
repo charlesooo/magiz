@@ -23,16 +23,15 @@ import type { magizTypes } from '../types/magizTypes'
 
 export { View }
 
-///////////////////// Web3D /////////////////////
+// notes:
 // js 必须在的一定数值范围内显示，否则会出现异常。这是3D渲染通病。如按
 // 经纬度计算数值过小，出现部分EdgesGeometry不显示的问题。如离原点过远，会出
 // 现模型旋转时不停闪烁的问题，即使设置logarithmicDepthBuffer 为 true，也
 // 无法完全解决。
 //
-// 提升效率的方法：
-// 1. render.shadowMap.autoUpdate 关闭阴影自动更新
+// 提升效率的方法：render.shadowMap.autoUpdate 关闭阴影自动更新
 //
-// 从 instancedMesh 到 Mesh 用 SceneUtils.createMeshesFromInstancedMesh
+// 从instancedMesh到Mesh用 SceneUtils.createMeshesFromInstancedMesh
 // https://threejs.org/docs/#examples/zh/utils/SceneUtils
 
 const viewOptions: magizTypes.viewOptions = {
