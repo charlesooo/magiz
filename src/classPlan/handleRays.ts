@@ -1,4 +1,4 @@
-import { Vector2, Matrix3 } from 'three'
+import { Vector2 } from 'three'
 import { lineInsideRect, offsetRay, rayIntersectRay } from './handleMath'
 import type { temp } from '../types/temp'
 
@@ -8,30 +8,23 @@ export { offsetRays, rectClampRays }
 function offsetRays(
   rays: temp.ray[][],
   size: { x: number; y: number },
-  params: { x: number; y: number; asRatio: boolean },
-  rotate?: number
+  params: { x: number; y: number; asRatio: boolean }
 ): temp.ray[][] {
-  const matrix = rotate ? new Matrix3().makeRotation(rotate) : undefined
-  const distance = params.asRatio
+  const offsetParams = params.asRatio
     ? { x: size.x * params.x, y: size.y * params.y }
     : { x: params.x, y: params.y }
 
-  return rays.map((loop) => {
-    const points: Vector2[] = []
-    loop.forEach((ray, i) => {
-      const previous = loop[i === 0 ? loop.length - 1 : i - 1]!
-      const ray2: temp.ray = {
-        start: previous.start,
-        end: previous.end,
-        direction: previous.end.clone().sub(previous.start),
-      }
-      // ray.direction 仍为原对象
-      const point = rayIntersectRay(offsetRay(ray, distance), offsetRay(ray2, distance))
-      if (point) {
-        points.push(matrix ? point.applyMatrix3(matrix) : point)
-      }
-    })
+  const offsetted = rays.map((rayLoop) => rayLoop.map((ray) => offsetRay(ray, offsetParams)))
 
+  return offsetted.map((rayLoop) => {
+    // 计算偏移后的交点
+    const points: Vector2[] = []
+    rayLoop.map((ray, i) => {
+      const previous = rayLoop[i === 0 ? rayLoop.length - 1 : i - 1]!
+      const point = rayIntersectRay(ray, previous)
+      if (point) points.push(point)
+    })
+    // 返回temp.ray格式的结果
     return points.map((start, j) => {
       const end = points[j === points.length - 1 ? 0 : j + 1]!
       return { start, end, direction: end.clone().sub(start) }

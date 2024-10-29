@@ -13,11 +13,11 @@ export {
   randomBetween,
   getBounds,
   getMatchRatioAndCount,
-  isClockwise,
   isAlongAxis,
   isParallel,
   isPerpendicular,
   isPointInPolygon,
+  crossLines,
   lineInsideRect,
   projectPointOnRay,
   projectPointOnLine,
@@ -56,28 +56,24 @@ function getBounds(points2D: Vector2[]) {
   return { min, max }
 }
 
-/** 使用 "面积法" 来判断一组点是否按顺时针方向排列 */
-function isClockwise(points: [number, number][]) {
-  let sum = 0
-  for (let i = 0; i < points.length - 1; i++) {
-    const a = points[i]!
-    const b = points[i + 1]!
-    sum += (b[0] - a[0]) * (b[1] + a[1])
-  }
-  return sum > 0
-}
+// threejs 的 ShapeUtils 有相同功能
+// /** 使用 "面积法" 来判断一组点是否按顺时针方向排列 */
+// function isClockwise(points: [number, number][]) {
+//   let sum = 0
+//   for (let i = 0; i < points.length - 1; i++) {
+//     const a = points[i]!
+//     const b = points[i + 1]!
+//     sum += (b[0] - a[0]) * (b[1] + a[1])
+//   }
+//   return sum > 0
+// }
 
 /** 根据边与X轴间的弧度判断是否为东西向 */
 function isAlongAxis(r: number): boolean {
   return r < 0.7854 || r > 5.4978 || (2.3562 < r && r < 3.927)
 }
 
-/**
- * 计算线段与线段的交点（包括端点），排除平行的情况
- * @param {temp.line} line1 被检测的线段
- * @param {temp.line} line2 图形的边界
- * @returns {poinType | undefined} 相交点，如果没有相交则返回 undefined
- */
+/** 计算线段与线段的交点（包括端点），排除平行的情况 */
 function crossLines(line1: temp.line, line2: temp.line): Vector2 | undefined {
   const { x: x1, y: y1 } = line1.start
   const { x: x2, y: y2 } = line1.end
@@ -94,6 +90,7 @@ function crossLines(line1: temp.line, line2: temp.line): Vector2 | undefined {
       return new Vector2(x1 + t * (x2 - x1), y1 + t * (y2 - y1))
     }
   }
+
   return undefined
 }
 
@@ -115,8 +112,12 @@ function lineInsideRect(line: temp.line, rectangle: temp.rectangle): temp.line |
   if (insideCount === 2) {
     return { start: line.start.clone(), end: line.end.clone() }
   } else {
-    // 计算包括交于端点情况在内的端点
-    const intersections = rectangle.lines.map((l) => crossLines(l, line)).filter((p) => p)
+    // 计算包括交于端点情况在内的交点
+    const intersections: Vector2[] = []
+    rectangle.lines.forEach((l) => {
+      const i = crossLines(l, line)
+      if (i) intersections.push(i)
+    })
     const pt = pointsInside[0]
     const i = intersections[0]
     const i1 = intersections[1]
@@ -148,7 +149,8 @@ function getSameDirection(line1: temp.line, p1: Vector2, p2: Vector2): temp.line
     : { start: p2, end: p1 }
 }
 
-/** 根据公式 P = A + ((B - A) · (P - A)) / ||B - A||^2 * (B - A) 计算点在线段上的投影点，不含线段的端点！ */
+// 根据公式 P = A + ((B - A) · (P - A)) / ||B - A||^2 * (B - A)
+/** 计算点在线段上的投影点，不含线段的端点！ */
 function projectPointOnLine(point: Vector2, line: temp.line): Vector2 | undefined {
   const { start, end } = line
   const PA = new Vector2().subVectors(point, start)

@@ -15,6 +15,16 @@ export namespace magizTypes {
     custom?: { from: string; to: string }[]
   }
 
+  type displayParams = {
+    freeze: boolean
+    remap: magizTypes.presetColor
+    time: number
+    materialCN: boolean
+    greyScale: boolean
+    shadow: boolean
+    edge: boolean
+  }
+
   /** view初始化和默认的参数类型 */
   type viewOptions = {
     /** 雾气参数 */
@@ -43,8 +53,6 @@ export namespace magizTypes {
     greyScale: boolean
     /** 生成边线 */
     edge: boolean
-    /** 模型按原位生成 */
-    inplace: boolean
     /** 是否使用无光照效果的基本材质 */
     basicMaterial: boolean
     /** 颜色重映射 */
@@ -86,7 +94,7 @@ export namespace magizTypes {
     points: [x: number, y: number][][]
     /** 还原模型时原平面中心点坐标 */
     center: [x: number, y: number]
-    /** 重置后的平面中心点坐标，生成多个时可能不在原点 */
+    /** 生成多个时原点为全部平面的中心点，此为该平面的相对中心点坐标 */
     centerRelative: [x: number, y: number]
     /** 还原模型时绕Z轴旋转的弧度 */
     rotate: number
@@ -121,7 +129,7 @@ export namespace magizTypes {
     /** 成组的解析请求 */
     requests: requestData[]
     /** 显示单个 requestData，为 data 中的序号 */
-    focus: number
+    focus?: number
   }
 
   /** 请求解析样式所需的参数，须注意多边形坐标的不能首尾重复 */
@@ -132,10 +140,6 @@ export namespace magizTypes {
     loops: [x: number, y: number][][]
     /** 带有自定义样式的按自定义样式，反之按默认样式 */
     customStyles?: styleTypes.styles
-    /** 用于显示的ID */
-    id?: string
-    /** 用于显示的附加信息 */
-    info?: any
   }
 
   /** 从平面生成建筑模型的参数。(内部参数不能省略!) */

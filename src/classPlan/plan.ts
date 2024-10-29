@@ -32,7 +32,7 @@ class Plan {
     bounds: { min: Vector2; max: Vector2 }
     /** 相对平面定界框的开间与进深 */
     size: { x: number; y: number }
-    /** 边线转为计算用的向量数据 */
+    /** 边线转为计算用的顺时针向量数据 */
     rays: temp.ray[][]
     /** 围绕坐标轴原点旋转到原位的弧度 */
     radian: number
@@ -198,15 +198,15 @@ class Plan {
   ): magizTypes.rawBuilding {
     // 将结果保存到公共变量，以便同时处理多个plan生成，以及每个平面都正确映射colorMap
     const styleParsed = styles.parseStyle(this.styleParams, this.seed, result.colorMap)
-
     // 按相对坐标还是源坐标生成
     const building: magizTypes.rawBuilding = {
       info: { floorArea: this.area, floors: styleParsed.floorCount },
       points: this.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
       center: this.center.toArray(),
       centerRelative: [this.center.x - centerOfAll.x, this.center.y - centerOfAll.y],
-      params: this.styleParams,
       rotate: this.relative.radian,
+      params: this.styleParams,
+
       instanced: {
         box: { matrices: [], colors: [] },
         boxGlass: { matrices: [], colors: [] },

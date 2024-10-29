@@ -77,18 +77,17 @@ function generateModel(
   }
 
   // STEP.1.将可序列化的rawModels转为生成所需threeJS数据到 tempResult
-  const inplace = options?.inplace ? true : false
+  const inplace = rawModels.models.length > 1
 
   rawModels.models.forEach((rawBuilding) => {
-    const restoreParams = inplace
+    const tr = inplace
       ? { center: rawBuilding.centerRelative, rotate: rawBuilding.rotate }
       : undefined
-    rawToInstancedTemp(rawBuilding.instanced, tempResult, restoreParams, rawToInstancedParams)
-    rawToExtrudedTemp(rawBuilding.extruded, tempResult, restoreParams, rawToInstancedParams)
+    rawToInstancedTemp(rawBuilding.instanced, tempResult, tr, rawToInstancedParams)
+    rawToExtrudedTemp(rawBuilding.extruded, tempResult, tr, rawToInstancedParams)
   })
 
   // STEP.2.根据 tempResult 生成proto体块
-  const useMaterials = options?.basicMaterial ? basicFaceMaterials : presetFaceMaterials
   function addInstanceByKey(
     key: keyof temp.rawInstanceDataResult['instanced'],
     geom: BufferGeometry,
@@ -97,12 +96,14 @@ function generateModel(
     addInstance(key, tempResult.instanced[key], buildings, geom, mat)
   }
 
+  const useMaterials = options?.basicMaterial ? basicFaceMaterials : presetFaceMaterials
   addInstanceByKey('box', boxGeom, useMaterials.solid)
   addInstanceByKey('boxGlass', boxGeom, useMaterials.glass)
   addInstanceByKey('slope2', getSlopeGeom('2'), useMaterials.roof)
   addInstanceByKey('slope4', getSlopeGeom('4'), useMaterials.roof)
   addInstanceByKey('slope2Glass', getSlopeGeom('2'), useMaterials.glass)
   addInstanceByKey('slope4Glass', getSlopeGeom('4'), useMaterials.glass)
+
   // STEP.3.根据 tempResult 生成extruded体块
   tempResult.extruded.solid.forEach((data) => {
     addInstance('extrudedSolid', data, buildings, data.geom, useMaterials.solid)
@@ -144,14 +145,14 @@ function generateModel(
 /** 一次生成多个的时候，通过restoreParams还原位置和旋转 */
 function getInstanceMatrix(
   m: number[],
-  restoreParams: { center: [x: number, y: number]; rotate: number } | undefined,
+  transRelative: { center: [x: number, y: number]; rotate: number } | undefined,
   tempMatrix: Matrix4
 ) {
   const matrix = new Matrix4().fromArray(m)
-  if (restoreParams) {
+  if (transRelative) {
     matrix
-      .premultiply(tempMatrix.makeRotationZ(restoreParams.rotate))
-      .premultiply(tempMatrix.makeTranslation(...restoreParams.center, 0))
+      .premultiply(tempMatrix.makeRotationZ(transRelative.rotate))
+      .premultiply(tempMatrix.makeTranslation(...transRelative.center, 0))
   }
   return matrix
 }
@@ -160,7 +161,7 @@ function getInstanceMatrix(
 function rawToInstancedTemp(
   raw: magizTypes.rawBuilding['instanced'],
   result: temp.rawInstanceDataResult,
-  restoreParams: { center: [x: number, y: number]; rotate: number } | undefined,
+  transRelative: { center: [x: number, y: number]; rotate: number } | undefined,
   params: SharedRawToInstancedType
 ) {
   let instanceType: keyof magizTypes.rawBuilding['instanced']
@@ -170,7 +171,7 @@ function rawToInstancedTemp(
     const resultRawData = result.instanced[instanceType]
 
     instancedData.matrices.forEach((m, i) => {
-      const matrix = getInstanceMatrix(m, restoreParams, tempMatrix)
+      const matrix = getInstanceMatrix(m, transRelative, tempMatrix)
       // 最终作为 InstancedBufferAttribute 绑定到边线模型上
       result.instancedEdge[
         instanceType.includes('box')
@@ -215,7 +216,7 @@ function rawToExtrudedTemp(
       extrudedInstancedData.matrices.forEach((matrixArray, i) => {
         const matrix = getInstanceMatrix(matrixArray, restoreParams, tempMatrix)
         // 最终作为 InstancedBufferAttribute 绑定到边线模型上
-        resultRawData.edgeAttr.push(...matrixArray)
+        resultRawData.edgeAttr.push(...matrix.toArray())
         // 保存矩阵数据
         resultRawData.matrix.push(matrix)
         // 保存颜色数据

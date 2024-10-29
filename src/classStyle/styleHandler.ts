@@ -180,6 +180,8 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
           c === '_ROOF'
             ? presetColors.face[c]
             : c.replace(/ *G$/, '')
+        if (!/^#/.test(cv)) console.log(colors, status, data)
+
         // 颜色先加入 colorMap 再从中索引
         let index = RESULT.colorMapPTR.indexOf(cv)
         if (index < 0) {

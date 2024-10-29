@@ -1,7 +1,8 @@
-import { Matrix4 } from 'three'
+import { Matrix4, Vector2 } from 'three'
 import { Seed, sample } from './utils'
 import { TEMP, applyBasicTransform } from './handleBasic'
 import { handleMatch } from './handleMatchRelated'
+import { crossLines } from './handleMath'
 
 import type { temp } from '../types/temp'
 import type { magizTypes } from '../types/magizTypes'
@@ -58,17 +59,18 @@ function handleExtrude(
       ]
       handleMatch(parsedMatchParams, rays, result, seed, true)
     } else {
-      if (height < 0) matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
-      matrix.premultiply(TEMP.makeScale(1, 1, Math.abs(height)))
-      applyBasicTransform(extrudeParams, matrix, TEMP)
-      matrix.premultiply(TEMP.makeTranslation(0, 0, elevation))
-      const loop = edgesModdedToLoop(rays)
+      const loop = outterRaysToLoop(rays)
       const saveAsType = result.extruded[glass ? 'glass' : 'solid']
       let saveAs = saveAsType.find((e) => isSameLoop(e.loop, loop))
       if (!saveAs) {
         saveAs = { loop, matrices: [], colors: [] }
         saveAsType.push(saveAs)
       }
+
+      if (height < 0) matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
+      matrix.premultiply(TEMP.makeScale(1, 1, Math.abs(height)))
+      applyBasicTransform(extrudeParams, matrix, TEMP)
+      matrix.premultiply(TEMP.makeTranslation(0, 0, elevation))
       saveAs.matrices.push(matrix.toArray())
       saveAs.colors.push(index)
     }
@@ -83,17 +85,67 @@ function isSameLoop(loopA: [x: number, y: number][], loopB: [x: number, y: numbe
 }
 
 /** 边线修正后可能不连续，须重新格式化成连续点集 */
-function edgesModdedToLoop(rays: temp.ray[][]): [x: number, y: number][] {
+function outterRaysToLoop(rays: temp.ray[][]): [x: number, y: number][] {
   const result: [x: number, y: number][] = []
   const outterRays = rays[0]
-  if (outterRays)
-    outterRays.forEach((ray, i) => {
+  if (outterRays) {
+    const newLoopRays = getLoopWithoutIntersects(outterRays)
+    newLoopRays.forEach((ray, i) => {
       result.push(ray.start.toArray())
-      const nextStart = outterRays[i === outterRays.length - 1 ? 0 : i + 1]!.start
-      if (ray.end.x !== nextStart.x || ray.end.y !== nextStart.y) {
+      // 下一个起点须与该终点重合，否则加入该终点
+      const nextRay = newLoopRays[i === newLoopRays.length - 1 ? 0 : i + 1]!
+      if (!ray.end.equals(nextRay.start)) {
         result.push(ray.end.toArray())
       }
     })
-
+  }
   return result
+}
+
+function getLoopWithoutIntersects(rayLoop: temp.ray[]): temp.ray[] {
+  let foundIntersects = true
+  while (foundIntersects) {
+    let intersect: undefined | [number, number, Vector2]
+    rayLoop.find((r, i) => {
+      // 遍历线段，排除相邻的，寻找与其之后相交的线段
+      for (let j = i + 1; j < rayLoop.length; j++) {
+        const nextRay = rayLoop[j]!
+        if (!nextRay.end.equals(r.start) && !nextRay.start.equals(r.end)) {
+          const intersection = crossLines(r, nextRay)
+          if (intersection) {
+            intersect = [i, j, intersection]
+            break
+          }
+        }
+      }
+      if (intersect) return true
+    })
+
+    if (intersect) {
+      // 删除相交线段之间的线段，替换相交线段的终点和起点，返回新的rayLoop
+      const [min, max, intersection] = intersect
+      const result: temp.ray[] = []
+      rayLoop.forEach((r, i) => {
+        if (i < min || i > max) {
+          result.push(r)
+        } else if (i === min) {
+          result.push({
+            start: r.start,
+            end: intersection.clone(),
+            direction: intersection.clone().sub(r.start),
+          })
+        } else if (i === max) {
+          result.push({
+            start: intersection.clone(),
+            end: r.end,
+            direction: r.end.clone().sub(r.start),
+          })
+        }
+      })
+      rayLoop = result
+    } else {
+      foundIntersects = false
+    }
+  }
+  return rayLoop
 }
