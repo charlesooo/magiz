@@ -1,15 +1,9 @@
+import { preset } from '../class/style'
 import type { magizTypes } from './magizTypes'
 
 export namespace styleTypes {
   /** 参数可以是数字或代表公式的字符串 */
   type ns = number | string
-
-  /** 在特定的padding区域生成部件，未设置时默认在中部 */
-  type paddingAreaType = 'BOTH' | 'START' | 'END' | 'MIDDLE'
-  type topLikeType = 'ROUGH' | 'HILL' | 'VALLEY'
-  type bottomLikeType = 'ROUGH' | 'TUNNEL'
-  type randomPlaceType = 'EDGE' | 'AREA'
-  type paymentType = 'FREE' | 'BASIC'
   type colorType = magizTypes.presetFaceType | magizTypes.presetGlassType | string
 
   /** 按总长度等比限定生成范围 */
@@ -33,13 +27,13 @@ export namespace styleTypes {
 
   /** 从楼层的顶部或底部限定生成范围 */
   type floorRangeType = {
-    /** 选中顶部的楼层，默认按数量 */
-    top?: ns
-    /** 选中底部的楼层，默认按数量 */
+    /** 范围从底部起始的楼层数，默认 asRatio:false */
     bottom?: ns
+    /** 范围距顶部终止的楼层数，默认 asRatio:false */
+    top?: ns
     /** 默认按数量 */
     asRatio?: boolean
-    /** 因按浮点的比例计算整数楼层，同一比例无法推算出反向计算时的比例（例如三层时，按 topRatio=0.5 计算range=[0,1]，但如果按 bottomRatio=0.5 计算结果为果[2,2]，而非期望的 [1,2]），只能在算法层面选择是否反算 */
+    /** 如反向，上部和下部独立计算，生成一或两段范围 */
     reverse?: boolean
   }
 
@@ -97,18 +91,28 @@ export namespace styleTypes {
     shrink?: ns
   }
 
-  type control = {
+  /** 楼层、拟合和立面元素阵列时根据序号控制生成 */
+  type indexController = {
+    /** 指定从0开始的序号总数 */
+    total?: ns
+
+    /** 参数视为按序号总数的比例 */
+    asRatio?: boolean
+    /** 反向操作 */
+    reverse?: boolean
+    /** 生成时跳过起始的数量 */
+    first?: ns
+    /** 生成时跳过末尾的数量 */
+    last?: ns
     /** 跳过一定序号间隔生成 */
-    skipIndex?: ns
+    skip?: ns
     /** 按一定序号间隔生成 */
-    everyIndex?: ns
+    every?: ns
     /** 按概率生成 */
     chance?: ns
   }
 
   type boxArray = {
-    /** 指定所在区间 */
-    area?: paddingAreaType
     /** 按所有项的间距组合阵列 */
     spacing?: {
       /** 该构件的间距 */
@@ -116,7 +120,7 @@ export namespace styleTypes {
       /** 组成构件的元素，可选boxFlex作为填充块，可为空表示占位 */
       group?: (box | boxFlex)[]
       /** 生成控制参数 */
-      control?: control
+      control?: indexController
       /** 在已有基础上添加repeat个副本到spacing（当repaet等于2时共有3个） */
       repeat?: ns
     }[]
@@ -127,14 +131,10 @@ export namespace styleTypes {
       /** 组成构件的元素 */
       group: (box | boxFlex)[]
       /** 生成控制参数 */
-      control?: control
+      control?: indexController
     }[]
-    /** 默认生成首位，可跳过 */
-    first?: boolean
-    /** 默认按loop生成阵列，不生成每条边阵列的末位以避免重复。可选按首项生成末项 */
-    last?: boolean
-    /** 默认不考虑末位宽度，可设置末尾宽度 */
-    lastWidth?: ns
+    /** 指定所在区间 */
+    area?: 'BOTH' | 'START' | 'END' | 'MIDDLE'
   }
 
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
@@ -144,7 +144,7 @@ export namespace styleTypes {
     /** 挤出的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
     height: ns
     /** 用box构成围墙，数值为围墙厚度 */
-    toWall?: ns
+    thickness?: ns
     /** 仅在该段的底部生成一次 */
     once?: boolean
   }
@@ -186,7 +186,7 @@ export namespace styleTypes {
     /** 调整顶部形态 */
     top?: {
       /** 形态 */
-      like: topLikeType
+      like: 'ROUGH' | 'HILL' | 'VALLEY'
       /** 形态占总高度的比例 */
       ratio: ns
       /** 两端按总长度的比例缩进 */
@@ -195,14 +195,14 @@ export namespace styleTypes {
     /** 调整底部形态 */
     bottom?: {
       /** 形态 */
-      like: bottomLikeType
+      like: 'ROUGH' | 'TUNNEL'
       /** 形态占总高度的比例 */
       ratio: ns
       /** 两端按总长度的比例缩进f */
       padding?: paddingType
     }
     /** 生成控制参数 */
-    control?: control
+    control?: indexController
     /** 仅在该段的底部生成一次 */
     once?: boolean
     /** 将首项添加到末项 */
@@ -230,7 +230,7 @@ export namespace styleTypes {
     /** 构件原型 */
     boxes: box[]
     /** 放置的位置，位于偏移后的边线或范围内 */
-    place?: randomPlaceType
+    place?: 'EDGE' | 'AREA'
     /** 生成的数量 */
     count?: ns
     /** 仅在该段的底部生成一次 */
@@ -238,20 +238,13 @@ export namespace styleTypes {
   }
 
   type floor = {
-    /** 按楼层控制竖向生成 */
-    floor?: {
-      /** 指定具体层数，影响其他选项和解析时的计算单位 SH */
-      number?: ns
-      /** 从顶部和底部向内偏移，选择范围内的楼层，每个范围都单独计算单位 SH */
-      range?: floorRangeType[]
-      /** 按楼层序号生成 */
-      control?: control
-    }
-    /** 根据参数组合修改边线，每条按 offset|clamp|along 的顺序，仅有一项生效 */
+    /** 按楼层序号控制竖向生成 */
+    control?: indexController
+    /** 修改边线，按组合的顺序操作 */
     edge?: (offsetEdgeType | clampEdgeType | alongEdgeType)[]
 
     /** 引用预设样式，非解析参数 */
-    preset?: floorPreset[]
+    presets?: ReturnType<typeof preset>[]
 
     /** 从平面挤出体块 */
     extrude?: extrude[]
@@ -268,16 +261,6 @@ export namespace styleTypes {
     /** 在平面内生成box组成的构件 */
     adjunct?: adjunct[]
   }
-  type floorPreset = {
-    /** 重定义预设的单位 */
-    unit?: { [key: string]: ns }
-    /** 重定义预设的颜色 */
-    color?: { [key: string]: string | string[] }
-    /** 按关键词随机引用样式 */
-    key?: string
-    /** 预设样式的名称 */
-    name?: string
-  }
 
   /** 通过 mod.floor = 1 实现单层生成体块，sections只实现在垂直方向上分段，因此没有basic属性 */
   type section = {
@@ -288,16 +271,13 @@ export namespace styleTypes {
 
   /** 建筑样式 */
   type style = {
-    /** 附加信息 */
-    info?: string
-    /** 订阅类型 */
-    type?: paymentType
-    /** 用于解析 ns 的单位变量 */
-    unit?: { [key: string]: number }
-    /** 建筑特点 */
-    tag?: string[]
-    /** 建筑功能 */
-    use?: string[]
+    /** 用于按样式特点进行筛选的标签 */
+    tags: {
+      /** V:竖向 | L:横向 */
+      orient?: 'V' | 'L'
+      /** R:住宅 | C:商业 | P:公建 */
+      use?: 'R' | 'C' | 'P'
+    }
     /** 按三段式进行分段。 */
     section: {
       /** 可设置高度但不计入层数 */
@@ -307,24 +287,28 @@ export namespace styleTypes {
       /** 设置高度，按中部段高修改高度 */
       bottom: section & { height: ns }
     }
+
+    /** 订阅类型，默认须付费 */
+    type?: 'FREE'
+    /** 附加信息 */
+    info?: string
+    /** 用于解析 ns 的单位变量 */
+    unit?: { [key: string]: number }
   }
 
-  /** 自定义样式 */
-  type styles = {
-    /** 可重复利用的预设样式，基本格式：{ [name: string]: { floor: floor[] } } */
-    preset: {
-      /** 样式名称 */
-      [name: string]: stylePreset
-    }
-    /** 建筑样式 */
-    building: { [name: string]: style }
-  }
-  type stylePreset = {
-    /** 预设样式变量的默认值 */
-    unit?: { [key: string]: ns }
-    /** 预设样式颜色的默认值 */
-    color?: { [key: string]: string | string[] }
-    /** 预设样式的参数组合 */
+  /** 建筑样式 */
+  type styles = { [name: string]: style }
+
+  /** 可重复利用的楼层预设样式 */
+  type preset<
+    U extends { [k: string]: ns },
+    C extends { [k: string]: colorType | colorType[] }
+  > = {
+    /** 预设的样式参数 */
     floor: floor[]
+    /** 预设的样式变量 */
+    unit: U
+    /** 预设的样式颜色 */
+    color: C
   }
 }

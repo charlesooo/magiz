@@ -24,9 +24,7 @@
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "dev": "esbuild index.ts --format=esm --bundle --sourcemap --watch --outfile=dist/magiz.module.js",
-    "build": "esbuild index.ts --format=esm --bundle --minify --metafile=dist/meta.min.json --outfile=dist/magiz.module.min.js && echo 包大小分析: https://www.esbuild.cn/api/#metafile",
-    "course": "esbuild index.ts --format=esm --bundle --watch --minify --outfile=D:/Works/magiz-course/src/magiz.module.min.js",
-    "demo_city": "esbuild index.ts --format=esm --bundle --watch --minify  --outfile=demo/magiz.module.min.js"
+    "dev": "echo 打包开发文件为 dist/magizAndView.js && esbuild bundle/build_magizAndView.ts --outfile=dist/magizAndView.module.js --format=esm --sourcemap --bundle --watch",
+    "build": "echo 包大小分析: https://www.esbuild.cn/api/#metafile && esbuild bundle/build_magizAndView.ts --outfile=dist/magizAndView.module.min.js --metafile=dist/meta.min.json --format=esm --bundle --minify"
   }
 }

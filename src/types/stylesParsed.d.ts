@@ -17,9 +17,14 @@ export namespace styleParsed {
   type box = status & { x: number; y: number; z: number }
   type boxFlex = status & { width: number; height: number; shrink: number }
 
-  type control = {
-    skipIndex: number
-    everyIndex: number
+  type indexController = {
+    total: number
+    asRatio: boolean
+    reverse: boolean
+    first: number
+    last: number
+    skip: number
+    every: number
     chance: number
   }
 
@@ -41,12 +46,12 @@ export namespace styleParsed {
   }
 
   type boxArray = {
-    area: styleTypes.paddingAreaType
+    area: NonNullable<styleTypes.boxArray['area']>
     spacing:
       | {
           space: number
           group: (box | boxFlex)[] | undefined
-          control: control | undefined
+          control: indexController | undefined
           repeat: number
         }[]
       | undefined
@@ -54,12 +59,9 @@ export namespace styleParsed {
       | {
           count: number
           group: (box | boxFlex)[]
-          control: control | undefined
+          control: indexController | undefined
         }[]
       | undefined
-    first: boolean
-    last: boolean
-    lastWidth: number
   }
 
   /** 解析styleTypes.floor与边线相关的参数 */
@@ -68,7 +70,7 @@ export namespace styleParsed {
   type extrude = status & {
     elevation: number
     height: number
-    toWall: number
+    thickness: number
   }
 
   type slopingRoof = status & {
@@ -95,19 +97,19 @@ export namespace styleParsed {
     top:
       | {
           ratio: number
-          like: styleTypes.topLikeType
+          like: NonNullable<styleTypes.match['top']>['like']
           padding: paddingType | undefined
         }
       | undefined
     bottom:
       | {
           ratio: number
-          like: styleTypes.bottomLikeType
+          like: NonNullable<styleTypes.match['bottom']>['like']
           padding: paddingType | undefined
         }
       | undefined
     elevation: number
-    control: control | undefined
+    control: indexController | undefined
     sandwich: boolean
   }
 
@@ -123,7 +125,7 @@ export namespace styleParsed {
 
   type adjunct = {
     boxes: box[]
-    place: styleTypes.randomPlaceType
+    place: NonNullable<styleTypes.adjunct['place']>
     count: number
     elevation: number
   }

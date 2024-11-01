@@ -1,0 +1,225 @@
+import { Matrix4, Vector2 } from 'three'
+import { indexesPassedControl, pushBoxData } from './utils'
+import { getMatchRatioAndCount } from './handleMath'
+import { TEMP, handleFacadeElements } from './handleBasic'
+
+import type { magizTypes } from '../../types/magizTypes'
+import type { styleParsed } from '../../types/stylesParsed'
+import type { temp } from '../../types/temp'
+
+export { handleFacade }
+
+type spacingDataType = {
+  model: temp.box[] | undefined
+  control: styleParsed.indexController | undefined
+  space: number
+}
+
+function handleFacade(
+  parsed: styleParsed.facade[],
+  rays: temp.ray[][],
+  result: magizTypes.rawBuilding
+) {
+  parsed.forEach((facadeParams) => {
+    handleBoxes(result, handlePadding(rays, facadeParams.padding), facadeParams)
+  })
+}
+
+/** 按padding将每条边线分解，并计算长度。没有padding也须计算middleRay */
+function handlePadding(rays: temp.ray[][], padding?: styleParsed.paddingType): temp.splitted[][] {
+  if (padding) {
+    const { start, middle, end, asRatio } = padding
+    return rays.map((loop) =>
+      loop.map((ray) => {
+        const data: temp.splitted = Object.assign({ split: {} }, ray)
+        const d = ray.direction
+        const l = d.length()
+        const sp = ray.start.clone()
+        const ep = ray.end.clone()
+        let midStart = sp,
+          midEnd = ep
+        let sl = 0,
+          ml = 0,
+          el = 0
+
+        // padding 仅向内，并考虑一端为0的情况均单独处理
+        if (middle > 0) {
+          ml = asRatio ? middle * l : middle
+          sl = el = (l - ml) / 2
+        } else {
+          sl = asRatio ? start * l : start
+          el = asRatio ? end * l : end
+          ml = l - sl - el
+        }
+
+        if (sl !== 0) {
+          const sd = d.clone().setLength(sl)
+          midStart = sp.clone().add(sd)
+          data.split.startRay = { start: sp, end: midStart, direction: sd }
+        }
+        if (el !== 0) {
+          const ed = d.clone().setLength(el)
+          midEnd = ep.clone().add(ed.clone().negate())
+          data.split.endRay = { start: midEnd, end: ep, direction: ed }
+        }
+        if (ml !== 0) {
+          data.split.middleRay = {
+            start: midStart,
+            end: midEnd,
+            direction: d.clone().setLength(ml),
+          }
+        }
+        return data
+      })
+    )
+  } else {
+    return rays.map((loop) =>
+      loop.map((ray) => {
+        return Object.assign({ split: { middleRay: ray } }, ray)
+      })
+    )
+  }
+}
+
+/** 如果有 divide，计算在偏移区内的点阵数据 */
+function handleBoxes(
+  result: magizTypes.rawBuilding,
+  lineData: temp.splitted[][],
+  partPared: styleParsed.facade
+) {
+  const { proto, elevation } = partPared
+  proto?.forEach((boxArray) => {
+    const { area } = boxArray
+    if (area === 'MIDDLE') {
+      lineData.forEach((loop) =>
+        loop.forEach((data) => pushDividePoints(boxArray, result, elevation, data.split.middleRay))
+      )
+    } else {
+      const pushStart = area === 'BOTH' || area === 'START'
+      const pushEnd = area === 'BOTH' || area === 'END'
+      lineData.forEach((loop) => {
+        if (pushStart) {
+          loop.forEach((data) =>
+            pushDividePoints(boxArray, result, elevation, data.split.startRay)
+          )
+        }
+        if (pushEnd) {
+          loop.forEach((data) => pushDividePoints(boxArray, result, elevation, data.split.endRay))
+        }
+      })
+    }
+  })
+}
+
+/** 在给定的起点、方向、距离内，按间距返回点阵。考虑美观，间距都按参数的近似值。moveZ 在之后结合标高一起计算。如果ray不存在则跳过 */
+function pushDividePoints(
+  boxArray: styleParsed.boxArray,
+  result: magizTypes.rawBuilding,
+  elevation: number,
+  ray?: temp.ray
+) {
+  if (ray) {
+    // 推送矩阵到结果，必须先缩放，再移动，再旋转加，最后移动到点位
+    const { start, direction } = ray
+    const { spacing, divide } = boxArray
+
+    const totalDistance = direction.length()
+
+    // 计算生成段数 spacingCount 和初始化间距组合 spacingData，生成时默认用spacing的第一个补齐整个阵列的最后一个。
+    let data: spacingDataType[] = []
+
+    if (spacing) {
+      const spaces: number[] = []
+      spacing.forEach((s) => {
+        for (let i = -1; i < s.repeat; i++) {
+          spaces.push(s.space)
+        }
+      })
+      const rc = getMatchRatioAndCount(spaces, totalDistance)
+
+      if (rc) {
+        const { ratio, count } = rc
+        const spacingData: spacingDataType[] = []
+        spacing.forEach((s) => {
+          let model: temp.box[] = []
+          if (s.group) {
+            s.group.forEach((b) => {
+              const fe = handleFacadeElements(b, s.space, ratio)
+              if (fe) model.push(fe)
+            })
+          }
+          const control = s.control
+          for (let i = -1; i < s.repeat; i++) {
+            spacingData.push({ model, control, space: s.space * ratio })
+          }
+        })
+
+        pushData(spacingData, count, result, elevation, direction, start)
+      }
+    }
+
+    if (divide) {
+      divide.map((d) => {
+        let space = totalDistance / d.count
+        const rc = getMatchRatioAndCount([space], totalDistance)
+        if (rc) {
+          const { ratio, count } = rc
+          space *= ratio
+
+          const model: temp.box[] = []
+          d.group.forEach((b) => {
+            const fe = handleFacadeElements(b, space, ratio)
+            if (fe) model.push(fe)
+          })
+
+          data = [{ model, control: d.control, space: space * ratio }]
+          pushData(data, count, result, elevation, direction, start)
+        }
+      })
+    }
+  }
+}
+
+function pushData(
+  data: spacingDataType[],
+  count: number,
+  result: magizTypes.rawBuilding,
+  elevation: number,
+  direction: Vector2,
+  startPoint: Vector2
+) {
+  /** 沿边线移动的总距离，用于直接从起点移动 */
+  let distance = 0
+
+  /** 先将元素在原点处缩放、旋转+移动，再用这个矩阵移动到边线上的起点 */
+  const placeMatrix = new Matrix4()
+    .makeRotationZ(direction.angle())
+    .premultiply(TEMP.makeTranslation(startPoint.x, startPoint.y, elevation))
+
+  const firstData = data[0]
+
+  data.forEach((d) => {
+    indexesPassedControl(count, d.control).forEach((i) => {
+      pushSpacingData(d, d.space * i, placeMatrix, result)
+    })
+  })
+
+  // 默认整个阵列的最后一项与第一项相同
+  if (firstData) pushSpacingData(firstData, distance, placeMatrix, result)
+}
+
+/** 计算并推送最终的matrix和colorIndex */
+function pushSpacingData(
+  data: spacingDataType,
+  distance: number,
+  placeMatrix: Matrix4,
+  result: magizTypes.rawBuilding
+) {
+  data.model?.forEach((m) => {
+    const mtx = m.matrix
+      .clone()
+      .premultiply(TEMP.makeTranslation(distance, 0, 0))
+      .premultiply(placeMatrix)
+    pushBoxData(result, m.colorID, mtx)
+  })
+}

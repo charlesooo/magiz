@@ -1,6 +1,10 @@
 {
   "include": [
-    "./**/*",
+    "./src/**/*",
+    "./styles/**/*",
+    "bundle/bundleMagizAndView.ts",
+    "bundle/bundleMagiz.ts",
+    "others"
   ],
   "compilerOptions": {
     "module": "ESNext",
