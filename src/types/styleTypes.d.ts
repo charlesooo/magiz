@@ -1,5 +1,5 @@
-import { preset } from '../class/style'
-import type { magizTypes } from './magizTypes'
+import { pick } from "../class/style"
+import type { magizTypes } from "./magizTypes"
 
 export namespace styleTypes {
   /** 参数可以是数字或代表公式的字符串 */
@@ -41,7 +41,9 @@ export namespace styleTypes {
   type offsetEdgeType = { offset: ns | { x: ns; y: ns; asRatio?: boolean } }
 
   /** 按朝向生成。平面轴向WIDTH|DEPTH|RANDOM */
-  type alongEdgeType = { along: 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number }
+  type alongEdgeType = {
+    along: "WIDTH" | "DEPTH" | "RANDOM" | "LONGEST" | "SHORTEST" | number
+  }
 
   type clampEdgeType = {
     clamp: {
@@ -134,7 +136,7 @@ export namespace styleTypes {
       control?: indexController
     }[]
     /** 指定所在区间 */
-    area?: 'BOTH' | 'START' | 'END' | 'MIDDLE'
+    area?: "BOTH" | "START" | "END" | "MIDDLE"
   }
 
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
@@ -152,7 +154,7 @@ export namespace styleTypes {
   /** 根据 boundingBox 生成坡屋顶 */
   type slopingRoof = status & {
     /** 双坡或四坡 */
-    form: '2' | '4'
+    form: "2" | "4"
     /** 坡屋顶的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
     height: ns
     /** 檐口出挑距离 */
@@ -186,7 +188,7 @@ export namespace styleTypes {
     /** 调整顶部形态 */
     top?: {
       /** 形态 */
-      like: 'ROUGH' | 'HILL' | 'VALLEY'
+      like: "ROUGH" | "HILL" | "VALLEY"
       /** 形态占总高度的比例 */
       ratio: ns
       /** 两端按总长度的比例缩进 */
@@ -195,7 +197,7 @@ export namespace styleTypes {
     /** 调整底部形态 */
     bottom?: {
       /** 形态 */
-      like: 'ROUGH' | 'TUNNEL'
+      like: "ROUGH" | "TUNNEL"
       /** 形态占总高度的比例 */
       ratio: ns
       /** 两端按总长度的比例缩进f */
@@ -230,7 +232,7 @@ export namespace styleTypes {
     /** 构件原型 */
     boxes: box[]
     /** 放置的位置，位于偏移后的边线或范围内 */
-    place?: 'EDGE' | 'AREA'
+    place?: "EDGE" | "AREA"
     /** 生成的数量 */
     count?: ns
     /** 仅在该段的底部生成一次 */
@@ -244,7 +246,7 @@ export namespace styleTypes {
     edge?: (offsetEdgeType | clampEdgeType | alongEdgeType)[]
 
     /** 引用预设样式，非解析参数 */
-    presets?: ReturnType<typeof preset>[]
+    presets?: ReturnType<typeof pick>[]
 
     /** 从平面挤出体块 */
     extrude?: extrude[]
@@ -274,9 +276,9 @@ export namespace styleTypes {
     /** 用于按样式特点进行筛选的标签 */
     tags: {
       /** V:竖向 | L:横向 */
-      orient?: 'V' | 'L'
+      orient?: "V" | "L"
       /** R:住宅 | C:商业 | P:公建 */
-      use?: 'R' | 'C' | 'P'
+      use?: "R" | "C" | "P"
     }
     /** 按三段式进行分段。 */
     section: {
@@ -289,7 +291,7 @@ export namespace styleTypes {
     }
 
     /** 订阅类型，默认须付费 */
-    type?: 'FREE'
+    type?: "FREE"
     /** 附加信息 */
     info?: string
     /** 用于解析 ns 的单位变量 */

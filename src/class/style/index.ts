@@ -1,13 +1,12 @@
-import Mexp from 'math-expression-evaluator'
-import { indexesPassedControl } from '../plan/utils'
-import { presetColors } from './color'
-import { presetData } from './presetData'
+import Mexp from "math-expression-evaluator"
+import { indexesPassedControl } from "../plan/utils"
+import { presetColors } from "./color"
 
-import type { magizTypes } from '../../types/magizTypes'
-import type { styleTypes } from '../../types/styleTypes'
-import type { styleParsed } from '../../types/stylesParsed'
+import type { magizTypes } from "../../types/magizTypes"
+import type { styleTypes } from "../../types/styleTypes"
+import type { styleParsed } from "../../types/stylesParsed"
 
-export { check, preset, randomPreset, StyleHandler }
+export { check, pick, randPick, StyleHandler }
 
 /** 为定义 preset 参数单元其提供类型检查 */
 function check<
@@ -17,39 +16,50 @@ function check<
   return params
 }
 
-/** 用于在styles中构建预设参数，提供类型检查和提示 */
-function preset<N extends keyof typeof presetData>(params: {
-  /** 预设名称
-   * @命名规则 标记 (S|C|V|M) 适用部位 (T|M|B) : 名称 */
-  name: N
-  unit?: Partial<(typeof presetData)[N]['unit']>
-  color?: Partial<(typeof presetData)[N]['color']>
-}): {
+/** 提取 preset 预设参数 */
+function pick<
+  U extends { [k: string]: styleTypes.ns },
+  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] },
+  P extends styleTypes.preset<U, C>
+>(
+  data: P,
+  params?: {
+    unit?: Partial<P["unit"]>
+    color?: Partial<P["color"]>
+  }
+): {
   floor: styleTypes.floor[]
-  unit: (typeof presetData)[N]['unit']
-  color: (typeof presetData)[N]['color']
+  unit: P["unit"]
+  color: P["color"]
 } {
-  const target = presetData[params.name]!
   return {
-    floor: target.floor,
-    unit: Object.assign({ ...target.unit }, params.unit),
-    color: Object.assign({ ...target.color }, params.color),
+    floor: data.floor,
+    unit: Object.assign({ ...data.unit }, params?.unit),
+    color: Object.assign({ ...data.color }, params?.color),
   }
 }
 
-function randomPreset(params: {
-  key?: string
-  mark?: string
-  section?: 'T' | 'M' | 'B'
-}): ReturnType<typeof preset> {
+/** 随机提取 preset 预设参数 */
+function randPick<
+  U extends { [k: string]: styleTypes.ns },
+  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] },
+  P extends { [k: string]: styleTypes.preset<U, C> }
+>(
+  data: P,
+  params: {
+    key?: string
+    mark?: string
+    section?: "T" | "M" | "B"
+  }
+): ReturnType<typeof pick> {
   const { key, mark, section } = params
-  let names = Object.keys(presetData) as (keyof typeof presetData)[]
+  let names = Object.keys(data)
   if (mark) names = names.filter((n) => n[0] === mark)
   if (section) names = names.filter((n) => n[1] === section)
   if (key) names = names.filter((n) => n.includes(key))
   if (names.length > 0) {
     const name = names[Math.round((names.length - 1) * Math.random())]!
-    return presetData[name]
+    return data[name]!
   } else {
     return { floor: [], unit: {}, color: {} }
   }
@@ -88,12 +98,12 @@ class StyleHandler {
     ...stylesArray: styleTypes.styles[]
   ) {
     this.Blocks = {
-      type: 'FREE',
+      type: "FREE",
       tags: {},
       section: {
         bottom: {
-          height: '1BH',
-          floor: [{ extrude: [{ once: true, height: '1BH' }] }],
+          height: "1BH",
+          floor: [{ extrude: [{ once: true, height: "1BH" }] }],
         },
       },
     }
@@ -103,19 +113,19 @@ class StyleHandler {
 
   /** 输入注册状态，检查样式是否可用 */
   isValid(name: string, regState: boolean) {
-    if (name === 'Blocks') {
+    if (name === "Blocks") {
       return true
     } else {
       const found = this.data[name]
-      return found && (found.type === 'FREE' || regState) ? true : false
+      return found && (found.type === "FREE" || regState) ? true : false
     }
   }
 
   /** @ignore 按是否免费返回分类后的样式名称 */
   getOptions(): magizTypes.styleOptions {
-    const result: magizTypes.styleOptions = { paid: [], free: ['Blocks'] }
+    const result: magizTypes.styleOptions = { paid: [], free: ["Blocks"] }
     for (const n in this.data) {
-      this.data[n]!.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
+      this.data[n]!.type === "FREE" ? result.free.push(n) : result.paid.push(n)
     }
     return result
   }
@@ -138,7 +148,7 @@ class StyleHandler {
     const elevation = Number(styleParams.elevation || 0)
 
     const styleSelected =
-      !styleParams.style || styleParams.style === 'Blocks'
+      !styleParams.style || styleParams.style === "Blocks"
         ? this.Blocks
         : this.data[styleParams.style]
 
@@ -163,9 +173,9 @@ class StyleHandler {
       bsh = height - rsh - msh
       bfh = bsh / Math.floor(bsh / bfh)
 
-      parseSection('bottom', ss, elevation, bsh, bfh)
-      parseSection('middle', ss, elevation + bsh, msh, mfh)
-      parseSection('roof', ss, elevation + height - rsh, rsh, rfh)
+      parseSection("bottom", ss, elevation, bsh, bfh)
+      parseSection("middle", ss, elevation + bsh, msh, mfh)
+      parseSection("roof", ss, elevation + height - rsh, rsh, rfh)
     } else {
       console.warn(`${styleParams.style} is invalid, returned empty data`)
     }
@@ -178,22 +188,25 @@ class StyleHandler {
 //////////////////////////////////////////////////////////
 
 /** 解析包含 styleTypes.status 的参数 */
-function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.status & MORE {
+function parseStatus<MORE>(
+  status: styleTypes.status,
+  data: MORE
+): styleParsed.status & MORE {
   let c = status.color
   // c 可能为预设的颜色名称，先进行解析
-  if (typeof c === 'string') c = GLOBAL.COLOR_PRESET[c] || c
+  if (typeof c === "string") c = GLOBAL.COLOR_PRESET[c] || c
   // 格式化为默认的颜色名称，特殊情况如：空值|""|"G"
-  if (typeof c === 'string') c = c.trim()
-  const colors = Array.isArray(c) ? c : !c ? ['_CONCRETE'] : c === 'G' ? ['_GLASS'] : [c]
+  if (typeof c === "string") c = c.trim()
+  const colors = Array.isArray(c) ? c : !c ? ["_CONCRETE"] : c === "G" ? ["_GLASS"] : [c]
   return Object.assign(
     {
       transform: status.transform
         ? status.transform.map((trans) => {
-            if ('rotateX' in trans) {
+            if ("rotateX" in trans) {
               return { rotateX: parse(trans.rotateX) }
-            } else if ('rotateY' in trans) {
+            } else if ("rotateY" in trans) {
               return { rotateY: parse(trans.rotateY) }
-            } else if ('rotateZ' in trans) {
+            } else if ("rotateZ" in trans) {
               return { rotateZ: parse(trans.rotateZ) }
             } else {
               return {
@@ -205,16 +218,16 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
           })
         : [],
       colorID: colors.map((c) => {
-        const isPresetGlass = c === '_GLASS'
+        const isPresetGlass = c === "_GLASS"
         const cv =
           isPresetGlass ||
-          c === '_CONCRETE' ||
-          c === '_METAL' ||
-          c === '_WOOD' ||
-          c === '_BRICK' ||
-          c === '_ROOF'
+          c === "_CONCRETE" ||
+          c === "_METAL" ||
+          c === "_WOOD" ||
+          c === "_BRICK" ||
+          c === "_ROOF"
             ? presetColors.face[c]
-            : c.replace(/ *G$/, '')
+            : c.replace(/ *G$/, "")
         if (!/^#/.test(cv)) console.log(colors, status, data)
 
         // 颜色先加入 colorMap 再从中索引
@@ -235,7 +248,7 @@ function parseBoxGroup(
   model: (styleTypes.box | styleTypes.boxFlex)[]
 ): (styleParsed.box | styleParsed.boxFlex)[] {
   return model.map((b) => {
-    return 'x' in b
+    return "x" in b
       ? parseStatus(b, {
           x: parse(b.x),
           y: parse(b.y),
@@ -271,8 +284,8 @@ function parseBoxFlex(boxFlex: styleTypes.boxFlex): styleParsed.boxFlex {
 
 /** 解析样式的段，须调用 styles  */
 function parseSection(
-  type: keyof styleTypes.style['section'],
-  sectionParams: styleTypes.style['section'],
+  type: keyof styleTypes.style["section"],
+  sectionParams: styleTypes.style["section"],
   sectionElevation: number,
   sectionHeight: number,
   floorHeight: number
@@ -282,7 +295,7 @@ function parseSection(
     GLOBAL.UNITS.SH = sectionHeight
     GLOBAL.UNITS.FH = floorHeight
     let floorCount = 0
-    if (type === 'roof') {
+    if (type === "roof") {
       floorCount = 1
     } else {
       floorCount = Math.round(sectionHeight / floorHeight)
@@ -372,9 +385,9 @@ function parseFloor(
 function parseEdgeParams(params: styleTypes.floor): styleParsed.handleEdgesType {
   const result: styleParsed.handleEdgesType = []
   params.edge?.forEach((modEdges) => {
-    if ('offset' in modEdges) {
+    if ("offset" in modEdges) {
       result.push(parseOffsetEdge(modEdges))
-    } else if ('along' in modEdges) {
+    } else if ("along" in modEdges) {
       result.push(modEdges)
     } else {
       result.push(parseClamp(modEdges))
@@ -438,7 +451,9 @@ function parseClampBox(
     clampBox.forEach((clampParams) => {
       const { once, height } = clampParams
       if (!once || isFirst) {
-        saveAs.clampBox.push(parseStatus(clampParams, { height: parse(height), elevation }))
+        saveAs.clampBox.push(
+          parseStatus(clampParams, { height: parse(height), elevation })
+        )
       }
     })
   }
@@ -481,7 +496,7 @@ function parseFacade(
           proto.forEach((boxArray) => {
             const { area, spacing, divide } = boxArray
             parsed.proto.push({
-              area: area || 'MIDDLE',
+              area: area || "MIDDLE",
               spacing: spacing?.map((s) => {
                 return {
                   space: parse(s.space),
@@ -580,7 +595,7 @@ function parseBoxInside(
 function parseMinAndMax(
   v: [min: styleTypes.ns, max: styleTypes.ns] | styleTypes.ns | undefined
 ): [min: number, max: number] {
-  if (typeof v === 'object') {
+  if (typeof v === "object") {
     return [parse(v[0]), parse(v[1])]
   } else {
     const x = v ? parse(v) : 1
@@ -601,7 +616,7 @@ function parseAdjuncts(
       if (!once || isFirst) {
         saveAs.adjunct.push({
           count: count ? parse(count) : 1,
-          place: place || 'EDGE',
+          place: place || "EDGE",
           boxes: parseBoxes(boxes),
           elevation,
         })
@@ -613,8 +628,14 @@ function parseAdjuncts(
 /** 解析偏移边线参数 */
 function parseOffsetEdge(params: styleTypes.offsetEdgeType): styleParsed.offsetEdgeType {
   const { offset } = params
-  if (typeof offset === 'object') {
-    return { offset: { x: parse(offset.x), y: parse(offset.y), asRatio: offset.asRatio || false } }
+  if (typeof offset === "object") {
+    return {
+      offset: {
+        x: parse(offset.x),
+        y: parse(offset.y),
+        asRatio: offset.asRatio || false,
+      },
+    }
   } else {
     const x = parse(offset)
     return { offset: { x, y: x, asRatio: false } }
@@ -631,19 +652,21 @@ function parseClamp(params: styleTypes.clampEdgeType): styleParsed.clampEdgeType
       yMax: parse(clamp.yMax),
       xCentral: parse(clamp.xCentral),
       yCentral: parse(clamp.yCentral),
-      asRatio: typeof clamp.asRatio === 'boolean' ? clamp.asRatio : true,
+      asRatio: typeof clamp.asRatio === "boolean" ? clamp.asRatio : true,
       reverse: clamp.reverse || false,
     },
   }
 }
 
-function parsePadding(params?: styleTypes.paddingType): styleParsed.paddingType | undefined {
+function parsePadding(
+  params?: styleTypes.paddingType
+): styleParsed.paddingType | undefined {
   if (params) {
     return {
       start: parse(params.start),
       middle: parse(params.middle),
       end: parse(params.end),
-      asRatio: typeof params.asRatio === 'boolean' ? params.asRatio : true,
+      asRatio: typeof params.asRatio === "boolean" ? params.asRatio : true,
     }
   }
   return undefined
@@ -652,7 +675,7 @@ function parsePadding(params?: styleTypes.paddingType): styleParsed.paddingType 
 /** 解析带单位的公式。 */
 function parse(ns?: styleTypes.ns): number {
   let n: number
-  if (typeof ns === 'string') {
+  if (typeof ns === "string") {
     // 计算单位值
     ns = replaceUnit(ns, GLOBAL.UNITS)
     ns = replaceUnit(ns, GLOBAL.UNITS_PRESET)
@@ -661,7 +684,7 @@ function parse(ns?: styleTypes.ns): number {
       n = evaluator.eval(ns)
       // n = eval(ns)
     } catch (error) {
-      console.log('[parse fomula]', error, ns, GLOBAL.UNITS, GLOBAL.UNITS_PRESET)
+      console.log("[parse fomula]", error, ns, GLOBAL.UNITS, GLOBAL.UNITS_PRESET)
       n = 0
     }
   } else {
@@ -677,9 +700,9 @@ function replaceUnit(input: string, units?: styleParsed.unitType) {
     // 优先解析长字符的变量，防止"变量A"先于"变量AB"解析导致后者错误
     const keys = Object.keys(units).sort((a, b) => b.length - a.length)
     keys.forEach((k) => {
-      input = input.replace(new RegExp(`\\d+(\\.\\d+)?${k}`, 'g'), (m) => {
+      input = input.replace(new RegExp(`\\d+(\\.\\d+)?${k}`, "g"), (m) => {
         const u = Number(units[k])
-        return (Number(m.replace(k, '')) * u).toString()
+        return (Number(m.replace(k, "")) * u).toString()
       })
     })
   }

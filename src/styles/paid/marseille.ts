@@ -1,9 +1,10 @@
-import { preset } from '../../class/style'
-import type { styleTypes } from '../../types/styleTypes'
+import { pick } from "../../class/style"
+import { presetData } from "../presetData"
+import type { styleTypes } from "../../types/styleTypes"
 
 export const styles: styleTypes.styles = {
   Marseille: {
-    tags: { use: 'R' },
+    tags: { use: "R" },
     section: {
       roof: {
         height: 2,
@@ -14,11 +15,11 @@ export const styles: styleTypes.styles = {
           {
             control: { total: 1 },
             edge: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
-            presets: [preset({ name: 'CB:马赛通风塔', unit: { 数量: 3 } })],
+            presets: [pick(presetData["CB:马赛通风塔"], { unit: { 数量: 3 } })],
             boxInside: [
               {
                 once: true,
-                along: 'LONGEST',
+                along: "LONGEST",
                 count: 9,
                 flex: { width: 2, height: 4 },
                 widthRatio: [0.1, 0.3],
@@ -38,7 +39,7 @@ export const styles: styleTypes.styles = {
           },
           // 整段玻璃
           {
-            extrude: [{ once: true, height: '1SH', color: 'G' }],
+            extrude: [{ once: true, height: "1SH", color: "G" }],
           },
           // 竖向两段中间的格栅
           {
@@ -48,7 +49,7 @@ export const styles: styleTypes.styles = {
               {
                 proto: [
                   {
-                    spacing: [{ group: [{ x: 0.2, y: 1, z: '1SH' }], space: 1 }],
+                    spacing: [{ group: [{ x: 0.2, y: 1, z: "1SH" }], space: 1 }],
                   },
                 ],
               },
@@ -58,28 +59,30 @@ export const styles: styleTypes.styles = {
           {
             control: { first: 0.35, last: 0.5, asRatio: true, reverse: true },
             edge: [{ clamp: { xMax: 0.5 } }],
-            presets: [preset({ name: 'CS:马赛撞色阳台' })],
+            presets: [pick(presetData["CS:马赛撞色阳台"])],
           },
           {
             edge: [{ clamp: { xMin: 0.6, xMax: 0.1 } }],
-            presets: [preset({ name: 'CS:马赛撞色阳台' })],
+            presets: [pick(presetData["CS:马赛撞色阳台"])],
           },
           {
-            edge: [{ clamp: { xMin: 0.9 } }, { along: 'DEPTH' }],
-            presets: [preset({ name: 'CS:马赛撞色阳台' })],
+            edge: [{ clamp: { xMin: 0.9 } }, { along: "DEPTH" }],
+            presets: [pick(presetData["CS:马赛撞色阳台"])],
           },
           // 中部方窗
           {
             edge: [{ clamp: { xMin: 0.5, xMax: 0.4 } }],
-            presets: [preset({ name: 'CM:马赛中段方窗' })],
+            presets: [pick(presetData["CM:马赛中段方窗"])],
           },
           // 端部板墙
           {
-            edge: [{ clamp: { xMin: 0.9 } }, { along: 'WIDTH' }],
+            edge: [{ clamp: { xMin: 0.9 } }, { along: "WIDTH" }],
             facade: [
               {
                 once: true,
-                proto: [{ divide: [{ group: [{ width: -0.3, height: '1SH' }], count: 1 }] }],
+                proto: [
+                  { divide: [{ group: [{ width: -0.3, height: "1SH" }], count: 1 }] },
+                ],
               },
             ],
           },
@@ -102,7 +105,7 @@ export const styles: styleTypes.styles = {
                           {
                             width: 4,
                             height: 1,
-                            transform: [{ rotateX: -15 }, { moveZ: '1SH-1.2' }],
+                            transform: [{ rotateX: -15 }, { moveZ: "1SH-1.2" }],
                           },
                         ],
                         count: 1,
@@ -117,7 +120,7 @@ export const styles: styleTypes.styles = {
           {
             edge: [
               { offset: 4 },
-              { along: 'WIDTH' },
+              { along: "WIDTH" },
               { clamp: { xMin: 0.45, xMax: 0.4, reverse: true } },
             ],
             facade: [
@@ -128,8 +131,13 @@ export const styles: styleTypes.styles = {
                     spacing: [
                       {
                         group: [
-                          { x: 2, y: 4, z: '1SH', transform: [{ rotateX: 10 }] },
-                          { x: 2, y: 4, z: '1SH', transform: [{ rotateX: -10 }, { moveX: 0.2 }] },
+                          { x: 2, y: 4, z: "1SH", transform: [{ rotateX: 10 }] },
+                          {
+                            x: 2,
+                            y: 4,
+                            z: "1SH",
+                            transform: [{ rotateX: -10 }, { moveX: 0.2 }],
+                          },
                         ],
                         space: 8,
                       },
@@ -142,7 +150,7 @@ export const styles: styleTypes.styles = {
           // 中部通高贯穿体块
           {
             edge: [{ offset: 3 }, { clamp: { xMin: 0.5, xMax: 0.45 } }],
-            clampBox: [{ once: true, height: '1BH+12' }],
+            clampBox: [{ once: true, height: "1BH+12" }],
           },
         ],
       },

@@ -1,54 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Magiz Demo</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="data:,">
-  <title>Magiz Demo</title>
-  <style>
-    html,
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-  </style>
-</head>
+  <body>
+    <div id="magiz"></div>
+  </body>
 
-<body>
-  <div id="magiz"></div>
-</body>
+  <script type="module">
+    // bundle magizAndView.module.js --- npm run build
+    import { View, Plan, styles } from "../dist/magizAndView.module.js"
 
-<script type="module">
-  // bundle magizAndView.module.js --- npm run build
-  import { View, Plan, styles } from '../dist/magizAndView.module.js'
+    const style = "SV"
+    const height = 60
+    const match = 0
 
-  const style = 'SV'
-  const height = 60
-  const match = 0
+    console.log(`${style} h=${height} (${match})`)
 
-  console.log(`${style} h=${height} (${match})`);
+    // 1. init a preset ThreeJS scene
+    const view = new View("#magiz")
+    view.camera.position.set(100, 50, 100)
 
-  // 1. init a preset ThreeJS scene
-  const view = new View('#magiz')
-  view.camera.position.set(100, 50, 100)
+    // 2. create a plan instance
+    const params = { style, height, match, floorHeight: 3, elevation: 0, seed: 0 }
+    let loops = [
+      [
+        [0, 0],
+        [40, 0],
+        [60, -20],
+        [80, -20],
+        [80, 30],
+        [0, 30],
+      ],
+    ]
+    loops = [
+      [
+        [0, 0],
+        [60, 0],
+        [60, 20],
+        [0, 20],
+      ],
+    ]
+    const plan = new Plan({ params, loops })
 
-  // 2. create a plan instance
-  const params = { style, height, match, floorHeight: 3, elevation: 0, seed: 0 }
-  let loops = [[[0, 0], [40, 0], [60, -20], [80, -20], [80, 30], [0, 30]]]
-  loops = [[[0, 0], [60, 0], [60, 20], [0, 20]]]
-  const plan = new Plan({ params, loops })
+    // a global variable to store data. easier to handle multiple generations
+    const data = { colorMap: [], models: [] }
+    // 3. create data
+    plan.toRawModel(data, styles)
 
-  // a global variable to store data. easier to handle colorMap which contains all the colors in models
-  const data = { colorMap: [], models: [] }
-  // 3. create data
-  plan.toRawModel(data, styles)
+    // 4. create model
+    view.refresh(data, { basicMaterial: false, greyScale: false, edge: true })
 
-  // 4. create model
-  view.refresh(data, { basicMaterial: false, greyScale: false, edge: true })
-
-  // import { createAll } from './dev.js'
-  // createAll(view)
-</script>
-
+    // import { createAll } from './dev.js'
+    // createAll(view)
+  </script>
 </html>
