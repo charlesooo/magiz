@@ -17,7 +17,7 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import { presetColors } from '../style/color'
+import { presetColors } from '../styleHandler/color'
 import { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials } from './materials'
 
 import type { temp } from '../../types/temp'

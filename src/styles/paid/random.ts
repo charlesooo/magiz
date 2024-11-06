@@ -1,6 +1,6 @@
-import { pick } from "../../class/style"
-import { presetData } from "../presetData"
-import type { styleTypes } from "../../types/styleTypes"
+import { preset } from '../../class/styleHandler'
+import { presetData } from '../presetData'
+import type { styleTypes } from '../../types/styleTypes'
 
 export const styles: styleTypes.styles = {
   R1: {
@@ -10,9 +10,9 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              pick(presetData["CT:随机设备"]),
-              pick(presetData["CT:女儿墙"], {
-                color: { 颜色: "#666" },
+              preset(presetData['CT:随机设备']),
+              preset(presetData['CT:女儿墙'], {
+                color: { 颜色: '#666' },
                 unit: { 缩进: 1 },
               }),
             ],
@@ -26,37 +26,37 @@ export const styles: styleTypes.styles = {
             edge: [{ offset: -1 }],
             extrude: [
               {
-                height: "0.6FH",
-                color: "_WOOD",
-                transform: [{ moveZ: "-0.2FH" }],
+                height: '0.6FH',
+                color: '_WOOD',
+                transform: [{ moveZ: '-0.2FH' }],
               },
             ],
           },
           {
             edge: [{ offset: -1 }],
             extrude: [
-              { once: true, height: 0.5, color: "#333" },
+              { once: true, height: 0.5, color: '#333' },
               {
                 once: true,
                 height: 0.5,
-                color: "#333",
-                transform: [{ moveZ: "1SH" }],
+                color: '#333',
+                transform: [{ moveZ: '1SH' }],
               },
             ],
           },
           {
-            presets: [pick(presetData["CM:随机垂直墙板"], { color: { 墙板: "_WOOD" } })],
+            presets: [preset(presetData['CM:随机垂直墙板'], { color: { 墙板: '_WOOD' } })],
           },
         ],
       },
       bottom: {
-        height: "0.1BH",
+        height: '0.1BH',
         floorHeight: 5,
         floor: [
           {
             presets: [
-              pick(presetData["CB:角柱A"], {
-                color: { 角柱: "#666", 柱子: "#666", 楼板: "#333", 门: "_WOOD" },
+              preset(presetData['CB:角柱A'], {
+                color: { 角柱: '#666', 柱子: '#666', 楼板: '#333', 门: '_WOOD' },
               }),
             ],
           },
@@ -71,8 +71,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              pick(presetData["CT:随机设备"]),
-              pick(presetData["CT:女儿墙"], { color: { 颜色: "_WOOD" } }),
+              preset(presetData['CT:随机设备']),
+              preset(presetData['CT:女儿墙'], { color: { 颜色: '_WOOD' } }),
             ],
           },
           {},
@@ -83,44 +83,44 @@ export const styles: styleTypes.styles = {
           {
             edge: [{ offset: -1 }],
             extrude: [
-              { height: -1, color: "#666" },
+              { height: -1, color: '#666' },
               {
                 height: 0.1,
-                color: "#666",
-                transform: [{ moveZ: "0.33FH-0.38" }],
+                color: '#666',
+                transform: [{ moveZ: '0.33FH-0.38' }],
               },
               {
                 height: 0.1,
-                color: "#666",
-                transform: [{ moveZ: "0.66FH-0.68" }],
+                color: '#666',
+                transform: [{ moveZ: '0.66FH-0.68' }],
               },
               {
                 once: true,
                 height: -1,
-                color: "#666",
-                transform: [{ moveZ: "1SH" }],
+                color: '#666',
+                transform: [{ moveZ: '1SH' }],
               },
             ],
           },
           {
             presets: [
-              pick(presetData["CM:随机垂直墙板"], {
+              preset(presetData['CM:随机垂直墙板'], {
                 unit: { 窗宽: 4, 降低: 0.5 },
-                color: { 墙板: "_WOOD" },
+                color: { 墙板: '_WOOD' },
               }),
             ],
           },
         ],
       },
       bottom: {
-        height: "0.15BH",
+        height: '0.15BH',
         floorHeight: 5,
         floor: [
           {
             presets: [
-              pick(presetData["CB:角柱A"], {
+              preset(presetData['CB:角柱A'], {
                 unit: { 降低: 1 },
-                color: { 角柱: "#666", 柱子: "#666", 楼板: "_WOOD", 门: "_WOOD" },
+                color: { 角柱: '#666', 柱子: '#666', 楼板: '_WOOD', 门: '_WOOD' },
               }),
             ],
           },
@@ -135,9 +135,9 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              pick(presetData["CT:随机设备"]),
-              pick(presetData["CT:女儿墙"], {
-                color: { 颜色: "#666" },
+              preset(presetData['CT:随机设备']),
+              preset(presetData['CT:女儿墙'], {
+                color: { 颜色: '#666' },
                 unit: { 缩进: 1 },
               }),
             ],
@@ -149,38 +149,38 @@ export const styles: styleTypes.styles = {
           {
             control: { first: 1 },
             edge: [{ offset: { x: -1, y: 2 } }],
-            extrude: [{ height: -1, color: "#fff" }],
+            extrude: [{ height: -1, color: '#fff' }],
           },
           {
             control: { first: 1 },
             edge: [{ offset: { x: 2, y: -1 } }],
-            extrude: [{ height: -1, color: "#fff" }],
+            extrude: [{ height: -1, color: '#fff' }],
           },
           {
             edge: [{ offset: -0.5 }],
             extrude: [
-              { once: true, height: 0.5, color: "#333" },
+              { once: true, height: 0.5, color: '#333' },
               {
                 once: true,
                 height: 0.5,
-                color: "#333",
-                transform: [{ moveZ: "1SH" }],
+                color: '#333',
+                transform: [{ moveZ: '1SH' }],
               },
             ],
           },
           {
-            presets: [pick(presetData["CM:随机垂直墙板"])],
+            presets: [preset(presetData['CM:随机垂直墙板'])],
           },
         ],
       },
       bottom: {
-        height: "0.1BH",
+        height: '0.1BH',
         floorHeight: 5,
         floor: [
           {
             presets: [
-              pick(presetData["CB:角柱A"], {
-                color: { 角柱: "#666", 楼板: "#333", 门: "_WOOD" },
+              preset(presetData['CB:角柱A'], {
+                color: { 角柱: '#666', 楼板: '#333', 门: '_WOOD' },
               }),
             ],
           },
@@ -195,8 +195,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              pick(presetData["CT:随机设备"]),
-              pick(presetData["CT:女儿墙"], { unit: { 缩进: 1 } }),
+              preset(presetData['CT:随机设备']),
+              preset(presetData['CT:女儿墙'], { unit: { 缩进: 1 } }),
             ],
           },
         ],
@@ -205,7 +205,7 @@ export const styles: styleTypes.styles = {
         floor: [
           // 楼板
           {
-            extrude: [{ height: -1, transform: [{ moveZ: "1FH" }] }],
+            extrude: [{ height: -1, transform: [{ moveZ: '1FH' }] }],
           },
           // 底部装饰横板
           {
@@ -214,7 +214,7 @@ export const styles: styleTypes.styles = {
           },
           {
             control: { first: 1 },
-            edge: [{ along: "WIDTH" }],
+            edge: [{ along: 'WIDTH' }],
             facade: [
               {
                 padding: { start: 1, end: 4, asRatio: false },
@@ -223,7 +223,7 @@ export const styles: styleTypes.styles = {
                     divide: [
                       {
                         count: 1,
-                        group: [{ width: 1, height: -1, color: ["#fff", "#999"] }],
+                        group: [{ width: 1, height: -1, color: ['#fff', '#999'] }],
                       },
                     ],
                   },
@@ -250,8 +250,8 @@ export const styles: styleTypes.styles = {
                           {
                             x: 4,
                             y: 0.5,
-                            z: "1BH-0.5",
-                            color: ["#999", "#bbb"],
+                            z: '1BH-0.5',
+                            color: ['#999', '#bbb'],
                             transform: [{ moveX: 2 }],
                           },
                         ],
@@ -274,9 +274,9 @@ export const styles: styleTypes.styles = {
                           {
                             x: 2,
                             y: 0.5,
-                            z: "1SH-3.4",
+                            z: '1SH-3.4',
                             transform: [{ moveX: 5, moveZ: 2.4 }],
-                            color: ["#fff", "#C6FF00", "#64B5F6"],
+                            color: ['#fff', '#C6FF00', '#64B5F6'],
                           },
                         ],
                       },
@@ -297,7 +297,7 @@ export const styles: styleTypes.styles = {
                     divide: [
                       {
                         count: 1,
-                        group: [{ width: 1, height: "1BH-0.5", color: "G" }],
+                        group: [{ width: 1, height: '1BH-0.5', color: 'G' }],
                       },
                     ],
                   },

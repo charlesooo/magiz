@@ -1,0 +1,352 @@
+import {
+  MAIN,
+  PRESET,
+  RESULT,
+  parse,
+  parseStatus,
+  parseClamp,
+  parseControl,
+  parseEdgeParams,
+  parseBoxOnly,
+  parseBoxes,
+} from './handleParse'
+import { getValidIndexes } from '../plan/utils'
+
+import type { magizTypes } from '../../types/magizTypes'
+import type { styleTypes } from '../../types/styleTypes'
+import type { styleParsed } from '../../types/stylesParsed'
+
+export { check, preset, StyleHandler }
+
+/** 为 preset 参数单元提供类型检查和提示 */
+function check<
+  U extends { [k: string]: styleTypes.ns },
+  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] }
+>(params: styleTypes.preset<U, C>) {
+  return params
+}
+
+/** 通过函数将 任意presetData 转为带自定义单位的floor[]参数 */
+function preset<
+  U extends { [k: string]: styleTypes.ns },
+  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] },
+  P extends styleTypes.preset<U, C>
+>(
+  presetData: P,
+  params?: {
+    unit?: Partial<P['unit']>
+    color?: Partial<P['color']>
+  }
+): {
+  floor: styleTypes.floor[]
+  unit: P['unit']
+  color: P['color']
+} {
+  return {
+    floor: presetData.floor,
+    unit: Object.assign({ ...presetData.unit }, params?.unit),
+    color: Object.assign({ ...presetData.color }, params?.color),
+  }
+}
+
+/** 用于管理多个样式文件的样式库类 */
+class StyleHandler {
+  /** 受保护的默认样式 Blocks */
+  Blocks: styleTypes.style
+  /** 整合后的样式参数 */
+  data: styleTypes.styles
+
+  /** 创建样式库实例，输入的样式将自动整合 */
+  constructor(
+    /** 输入多个样式参数并整合 */
+    stylesArray: styleTypes.styles[]
+  ) {
+    this.Blocks = {
+      type: 'FREE',
+      tags: {},
+      section: {
+        bottom: {
+          height: '1BH',
+          floor: [{ control: { total: 1 }, extrude: [{ height: '1BH' }] }],
+        },
+      },
+    }
+    this.data = {}
+    stylesArray.forEach((s) => Object.assign(this.data, s))
+  }
+
+  /** 输入注册状态，检查样式是否可用 */
+  isValid(name: string, regState: boolean) {
+    if (name === 'Blocks') {
+      return true
+    } else {
+      const found = this.data[name]
+      return found && (found.type === 'FREE' || regState) ? true : false
+    }
+  }
+
+  /** @ignore 按是否免费返回分类后的样式名称 */
+  getOptions(): magizTypes.styleOptions {
+    const result: magizTypes.styleOptions = { paid: [], free: ['Blocks'] }
+    for (const n in this.data) {
+      this.data[n]!.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
+    }
+    return result
+  }
+
+  /** 根据输入参数和随机种子解析样式。优先按custom解析 */
+  parseStyle(
+    /** 控制解析的参数 */
+    styleParams: magizTypes.styleParams,
+    /** 全局缓存 colorMap 以便生成多个时正确索引 */
+    globalColorMap: string[]
+  ): styleParsed.result {
+    RESULT.colorMapPTR = globalColorMap
+    RESULT.floorCount = 0
+    RESULT.classified = {}
+
+    // 确保输入的参数为数字
+    const height = Number(styleParams.height)
+    // 部分参数具有默认值
+    const floorHeight = Number(styleParams.floorHeight || 3)
+    const elevation = Number(styleParams.elevation || 0)
+
+    const styleSelected =
+      !styleParams.style || styleParams.style === 'Blocks'
+        ? this.Blocks
+        : this.data[styleParams.style]
+
+    if (styleSelected) {
+      /** 内部全局变量，保存解析公式所需的单位 */
+      MAIN.UNITS = Object.assign({ BH: height, FH: floorHeight }, styleSelected.unit)
+
+      const ss = styleSelected.section
+
+      const rsh = parse(ss.roof?.height)
+      const rfh = parse(ss.roof?.floorHeight) || floorHeight
+      // 先估算底部高度，按比例计算时初始值最小不小于层高
+      let bsh = parse(ss.bottom.height)
+      let bfh = parse(ss.bottom.floorHeight) || floorHeight
+      if (bsh < bfh) bsh = bfh
+      // 中段按层数拟合，高度可变
+      let msh = height - rsh - bsh
+      const mfh = parse(ss.middle?.floorHeight) || floorHeight
+      const middleFloors = Math.floor(msh / mfh)
+      msh = middleFloors * mfh
+      // 底部段高和层高最终根据中部拟合高度确定
+      bsh = height - rsh - msh
+      bfh = bsh / Math.floor(bsh / bfh)
+
+      parseSection('bottom', ss, elevation, bsh, bfh)
+      parseSection('middle', ss, elevation + bsh, msh, mfh)
+      parseSection('roof', ss, elevation + height - rsh, rsh, rfh)
+    } else {
+      console.warn(`${styleParams.style} is invalid, ignored.`)
+    }
+
+    // 解析完成后清理 custom
+    return RESULT
+  }
+}
+
+//////////////////////////////////////////////////////////
+
+/** 解析样式的段，须调用 styles  */
+function parseSection(
+  type: keyof styleTypes.style['section'],
+  sectionParams: styleTypes.style['section'],
+  sectionElevation: number,
+  sectionHeight: number,
+  floorHeight: number
+) {
+  const section = sectionParams[type]
+  if (section) {
+    MAIN.UNITS.SH = sectionHeight
+    MAIN.UNITS.FH = floorHeight
+    let floorCount = 0
+    if (type === 'roof') {
+      floorCount = 1
+    } else {
+      floorCount = Math.round(sectionHeight / floorHeight)
+      RESULT.floorCount += floorCount
+    }
+
+    if (floorCount > 0) {
+      section.floor?.forEach((floorParams) => {
+        // 先解析除预设外的样式参数
+        parseFloor(floorCount, floorHeight, sectionElevation, floorParams)
+
+        // 然后处理预设样式相关参数
+        floorParams.presets?.forEach((floorPresetParams) => {
+          const { unit, color, floor } = floorPresetParams
+
+          // 将预设的单位和颜色缓存到全局变量中
+          PRESET.UNITS = {}
+          PRESET.COLOR = {}
+          for (const key in unit) {
+            PRESET.UNITS[key] = parse(unit[key as keyof typeof unit])
+          }
+          for (const key in color) {
+            PRESET.COLOR[key] = color[key as keyof typeof color]!
+          }
+
+          floor.forEach((params) => {
+            // 创建预设的深拷贝
+            const presetClone = { ...params }
+            // 父级层数控制参数覆盖预设控制参数
+            if (floorParams.control) presetClone.control = floorParams.control
+            // 父级边线控制参数与预设叠加
+            presetClone.edge = [...(floorParams.edge || []), ...(presetClone.edge || [])]
+
+            parseFloor(floorCount, floorHeight, sectionElevation, presetClone)
+          })
+
+          // 清除预设的全局缓存
+          PRESET.UNITS = undefined
+          PRESET.COLOR = undefined
+        })
+      })
+    }
+  }
+}
+
+//////////////// INSIDE FUNCTIONS BELOW ////////////////
+
+function parseFloor(
+  /** 根据段高和层高拟合计算的层数 */
+  totalFloors: number,
+  floorHeight: number,
+  sectionElevation: number,
+  floorParams: styleTypes.floor
+) {
+  // 获取将生成元素的标高
+  const elevations = getValidIndexes(totalFloors, parseControl(floorParams.control)).map(
+    (i) => sectionElevation + i * floorHeight
+  )
+
+  const edgeParams = parseEdgeParams(floorParams.edge)
+  const edgeParamsJSON = JSON.stringify(edgeParams)
+  const saveAs: styleParsed.floorResult = {
+    elevations,
+    edgeParams,
+    extrude: [],
+    matchSpacing: [],
+    matchDividing: [],
+    spacing: [],
+    dividing: [],
+    appendent: [],
+    boundingBox: [],
+    slopingRoof: [],
+  }
+
+  const sameEdge = RESULT.classified[edgeParamsJSON]
+  sameEdge
+    ? sameEdge.parsed.push(saveAs)
+    : (RESULT.classified[edgeParamsJSON] = { params: edgeParams, parsed: [saveAs] })
+
+  parseExtrude(saveAs, floorParams)
+  parseAppendent(saveAs, floorParams)
+  parseSlopingRoof(saveAs, floorParams)
+  parseBoundingBox(saveAs, floorParams)
+
+  floorParams.spacing?.forEach((p) => {
+    saveAs.spacing.push(parseSpacingParams(p))
+  })
+  floorParams.dividing?.forEach((p) => {
+    saveAs.dividing.push(parseDividingParams(p))
+  })
+  floorParams.matchSpacing?.forEach((p) => {
+    saveAs.matchSpacing.push({ ...parseSpacingParams(p), along: p.along })
+  })
+  floorParams.matchDividing?.forEach((p) => {
+    saveAs.matchDividing.push({ ...parseDividingParams(p), along: p.along })
+  })
+}
+
+function parseExtrude(to: styleParsed.floorResult, params?: styleTypes.floor) {
+  params?.extrude?.forEach((p) => {
+    to.extrude.push(
+      parseStatus(p, {
+        height: parse(p.height),
+        thickness: parse(p.thickness),
+      })
+    )
+  })
+}
+
+function parseSlopingRoof(to: styleParsed.floorResult, params?: styleTypes.floor) {
+  params?.slopingRoof?.forEach((p) => {
+    to.slopingRoof.push(
+      parseStatus(p, {
+        form: p.form,
+        overhang: parse(p.overhang),
+        height: parse(p.height),
+      })
+    )
+  })
+}
+
+function parseBoundingBox(to: styleParsed.floorResult, params?: styleTypes.floor) {
+  params?.boundingBox?.forEach((p) => {
+    to.boundingBox.push(
+      parseStatus(p, {
+        height: parse(p.height),
+        clamp: parseClamp(p.clamp),
+      })
+    )
+  })
+}
+
+/** 解析 floor.adjunct */
+function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floor) {
+  params?.appendent?.forEach((p) => {
+    to.appendent.push({
+      count: parse(p.count) || 1,
+      place: p.place || 'EDGE',
+      parts: p.parts.map(parseBoxOnly),
+    })
+  })
+}
+
+function parseSpacingParams(params: styleTypes.spacing): styleParsed.spacing {
+  return {
+    ...parsearrayRelated(params),
+    array: params.array.map((ap) => {
+      // 代表自身数量，不能小于1
+      let repeat = parse(ap.repeat)
+      if (repeat < 1) repeat = 1
+      return {
+        space: parse(ap.space),
+        boxes: ap.boxes ? parseBoxes(ap.boxes) : [],
+        repeat,
+      }
+    }),
+  }
+}
+
+function parseDividingParams(params: styleTypes.dividing): styleParsed.dividing {
+  return {
+    ...parsearrayRelated(params),
+    boxes: parseBoxes(params.boxes),
+    count: parse(params.count),
+  }
+}
+
+function parsearrayRelated(params: styleTypes.arrayRelated): styleParsed.arrayRelated {
+  return {
+    control: parseControl(params.control),
+    sandwich: params.sandwich || false,
+    alignEnd: params.alignEnd || false,
+  }
+}
+
+// function parseMinAndMax(
+//   v: [min: styleTypes.ns, max: styleTypes.ns] | styleTypes.ns | undefined
+// ): [min: number, max: number] {
+//   if (typeof v === 'object') {
+//     return [parse(v[0]), parse(v[1])]
+//   } else {
+//     const x = v ? parse(v) : 1
+//     return [x, x]
+//   }
+// }

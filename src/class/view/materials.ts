@@ -4,7 +4,7 @@ import {
   MeshStandardMaterial,
   LineBasicMaterial,
 } from 'three'
-import { presetColors } from '../style/color'
+import { presetColors } from '../styleHandler/color'
 
 export { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials }
 

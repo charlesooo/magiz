@@ -1,21 +1,21 @@
 import { Vector2 } from 'three'
 import { lineInsideRect, offsetRay, rayIntersectRay } from './handleMath'
+
 import type { temp } from '../../types/temp'
 
-export { offsetRays, rectClampRays }
+export { offsetRayLoops, rectClampRays }
 
-/** 偏移边线，返回新的rays */
-function offsetRays(
-  rays: temp.ray[][],
-  size: { x: number; y: number },
+/** 偏移边线，返回新的 rayLoops */
+function offsetRayLoops(
+  rayLoops: temp.ray[][],
+  /** 按比例计算偏移的尺寸依据 */
+  sizeRef: { x: number; y: number },
   params: { x: number; y: number; asRatio: boolean }
 ): temp.ray[][] {
   const offsetParams = params.asRatio
-    ? { x: size.x * params.x, y: size.y * params.y }
+    ? { x: sizeRef.x * params.x, y: sizeRef.y * params.y }
     : { x: params.x, y: params.y }
-
-  const offsetted = rays.map((rayLoop) => rayLoop.map((ray) => offsetRay(ray, offsetParams)))
-
+  const offsetted = rayLoops.map((rayLoop) => rayLoop.map((ray) => offsetRay(ray, offsetParams)))
   return offsetted.map((rayLoop) => {
     // 计算偏移后的交点
     const points: Vector2[] = []
@@ -34,10 +34,10 @@ function offsetRays(
 
 /** 根据偏移后的定界框裁剪 edgeData （修改原数据） */
 function rectClampRays(
-  rays: temp.ray[][],
+  rayLoops: temp.ray[][],
   rectangles: { min: Vector2; max: Vector2 }[]
 ): temp.ray[][] {
-  return rays.map((loop) => {
+  return rayLoops.map((rayLoop) => {
     const clamped: temp.ray[] = []
 
     rectangles.forEach((rect) => {
@@ -55,7 +55,7 @@ function rectClampRays(
         ],
       }
 
-      loop.forEach((ray) => {
+      rayLoop.forEach((ray) => {
         const newLine = lineInsideRect(ray, clampRect)
         if (newLine) {
           const { start, end } = newLine

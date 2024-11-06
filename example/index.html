@@ -19,17 +19,17 @@
   </body>
 
   <script type="module">
-    // bundle magizAndView.module.js --- npm run build
-    import { View, Plan, styles } from "../dist/magizAndView.module.js"
+    // to bundle magizAndView.module.js --- npm run build
+    import { View, Plan, styles } from '../dist/magizAndView.module.js'
 
-    const style = "SV"
-    const height = 60
+    const style = 'SV'
+    const height = 40
     const match = 0
 
-    console.log(`${style} h=${height} (${match})`)
+    console.log(`${style} h=${height}m (m:${match})`)
 
     // 1. init a preset ThreeJS scene
-    const view = new View("#magiz")
+    const view = new View('#magiz')
     view.camera.position.set(100, 50, 100)
 
     // 2. create a plan instance
@@ -44,14 +44,14 @@
         [0, 30],
       ],
     ]
-    loops = [
-      [
-        [0, 0],
-        [60, 0],
-        [60, 20],
-        [0, 20],
-      ],
-    ]
+    // loops = [
+    //   [
+    //     [0, 0],
+    //     [60, 0],
+    //     [60, 20],
+    //     [0, 20],
+    //   ],
+    // ]
     const plan = new Plan({ params, loops })
 
     // a global variable to store data. easier to handle multiple generations

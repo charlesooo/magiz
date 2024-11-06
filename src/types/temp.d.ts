@@ -3,6 +3,12 @@ import type { styleParsed } from './stylesParsed'
 
 /** 计算过程数据 */
 export namespace temp {
+  /** spacing 和 dividing 通用的阵列数据，spacing时须整体沿X轴缩放，数据均为scaled */
+  type scaledArrayData = {
+    boxData: temp.box[] | undefined
+    spaceScaled: number
+  }
+
   type partMatrixType = {
     box: { [textureName: string]: Matrix4[] }
     plane: { [textureName: string]: Matrix4[] }
@@ -28,9 +34,8 @@ export namespace temp {
   }
 
   type match = styleParsed.status & {
-    width: number
+    flexDepth: number
     height: number
-    elevation: number
     /** 如果有孔洞，可能一行存在多个pair */
     pairs: {
       center: { x: number; y: number }

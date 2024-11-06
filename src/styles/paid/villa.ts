@@ -1,16 +1,16 @@
-import { pick } from "../../class/style"
-import { presetData } from "../presetData"
-import type { styleTypes } from "../../types/styleTypes"
+import { preset } from '../../class/styleHandler'
+import { presetData } from '../presetData'
+import type { styleTypes } from '../../types/styleTypes'
 
 export const styles: styleTypes.styles = {
   新中式别墅: {
-    tags: { use: "R" },
+    tags: { use: 'R' },
     section: {
       roof: {
         height: 2,
         floor: [
           {
-            presets: [pick(presetData["VT:四坡顶"])],
+            presets: [preset(presetData['VT:四坡顶'])],
           },
         ],
       },
@@ -18,15 +18,15 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             edge: [{ clamp: { xCentral: 1.2, asRatio: false } }],
-            presets: [pick(presetData["VM:横向门搭配竖向划分入户门"])],
+            presets: [preset(presetData['VM:横向门搭配竖向划分入户门'])],
           },
           {
             edge: [{ clamp: { xCentral: 2, asRatio: false, reverse: true } }],
-            presets: [pick(presetData["VM:横向划分立面窗"])],
+            presets: [preset(presetData['VM:横向划分立面窗'])],
           },
           {
             edge: [{ clamp: { xCentral: 3, asRatio: false } }],
-            presets: [pick(presetData["VM:门廊阳台线脚"])],
+            presets: [preset(presetData['VM:门廊阳台线脚'])],
           },
         ],
       },
@@ -35,30 +35,25 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             edge: [{ clamp: { xCentral: 2, asRatio: false } }],
-            presets: [
-              pick(presetData["VM:整段竖向划分阳台门"], { unit: { 总高: "1BH-2.6" } }),
-            ],
+            presets: [preset(presetData['VM:整段竖向划分阳台门'], { unit: { 总高: '1BH-2.6' } })],
           },
           {
             edge: [{ clamp: { xCentral: 2, asRatio: false, reverse: true } }],
             presets: [
-              pick(presetData["VM:整段竖向划分立面窗"], { unit: { 总高: "1BH-2.6" } }),
-              pick(presetData["VM:横向划分立面窗"], {
+              preset(presetData['VM:整段竖向划分立面窗'], { unit: { 总高: '1BH-2.6' } }),
+              preset(presetData['VM:横向划分立面窗'], {
                 unit: { 墙板高: 1, 墙板降低: 0 },
-                color: { 浅色: "#541" },
+                color: { 浅色: '#541' },
               }),
             ],
           },
           {
-            presets: [pick(presetData["VT:线脚"]), pick(presetData["VB:通高角柱"])],
-            extrude: [{ once: true, height: "1BH-2.5", color: "G" }],
+            presets: [preset(presetData['VT:线脚']), preset(presetData['VB:通高角柱'])],
+            extrude: [{ once: true, height: '1BH-2.5', color: 'G' }],
           },
           {
             edge: [{ clamp: { xCentral: 3, asRatio: false } }],
-            presets: [
-              pick(presetData["VB:通高门廊柱"]),
-              pick(presetData["VB:门廊三级台阶"]),
-            ],
+            presets: [preset(presetData['VB:通高门廊柱']), preset(presetData['VB:门廊三级台阶'])],
           },
         ],
       },

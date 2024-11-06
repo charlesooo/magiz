@@ -2,10 +2,12 @@
 
 import { Vector2, Matrix3 } from 'three'
 import { seededRandom } from 'three/src/math/MathUtils.js'
+import { getBoxData } from './handleBasic'
 
 import type { temp } from '../../types/temp'
 import type { styleParsed } from '../../types/stylesParsed'
 import type { styleTypes } from '../../types/styleTypes'
+
 export {
   seed,
   sRand,
@@ -13,7 +15,7 @@ export {
   sShuffleArray,
   sRandBetween,
   getBounds,
-  getMatchRatioAndCount,
+  matchRatioAndCount,
   isAlongAxis,
   isParallel,
   isPerpendicular,
@@ -25,9 +27,12 @@ export {
   offsetRay,
   rayIntersectLine,
   rayIntersectRay,
-  sweepPolygonLines,
-  matchPolygonLinesAlongX,
+  sweepPolygonX,
+  spacingMatchPolygonX,
   sRotateLinesAlong,
+  getBoxesWidth,
+  getClampedRects,
+  getLoopNext,
 }
 
 /** 生成一个100以内原始的随机整数 */
@@ -274,24 +279,41 @@ function isPointInPolygon(point: Vector2, polygon: Vector2[]): boolean {
 
 /** 返回多边形内部的随机点，采样的方式运算效率较低。另有画线与面向交并计算相交线段内的点的方法 */
 
-/** 计算用间距组合拟合指定长度的缩放系数 */
-function getMatchRatioAndCount(spacing: number[], distance: number, addWidthToLast = 0) {
-  const ss = spacing.reduce((v, space) => v + space, 0)
-  if (ss > 0) {
-    const count = Math.round((distance - addWidthToLast) / ss)
-
+/** 计算用间距组合拟合指定长度的缩放系数，alignEnd等于firstWidth是否为0 */
+function matchRatioAndCount(
+  array: styleParsed.spacing['array'],
+  firstWidth: number,
+  distance: number,
+  /** 默认不在终点生成元素。将终点纳入考虑时将在计算终点时添加起点元素firstWidth让阵列对齐两端 */
+  sandwich: boolean,
+  /** 默认按元素中心点对齐线段两端，起点元素宽度视为0。加入起点元素宽度以保证元素一端对齐起点 */
+  alignEnd: boolean
+) {
+  alignEnd ? (distance -= sandwich ? firstWidth : firstWidth / 2) : (firstWidth = 0)
+  const totalSpace = array.reduce((v, p) => v + p.space * p.repeat, 0)
+  if (totalSpace > 0) {
+    const count = Math.round(distance / totalSpace)
     if (count > 0)
       return {
-        ratio: distance / (ss * count + addWidthToLast),
+        ratio: distance / (totalSpace * count),
         count,
       }
   }
+
   return undefined
 }
 
-/** 计算平行Y轴的直线与多边形所有边的交点，排除在端点的情况，结果按x值从小到大排序 */
-function sweepPolygonLines(y: number, lines: temp.line[]) {
-  const result: [leftPoint: Vector2, rightPoint: Vector2][] = []
+/** group 由不同宽度的box组成，不考虑boxFlex计算最大宽度 */
+function getBoxesWidth(data: styleParsed.spacing['array'][number]): number {
+  return data.boxes.reduce((a, b) => {
+    const w = 'widthX' in b ? b.widthX : a
+    return a < w ? w : a
+  }, 0)
+}
+
+/** 计算平行X轴的直线与多边形所有边的交点，排除在端点的情况，结果按x值从小到大排序 */
+function sweepPolygonX(y: number, lines: temp.line[]) {
+  const result: [start: Vector2, end: Vector2][] = []
   const a: Vector2[] = []
   lines.forEach((line) => {
     const i = pointAt(y, line)
@@ -322,80 +344,84 @@ function sweepPolygonLines(y: number, lines: temp.line[]) {
   }
 }
 
-/** 根据输入的match参数，添加标高并按拟合缩放数值，返回计算结果。根据 steps 组合沿Y轴计算交点。返回的 pairs 为每个step中线的交点，Y值相同 */
-function matchPolygonLinesAlongX(
+/** 沿X轴拟合平面。 */
+function spacingMatchPolygonX(
   lines: temp.line[],
-  flexBoxes: styleParsed.boxFlex[],
-  elevation: number,
-  sandwich: boolean
+  array: styleParsed.spacing['array'],
+  sandwich: boolean,
+  alignEnd: boolean
 ) {
   const result: temp.match[] = []
   const bounds = getBounds(lines.map((line) => line.start))
-  /** 计算过程中当前的Y坐标 */
-  let currentY = bounds.min.y
 
-  // 将spacing按总长度拟合，以正好覆盖范围
-  const distance = bounds.max.y - bounds.min.y
-  const flexData = flexBoxes.map((flexBox) => Object.assign({ elevation }, flexBox))
-  const widths = flexData.map((d) => d.width)
-  const rc = getMatchRatioAndCount(widths, distance, sandwich ? widths[0] : 0)
+  // 计算沿Y轴的拟合次数和比例
+  const first = array[0]
+  const firstWidth = first ? getBoxesWidth(first) : 0
+  const rc = matchRatioAndCount(array, firstWidth, bounds.max.y - bounds.min.y, sandwich, alignEnd)
   if (rc) {
+    const boxDataArray: temp.box[] = []
+    const { ratio, count } = rc
     // 按拟合比例缩放间距
-    flexData.forEach((data) => (data.width *= rc.ratio))
-
-    for (let i = 0; i < rc.count; i++) {
-      // if (!order) shuffleArray(matchData)
-      flexData.forEach(pushMatchData)
+    const flexSpacesY: number[] = []
+    array.forEach((p) => {
+      const fs = p.space * ratio
+      for (let i = 0; i < p.repeat; i++) flexSpacesY.push(fs)
+    })
+    // 按repeat生成参数组合
+    const boxArray = formatBoxArray(array)
+    let y = bounds.min.y
+    for (let i = 0; i < count; i++) {
+      boxArray.forEach((data, n) => {
+        pushTempMatch(boxDataArray, data.boxes, flexSpacesY[n]!, y)
+        y += flexSpacesY[n]!
+      })
     }
 
     // 推送首位到末位
-    if (sandwich && flexData[0]) {
-      pushMatchData(flexData[0])
+    if (sandwich && boxArray[0]) {
+      pushTempMatch(boxDataArray, boxArray[0].boxes, flexSpacesY[0]!, y)
     }
   }
 
   return result
 
-  /** 调用公共变量currentY，将拟合结果推送到result */
-  function pushMatchData(data: (typeof flexData)[0]) {
-    // 先移动当前currentY坐标到计算的中点位置
-    const s = data.width / 2
-    currentY += s
-    // 计算中点和总宽。sweepPolygonLines 排除在端点的情况，须在中线处拟合
-    const pairs = sweepPolygonLines(currentY, lines).map((pair) => {
-      const [p1, p2] = pair
-      return {
-        center: {
-          x: (p1.x + p2.x) / 2,
-          y: (p1.y + p2.y) / 2,
-        },
-        width: p2.x - p1.x,
-      }
-    })
+  /** 调用公共变量currentY，将拟合结果推送到公共变量result */
+  function pushTempMatch(
+    result: temp.box[],
+    boxes: (styleParsed.box | styleParsed.boxFlex)[],
+    /** 当前缩放后的间距 */
+    flexSpaceY: number,
+    /** 当前批次的相对Y坐标 */
+    y: number
+  ) {
+    // 计算用中线拟合的交点。sweepPolygonX 排除在端点的情况
+    let pointPairs = sweepPolygonX(y + flexSpaceY / 2, lines)
 
-    // 根据 shrink 调整结果
-    if (data.shrink) {
-      pairs.forEach((pair) => (pair.width -= data.shrink))
-    }
-    // 根据 tansform 中的位移调整结果，暂不考虑旋转
-    data.transform?.forEach((t) => {
-      if ('moveX' in t) {
-        pairs.forEach((pair) => {
-          pair.center.x += t.moveX
-          pair.center.y += t.moveY
-        })
-      }
+    pointPairs.forEach((pair) => {
+      const flexWidth = Math.abs(pair[1].x - pair[0].x)
+      boxes.forEach((boxEnum) => {
+        getBoxData(boxEnum, flexWidth).forEach((bd) => result.push(bd))
+      })
     })
-
-    result.push(Object.assign({ pairs }, data))
-    currentY += s
   }
 }
 
+/** 因其中的repeat参数，先格式化为数组 */
+function formatBoxArray(array: styleParsed.spacing['array']) {
+  const result: Omit<styleParsed.spacing['array'][number], 'repeat'>[] = []
+  array.forEach((params) => {
+    const p = { space: params.space, boxes: params.boxes }
+    for (let i = 0; i < params.repeat; i++) result.push(p)
+  })
+  return result
+}
+
 /** 根据along旋转由Plane生成的lines数据，默认按 WIDTH */
-function sRotateLinesAlong(rays: temp.ray[], along?: styleTypes.alongEdgeType['along']) {
+function sRotateLinesAlong(rays: temp.ray[], along?: styleTypes.handleEdgeType['along']) {
   let radian = 0
-  if (along === 'RANDOM') {
+  if (typeof along === 'number') {
+    radian = along * (Math.PI / 180)
+  } else if (along === 'RANDOM') {
     radian = Math.PI * 2 * sRand()
   } else if (along === 'DEPTH') {
     radian = Math.PI / 2
@@ -408,8 +434,6 @@ function sRotateLinesAlong(rays: temp.ray[], along?: styleTypes.alongEdgeType['a
   } else if (along === 'SHORTEST') {
     const r = rays.reduce((a, b) => (a.direction.length() < b.direction.length() ? a : b))
     radian = r.direction.angle()
-  } else if (typeof along === 'number') {
-    radian = along * (Math.PI / 180)
   }
 
   if (radian) {
@@ -432,4 +456,66 @@ function sRotateLinesAlong(rays: temp.ray[], along?: styleTypes.alongEdgeType['a
   }
 
   return { newRays: rays, radian }
+}
+
+/** 根据参数返回偏移后的定界框 */
+function getClampedRects(
+  bounds: { min: Vector2; max: Vector2 },
+  params: styleParsed.clampType
+): { min: Vector2; max: Vector2 }[] {
+  const min = bounds.min.clone()
+  const max = bounds.max.clone()
+  const w = max.x - min.x
+  const h = max.y - min.y
+  const { startX, endX, startY, endY, asRatio, reverse } = params
+  const result = [{ min, max }]
+
+  setClamped(result, w, 'x', startX, endX, asRatio, reverse)
+  setClamped(result, h, 'y', startY, endY, asRatio, reverse)
+
+  return result
+}
+
+/** 按参数生成修改原 bounds 中定界框的坐标 */
+function setClamped(
+  bounds: { min: Vector2; max: Vector2 }[],
+  distance: number,
+  axis: 'x' | 'y',
+  start: number,
+  end: number,
+  asRatio: boolean,
+  reverse: boolean
+): void {
+  if (start || end) {
+    const dStart = start ? (asRatio ? start * distance : start) : 0
+    const dEnd = end ? (asRatio ? end * distance : end) : 0
+    bounds.forEach((rect) => {
+      if (reverse) {
+        if (dStart && dEnd) {
+          // 反向两端同时缩进，新增一个矩形
+          const newRect = {
+            min: rect.min.clone(),
+            max: rect.max.clone(),
+          }
+          bounds.push(newRect)
+          // 修改矩形数据
+          newRect.min[axis] = newRect.max[axis] - dEnd
+          rect.max[axis] = rect.min[axis] + dStart
+        } else if (dStart) {
+          rect.max[axis] = rect.min[axis] + dStart
+        } else if (dEnd) {
+          rect.min[axis] = rect.max[axis] - dEnd
+        }
+      } else {
+        rect.min[axis] += dStart
+        rect.max[axis] -= dEnd
+      }
+    })
+  }
+}
+
+function getLoopNext<T>(a: T[], i: number) {
+  let nextID = i + 1
+  if (nextID >= a.length) nextID = 0
+  return a[nextID]!
 }

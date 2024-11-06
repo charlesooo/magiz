@@ -1,13 +1,14 @@
-import { Vector2, Matrix3 } from 'three'
+import { Vector2 } from 'three'
 import { ShapeUtils } from 'three/src/extras/ShapeUtils.js'
-import { sRand, getBounds, isAlongAxis } from './handleMath'
+import { sRand, getBounds, isAlongAxis, getClampedRects } from './handleMath'
 import { handleSlopingRoof } from './handleSlopingRoof'
-import { handleClampBox } from './handleClampBox'
-import { handleFacade } from './handleFacade'
-import { handleMatch, handleBoxInside, handleAdjunct } from './handleMatchRelated'
+import { handleBoundingBox } from './handleBoundingBox'
+import { handleSpacing } from './handleArray'
+import { handleSpacingMatch, handleAppendent } from './handleMatchPlan'
 import { handleExtrude } from './handleExtrude'
-import { offsetRays, rectClampRays } from './handleRays'
-import { StyleHandler } from '../style'
+import { offsetRayLoops, rectClampRays } from './handleRays'
+import { indentRays } from './handleIdent'
+import { StyleHandler } from '../styleHandler'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleParsed } from '../../types/stylesParsed'
@@ -30,7 +31,7 @@ class Plan {
     /** 相对平面定界框的开间与进深 */
     size: { x: number; y: number }
     /** 边线转为计算用的顺时针向量数据 */
-    rays: temp.ray[][]
+    rayLoops: temp.ray[][]
     /** 围绕坐标轴原点旋转到原位的弧度 */
     radian: number
   }
@@ -78,7 +79,7 @@ class Plan {
         radian,
         bounds: { min, max },
         size: { x: max.x - min.x, y: max.y - min.y },
-        rays: relativePoints.map((loop) =>
+        rayLoops: relativePoints.map((loop) =>
           loop.map((start, i) => {
             const end = loop[i + 1 === loop.length ? 0 : i + 1]!
             const direction = end.clone().sub(start)
@@ -104,84 +105,79 @@ class Plan {
   }
 
   /** 根据样式参数中的 setEdges 处理边线向量并生成新的向量数组。不处理内部的边线。 */
-  getEdges(
-    edgeParams: styleParsed.handleEdgesType,
-    outerOnly: boolean,
-    rotate?: number
-  ): temp.ray[][] {
-    const outter = this.relative.rays[0]!
-    let rays = outerOnly ? [outter] : this.relative.rays
-
-    // 计算整体尺寸
-    const { min, max } = getBounds(outter.map((line) => line.start))
-    const size = { x: max.x - min.x, y: max.y - min.y }
-
-    // 再处理边线
-    edgeParams.forEach((p) => {
-      if ('offset' in p) {
-        rays = offsetRays(rays, size, p.offset)
-      } else if ('clamp' in p) {
-        const bounds = getBounds(outter.map((line) => line.start))
-        const rects = getClampedRects(bounds, p.clamp)
-        rays = rectClampRays(rays, rects)
-      } else if (p.along) {
-        const o = p.along
-        switch (o) {
-          case 'WIDTH':
-            rays = rays
-              .map((loop) => loop.filter((ray) => isAlongAxis(ray.direction.angle())))
-              .filter((loop) => loop.length > 0)
-            break
-          case 'DEPTH':
-            rays = rays
-              .map((loop) => loop.filter((ray) => !isAlongAxis(ray.direction.angle())))
-              .filter((loop) => loop.length > 0)
-            break
-          case 'RANDOM':
-            rays = rays
-              .map((loop) => loop.filter(() => sRand() < 1))
-              .filter((loop) => loop.length > 0)
-            break
-          case 'SHORTEST':
-          case 'LONGEST':
-            {
-              // 找到最长的射线
-              const r = outter.reduce((a, b) =>
-                a.direction.length() > b.direction.length() ? a : b
-              )
-              rays =
-                o === 'LONGEST'
-                  ? rays.map((loop) =>
-                      loop.filter((ray) => isAlongAxis(ray.direction.angleTo(r.direction)))
-                    )
-                  : rays.map((loop) =>
-                      loop.filter((ray) => !isAlongAxis(ray.direction.angleTo(r.direction)))
-                    )
-            }
-            break
-          default:
-            rays = rays
-              .map((loop) =>
-                loop.filter((ray) => Math.abs(ray.direction.angle() - o) < 10 * (Math.PI / 180))
-              )
-              .filter((loop) => loop.length > 0)
-            break
+  getEdges(edgeParams: styleParsed.handleEdgeType[]) {
+    let rayLoops: temp.ray[][] = []
+    const outter = this.relative.rayLoops[0]
+    if (outter) {
+      rayLoops.push(outter)
+      const sizeRef = { x: 0, y: 0, caculated: false }
+      // 按顺序多次修正边线
+      edgeParams.forEach((params) => {
+        const { offset, along, clamp, indent } = params
+        if (offset) {
+          // 如有偏移边线，先计算整体尺寸，之后的任何偏移都以此sizeRef为准
+          if (!sizeRef.caculated) {
+            const { min, max } = getBounds(outter.map((line) => line.start))
+            sizeRef.x = max.x - min.x
+            sizeRef.y = max.y - min.y
+            sizeRef.caculated = true
+          }
+          rayLoops = offsetRayLoops(rayLoops, sizeRef, offset)
+        } else if (clamp) {
+          const bounds = getBounds(outter.map((line) => line.start))
+          const rects = getClampedRects(bounds, clamp)
+          rayLoops = rectClampRays(rayLoops, rects)
+        } else if (along !== undefined) {
+          switch (along) {
+            case 'WIDTH':
+              rayLoops = rayLoops
+                .map((loop) => loop.filter((ray) => isAlongAxis(ray.direction.angle())))
+                .filter((loop) => loop.length > 0)
+              break
+            case 'DEPTH':
+              rayLoops = rayLoops
+                .map((loop) => loop.filter((ray) => !isAlongAxis(ray.direction.angle())))
+                .filter((loop) => loop.length > 0)
+              break
+            case 'RANDOM':
+              rayLoops = rayLoops
+                .map((loop) => loop.filter(() => sRand() < 1))
+                .filter((loop) => loop.length > 0)
+              break
+            case 'SHORTEST':
+            case 'LONGEST':
+              {
+                // 找到最长的射线
+                const { direction } = outter.reduce((a, b) =>
+                  a.direction.length() > b.direction.length() ? a : b
+                )
+                rayLoops =
+                  along === 'LONGEST'
+                    ? rayLoops.map((loop) =>
+                        loop.filter((ray) => isAlongAxis(ray.direction.angleTo(direction)))
+                      )
+                    : rayLoops.map((loop) =>
+                        loop.filter((ray) => !isAlongAxis(ray.direction.angleTo(direction)))
+                      )
+              }
+              break
+            default:
+              rayLoops = rayLoops
+                .map((loop) =>
+                  loop.filter(
+                    (ray) => Math.abs(ray.direction.angle() - along) < 10 * (Math.PI / 180)
+                  )
+                )
+                .filter((loop) => loop.length > 0)
+              break
+          }
+        } else if (indent) {
+          rayLoops = rayLoops.map((rl) => indentRays(rl, indent))
         }
-      }
-    })
-
-    if (rotate) {
-      const matrix = new Matrix3().makeRotation(rotate)
-      rays.forEach((loop) =>
-        loop.forEach((ray) => {
-          ray.direction.applyMatrix3(matrix)
-          ray.start.applyMatrix3(matrix)
-          ray.end.applyMatrix3(matrix)
-        })
-      )
+      })
     }
 
-    return rays
+    return rayLoops
   }
   /** 按平面和样式生成可序列化的建筑模型数据 */
   toRawModel(
@@ -194,10 +190,11 @@ class Plan {
     const centerY = centerOfAll?.y || 0
     // 将结果保存到公共变量，以便同时处理多个plan生成，以及每个平面都正确映射colorMap
     const styleParsed = styles.parseStyle(this.styleParams, result.colorMap)
+
     // 按相对坐标还是源坐标生成
     const building: magizTypes.rawBuilding = {
       info: { floorArea: this.area, floors: styleParsed.floorCount },
-      points: this.relative.rays.map((loop) => loop.map((ray) => ray.start.toArray())),
+      points: this.relative.rayLoops.map((loop) => loop.map((ray) => ray.start.toArray())),
       center: this.center.toArray(),
       centerRelative: [this.center.x - centerX, this.center.y - centerY],
       rotate: this.relative.radian,
@@ -214,108 +211,28 @@ class Plan {
       extruded: { solid: [], glass: [] },
     }
 
-    styleParsed.classifiedByEdge.forEach((data) => {
-      // 保留包含内部孔洞的数据格式，但暂时只处理外边线
-      const rays = this.getEdges(data.edgeParams, true)
-      if (rays[0] && rays[0].length > 0) {
-        handleExtrude(data.extrude, rays, building, this.styleParams.match)
-        handleMatch(data.match, rays, building)
-        handleFacade(data.facade, rays, building)
-        handleBoxInside(data.boxInside, rays, building)
-        handleAdjunct(data.adjunct, rays, building)
+    const { classified } = styleParsed
+    for (const edgeParamsJSON in classified) {
+      const { params, parsed } = classified[edgeParamsJSON]!
+      const rayLoops = this.getEdges(params)
+      parsed.forEach((dataParsed) => {
+        handleExtrude(building, dataParsed, rayLoops, this.styleParams.match)
+        handleSpacingMatch(building, dataParsed, rayLoops)
+        handleSpacing(building, dataParsed, rayLoops)
+        handleAppendent(building, dataParsed, rayLoops)
 
-        const bounds = getBounds(rays[0].map((r) => r.start))
-        handleClampBox(data.clampBox, bounds, building)
-        handleSlopingRoof(data.slopingRoof, bounds, building)
-      }
-    })
+        const outter = rayLoops[0]
+        if (outter) {
+          const bounds = getBounds(outter.map((r) => r.start))
+          handleBoundingBox(building, dataParsed, bounds)
+          handleSlopingRoof(building, dataParsed, bounds)
+        }
+      })
+    }
 
     result.models.push(building)
     return building
   }
-}
-
-/** 根据参数返回偏移后的定界框 */
-function getClampedRects(
-  bounds: { min: Vector2; max: Vector2 },
-  params: styleParsed.clampEdgeType['clamp']
-): { min: Vector2; max: Vector2 }[] {
-  const min = bounds.min.clone()
-  const max = bounds.max.clone()
-  const w = max.x - min.x
-  const h = max.y - min.y
-  const { xMin, xMax, yMin, yMax, xCentral, yCentral, asRatio, reverse } = params
-  const result = [{ min, max }]
-
-  pushRect(result, 'x', w, xCentral, xMin, xMax, asRatio, reverse)
-  pushRect(result, 'y', h, yCentral, yMin, yMax, asRatio, reverse)
-
-  return result
-}
-
-/** 按参数生成修改原 bounds 中定界框的坐标 */
-function pushRect(
-  bounds: { min: Vector2; max: Vector2 }[],
-  key: 'x' | 'y',
-  distance: number,
-  central: number,
-  min: number,
-  max: number,
-  asRatio: boolean,
-  reverse: boolean
-): void {
-  const pushing: typeof bounds = []
-  if (central) {
-    const centralW = asRatio ? central * distance : central
-    if (centralW > 0) {
-      const sideW = (distance - centralW) / 2
-      if (sideW)
-        bounds.forEach((rect) => {
-          if (reverse) {
-            // 反向时将新增一个新的矩形
-            const newRect = {
-              min: rect.min.clone(),
-              max: rect.max.clone(),
-            }
-            rect.max[key] = rect.min[key] + sideW
-            newRect.min[key] = newRect.max[key] - sideW
-            pushing.push(newRect)
-          } else {
-            // 修改最大和最小点坐标
-            rect.min[key] += sideW
-            rect.max[key] -= sideW
-          }
-        })
-    }
-  } else if (min || max) {
-    const vMin = min ? (asRatio ? min * distance : min) : 0
-    const vMax = max ? (asRatio ? max * distance : max) : 0
-    bounds.forEach((rect) => {
-      if (reverse) {
-        // 反向选择时可能新增一个或0个矩形
-        if (vMin && vMax) {
-          // 复制一个新的矩形
-          const newRect = {
-            min: rect.min.clone(),
-            max: rect.max.clone(),
-          }
-          // 推送新的矩形
-          pushing.push(newRect)
-          // 修改矩形数据
-          rect.max[key] = rect.min[key] + vMin
-          newRect.min[key] = newRect.max[key] - vMax
-        } else if (vMin) {
-          rect.max[key] = rect.min[key] + vMin
-        } else if (vMax) {
-          rect.min[key] = rect.max[key] - vMax
-        }
-      } else {
-        rect.min[key] += vMin
-        rect.max[key] -= vMax
-      }
-    })
-  }
-  bounds.push(...pushing)
 }
 
 function getCenter(loop: Vector2[]) {
