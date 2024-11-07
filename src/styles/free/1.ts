@@ -17,7 +17,7 @@ export const styles: styleTypes.styles = {
         ],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['SM:竖向'])] }],
+        floor: [{ presets: [preset(presetData['SM:横向'])] }],
       },
       bottom: {
         height: '0.2BH',
@@ -25,7 +25,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             edge: [{ offset: 1 }],
-            presets: [preset(presetData['SB:竖向']), preset(presetData['SB:通高核心筒'])],
+            presets: [preset(presetData['SB:横向']), preset(presetData['SB:通高核心筒'])],
           },
         ],
       },

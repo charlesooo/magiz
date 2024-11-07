@@ -7,8 +7,8 @@ import {
   parseClamp,
   parseControl,
   parseEdgeParams,
-  parseBoxOnly,
-  parseBoxes,
+  parseBoxEnums,
+  parseBox,
 } from './handleParse'
 import { getValidIndexes } from '../plan/utils'
 
@@ -231,9 +231,7 @@ function parseFloor(
     edgeParams,
     extrude: [],
     matchSpacing: [],
-    matchDividing: [],
     spacing: [],
-    dividing: [],
     appendent: [],
     boundingBox: [],
     slopingRoof: [],
@@ -252,14 +250,8 @@ function parseFloor(
   floorParams.spacing?.forEach((p) => {
     saveAs.spacing.push(parseSpacingParams(p))
   })
-  floorParams.dividing?.forEach((p) => {
-    saveAs.dividing.push(parseDividingParams(p))
-  })
   floorParams.matchSpacing?.forEach((p) => {
     saveAs.matchSpacing.push({ ...parseSpacingParams(p), along: p.along })
-  })
-  floorParams.matchDividing?.forEach((p) => {
-    saveAs.matchDividing.push({ ...parseDividingParams(p), along: p.along })
   })
 }
 
@@ -303,50 +295,25 @@ function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floor) 
     to.appendent.push({
       count: parse(p.count) || 1,
       place: p.place || 'EDGE',
-      parts: p.parts.map(parseBoxOnly),
+      parts: p.parts.map(parseBox),
     })
   })
 }
 
 function parseSpacingParams(params: styleTypes.spacing): styleParsed.spacing {
   return {
-    ...parsearrayRelated(params),
     array: params.array.map((ap) => {
       // 代表自身数量，不能小于1
-      let repeat = parse(ap.repeat)
-      if (repeat < 1) repeat = 1
+      let count = parse(ap.count)
+      if (count < 1) count = 1
       return {
         space: parse(ap.space),
-        boxes: ap.boxes ? parseBoxes(ap.boxes) : [],
-        repeat,
+        boxes: parseBoxEnums(ap.boxes),
+        count,
       }
     }),
-  }
-}
-
-function parseDividingParams(params: styleTypes.dividing): styleParsed.dividing {
-  return {
-    ...parsearrayRelated(params),
-    boxes: parseBoxes(params.boxes),
-    count: parse(params.count),
-  }
-}
-
-function parsearrayRelated(params: styleTypes.arrayRelated): styleParsed.arrayRelated {
-  return {
     control: parseControl(params.control),
     sandwich: params.sandwich || false,
     alignEnd: params.alignEnd || false,
   }
 }
-
-// function parseMinAndMax(
-//   v: [min: styleTypes.ns, max: styleTypes.ns] | styleTypes.ns | undefined
-// ): [min: number, max: number] {
-//   if (typeof v === 'object') {
-//     return [parse(v[0]), parse(v[1])]
-//   } else {
-//     const x = v ? parse(v) : 1
-//     return [x, x]
-//   }
-// }

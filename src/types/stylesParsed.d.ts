@@ -38,11 +38,30 @@ export namespace styleParsed {
     colorID: colorDataType[]
   }
 
-  type box = status & { widthX: number; depthY: number; heightZ: number }
+  type replaceBoxEnum = {
+    chance: number
+    with: box | boxFlex
+  }
+
+  type box = status & {
+    widthX: number
+    depthY: number
+    heightZ: number
+  }
+
   type boxFlex = status & {
-    flexDepth: number
-    indentWidth: undefined | indentType
+    depth: number
     height: number
+    indentWidth: undefined | indentType
+  }
+
+  type boxArrayEnum = {
+    space: number
+    boxes: (
+      | (box & { replace: undefined | replaceBoxEnum })
+      | (boxFlex & { replace: undefined | replaceBoxEnum })
+    )[]
+    count: number
   }
 
   type indexController = {
@@ -51,21 +70,6 @@ export namespace styleParsed {
     every: number
     chance: number
     indent: undefined | indentType
-  }
-
-  type offsetEdgeType = {
-    offset: { x: number; y: number; asRatio: boolean }
-  }
-
-  type clampBoxType = {
-    clamp: {
-      startX: number
-      startY: number
-      endX: number
-      endY: number
-      asRatio: boolean
-      reverse: boolean
-    }
   }
 
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
@@ -86,22 +90,11 @@ export namespace styleParsed {
     clamp: undefined | clampType
   }
 
-  type arrayRelated = {
+  type spacing = {
+    array: boxArrayEnum[]
     control: undefined | indexController
     sandwich: boolean
     alignEnd: boolean
-  }
-
-  type spacing = arrayRelated & {
-    array: {
-      space: number
-      boxes: (box | boxFlex)[]
-      repeat: number
-    }[]
-  }
-  type dividing = arrayRelated & {
-    count: number
-    boxes: (box | boxFlex)[]
   }
 
   type appendent = {
@@ -114,10 +107,8 @@ export namespace styleParsed {
     elevations: number[]
     edgeParams: handleEdgeType[]
     extrude: extrude[]
-    spacing: spacing[]
-    dividing: dividing[]
     matchSpacing: (spacing & { along: handleEdgeType['along'] })[]
-    matchDividing: (dividing & { along: handleEdgeType['along'] })[]
+    spacing: spacing[]
     appendent: appendent[]
     boundingBox: boundingBox[]
     slopingRoof: slopingRoof[]

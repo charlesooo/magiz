@@ -1,7 +1,7 @@
 import { Matrix4 } from 'three'
 import { getValidIndexes, pushBoxData } from './utils'
-import { matchRatioAndCount, getBoxesWidth, getLoopNext } from './handleMath'
-import { TEMP, getBoxData } from './handleBasic'
+import { matchRatioAndCount, getBoxesWidth, getLoopNext, sRand } from './handleMath'
+import { TEMP, getTempData } from './handleBasic'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleParsed } from '../../types/stylesParsed'
@@ -24,18 +24,6 @@ function handleSpacing(
   })
 }
 
-// function handleDividing(
-//   spacingParams: styleParsed.dividing[],
-//   rayLoops: temp.ray[][],
-//   result: magizTypes.rawBuilding
-// ) {
-//   rayLoops.forEach((rayLoop) => {
-//     spacingParams.forEach((params) => {
-//       dividedBoxes(result, rayLoop, params)
-//     })
-//   })
-// }
-
 /** 沿一段线按间距组合阵列Boxes */
 function raySpacing(
   result: magizTypes.rawBuilding,
@@ -51,18 +39,14 @@ function raySpacing(
   const distance = ray.direction.length()
   const rc = matchRatioAndCount(array, firstWidth, distance, sandwich, alignEnd)
   if (rc) {
-    const scaledArrayData: temp.scaledArrayData[] = []
+    // 按 ratio, count 缩放数据
     const { ratio, count } = rc
-    // 缩放并初始化阵列数据 arrayData
-    array.forEach((spacingData) => {
-      const spaceScaled = spacingData.space * ratio
-      const boxData: temp.box[] = []
-      spacingData.boxes.forEach((boxEnum) => {
-        getBoxData(boxEnum, spacingData.space).forEach((bd) => boxData.push(bd))
-      })
-
-      for (let i = 0; i < spacingData.repeat; i++) {
-        scaledArrayData.push({ spaceScaled, boxData })
+    const scaledArrayData: temp.scaledArrayData[] = []
+    array.forEach((boxArray) => {
+      const spaceScaled = boxArray.space * ratio
+      const tempData = getTempData(boxArray, spaceScaled)
+      for (let i = 0; i < boxArray.count; i++) {
+        scaledArrayData.push({ spaceScaled, tempData })
       }
     })
 
@@ -82,37 +66,6 @@ function raySpacing(
     })
   }
 }
-
-// function dividedBoxes(
-//   result: magizTypes.rawBuilding,
-//   rayLoop: temp.ray[],
-//   spacingParams: styleParsed.dividing
-// ) {
-//   const { control, addLast, count, group, elevations } = spacingParams
-
-//   rayLoop.forEach((ray) => {
-//     const { start, direction } = ray
-//     let distance = direction.length()
-//     let startPoint = start
-//     if (addLast) {
-//       distance -= alignEndsAs
-//       startPoint = start.clone().add(direction.clone().setLength(alignEndsAs / 2))
-//     }
-
-//     const dUnit = distance / count
-//     const arrayData: arrayDataType[] = []
-//     const model: temp.box[] = []
-//     group.forEach((boxes) => {
-//       const boxData = getBoxDataScaled(boxes, dUnit)
-//       if (boxData) model.push(boxData)
-//     })
-//     arrayData.push({ model, space: dUnit })
-
-//     elevations.forEach((elevation) => {
-//       pushArraygData(result, arrayData, control, count, elevation, direction, startPoint)
-//     })
-//   })
-// }
 
 /** 将格式化的阵列数据arrayDataType[]转为instance数据并保存到结果 */
 function pushArraygData(
@@ -140,11 +93,10 @@ function pushArraygData(
     const placeMatrix = new Matrix4()
       .makeRotationZ(ray.direction.angle())
       .premultiply(TEMP.makeTranslation(start.x, start.y, elevation))
-
-    console.log(scaledArrayData)
-
     /** 缩放后整个组合的长度 */
     const arrayD = scaledArrayData.reduce((a, b) => a + b.spaceScaled, 0)
+
+    // 按序号推送数据
     getValidIndexes(count, control).forEach((i) => {
       let startD = i * arrayD
       scaledArrayData.forEach((data, n) => {
@@ -164,12 +116,19 @@ function pushArraygData(
     placeMatrix: Matrix4,
     result: magizTypes.rawBuilding
   ) {
-    data.boxData?.forEach((bd) => {
-      const mtx = bd.matrix
-        .clone()
-        .premultiply(TEMP.makeTranslation(targetDistance, 0, 0))
-        .premultiply(placeMatrix)
-      pushBoxData(result, bd.colorID, mtx)
+    data.tempData?.forEach((td) => {
+      let target = td.boxes
+      const { replace } = td
+      if (replace && sRand() < replace.chance) {
+        target = replace.with
+      }
+      target.forEach((tempBoxData) => {
+        const mtx = tempBoxData.matrix
+          .clone()
+          .premultiply(TEMP.makeTranslation(targetDistance, 0, 0))
+          .premultiply(placeMatrix)
+        pushBoxData(result, tempBoxData.colorID, mtx)
+      })
     })
   }
 }

@@ -26,26 +26,24 @@ export const presetData = {
     color: { 颜色: '_METAL' },
     floor: [
       {
+        control: { indent: { end: -1 } },
         edge: [{ offset: '1楼板缩进' }],
-        extrude: [{ height: '-1楼板厚', transform: [{ moveZ: '1FH' }] }],
+        extrude: [{ height: '-1楼板厚' }],
       },
       {
+        control: { total: 1 },
         extrude: [{ height: '1SH-1楼板厚', color: 'G' }],
       },
     ],
   }),
   'SM:竖向': check({
     unit: { 柱宽: 2, 柱深: 1, 间距: 2, 楼板缩进: 0.5, 幕墙降顶: 0.6, 幕墙抬升: 0, 柱数量: 3 },
-    color: { 宽柱颜色: '_CONCRETE', 柱颜色: '_METAL' },
+    color: { 宽柱颜色: '_CONCRETE', 柱颜色: '_METAL', 楼板颜色: '#999' },
     floor: [
       {
-        control: { total: 1 },
-        extrude: [{ height: -0.6, transform: [{ moveZ: '1SH' }] }],
-      },
-      {
-        control: { indent: { start: 1 } },
+        control: { indent: { end: -1 } },
         edge: [{ offset: '1楼板缩进' }],
-        extrude: [{ height: -0.6 }],
+        extrude: [{ height: -0.6, color: '楼板颜色' }],
       },
       {
         control: { total: 1 },
@@ -57,16 +55,12 @@ export const presetData = {
             array: [
               {
                 space: '1间距',
-                boxes: [
-                  { widthX: '1柱宽', depthY: '1柱深', heightZ: '1SH-0.3', color: '宽柱颜色' },
-                ],
+                boxes: [{ widthX: '1柱宽', depthY: '1柱深', heightZ: '1SH', color: '宽柱颜色' }],
               },
               {
                 space: '1间距',
-                boxes: [
-                  { widthX: '0.2柱宽', depthY: '1柱深', heightZ: '1SH-0.3', color: '柱颜色' },
-                ],
-                repeat: '1柱数量',
+                boxes: [{ widthX: '0.2柱宽', depthY: '1柱深', heightZ: '1SH', color: '柱颜色' }],
+                count: '1柱数量',
               },
             ],
           },
@@ -112,28 +106,40 @@ export const presetData = {
         extrude: [{ height: '-1楼板厚', transform: [{ moveZ: '1FH' }] }],
       },
       {
+        control: { total: 1 },
         extrude: [{ height: '1SH-1降顶', color: 'G' }],
-        dividing: [
+        spacing: [
           {
-            count: 4,
-            control: { chance: 0.5 },
-            boxes: [{ widthX: 2, depthY: 1, heightZ: '1FH-1楼板厚' }],
+            array: [
+              {
+                boxes: [
+                  { widthX: 2, depthY: 2, heightZ: '1SH' },
+                  {
+                    depth: 1,
+                    height: 3,
+                    replace: { with: { widthX: 2, depthY: 12, heightZ: '1BH' }, chance: 0.3 },
+                  },
+                ],
+                space: 6,
+              },
+            ],
           },
         ],
       },
     ],
   }),
   'SB:竖向': check({
-    unit: { 柱宽: 3, 柱缩进: 0.6, 间距: 8, 楼板缩进: -1, 楼板厚: 1.2, 降低: 0.6 },
+    unit: { 柱宽: 3, 柱缩进: 0.6, 间距: 8, 楼板缩进: -1, 楼板厚: 1.2, 降低: 0 },
     color: { 门: '_METAL', 楼板: '#999' },
     floor: [
       {
+        control: { indent: { start: 1 } },
         edge: [{ offset: '1楼板缩进' }],
-        extrude: [{ height: '-1楼板厚', color: '楼板', transform: [{ moveZ: '1FH' }] }],
+        extrude: [{ height: '-1楼板厚', color: '楼板' }],
       },
       {
         control: { total: 1 },
-        extrude: [{ height: '1SH-1楼板厚', color: 'G' }],
+        extrude: [{ height: '1SH-1降低', color: 'G' }],
         spacing: [
           {
             array: [
@@ -272,30 +278,30 @@ export const presetData = {
     floor: [
       {
         edge: [{ indent: { start: 0.2, end: 0.2, asRatio: true, reverse: true } }],
-        dividing: [
-          {
-            count: 1,
-            boxes: [{ flexDepth: '1厚度', height: '1SH-1降顶' }],
-          },
-        ],
+        // dividing: [
+        //   {
+        //     count: 1,
+        //     boxes: [{ flexDepth: '1厚度', height: '1SH-1降顶' }],
+        //   },
+        // ],
       },
 
       // 中间顶部横板
       {
         edge: [{ indent: { start: 0.2, end: 0.2, asRatio: true, reverse: true } }],
-        dividing: [
-          {
-            count: 1,
-            boxes: [
-              {
-                flexDepth: '0.8厚度',
-                height: '0.4FH',
-                color: '颜色',
-                transform: [{ moveZ: '1SH-0.4FH-1降顶' }],
-              },
-            ],
-          },
-        ],
+        // dividing: [
+        //   {
+        //     count: 1,
+        //     boxes: [
+        //       {
+        //         flexDepth: '0.8厚度',
+        //         height: '0.4FH',
+        //         color: '颜色',
+        //         transform: [{ moveZ: '1SH-0.4FH-1降顶' }],
+        //       },
+        //     ],
+        //   },
+        // ],
       },
       // 楼板
       {
@@ -550,7 +556,7 @@ export const presetData = {
   //                       transform: [{ moveZ: '1FH-1' }],
   //                     },
   //                   ],
-  //                   repeat: 2,
+  //                   count: 2,
   //                 },
   //               ],
   //             },

@@ -3,12 +3,6 @@ import type { styleParsed } from './stylesParsed'
 
 /** 计算过程数据 */
 export namespace temp {
-  /** spacing 和 dividing 通用的阵列数据，spacing时须整体沿X轴缩放，数据均为scaled */
-  type scaledArrayData = {
-    boxData: temp.box[] | undefined
-    spaceScaled: number
-  }
-
   type partMatrixType = {
     box: { [textureName: string]: Matrix4[] }
     plane: { [textureName: string]: Matrix4[] }
@@ -31,6 +25,17 @@ export namespace temp {
   type box = {
     matrix: Matrix4
     colorID: styleParsed.colorDataType[]
+  }
+
+  type boxReplacable = {
+    boxes: box[]
+    replace: { chance: number; with: box[] } | undefined
+  }
+
+  /** spacing 和 dividing 通用的阵列数据，spacing时须整体沿X轴缩放，数据均为scaled */
+  type scaledArrayData = {
+    tempData: temp.boxReplacable[] | undefined
+    spaceScaled: number
   }
 
   type match = styleParsed.status & {

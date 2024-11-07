@@ -2,7 +2,7 @@
 
 import { Vector2, Matrix3 } from 'three'
 import { seededRandom } from 'three/src/math/MathUtils.js'
-import { getBoxData } from './handleBasic'
+import { getTempData } from './handleBasic'
 
 import type { temp } from '../../types/temp'
 import type { styleParsed } from '../../types/stylesParsed'
@@ -33,6 +33,7 @@ export {
   getBoxesWidth,
   getClampedRects,
   getLoopNext,
+  formatBoxArray,
 }
 
 /** 生成一个100以内原始的随机整数 */
@@ -290,14 +291,13 @@ function matchRatioAndCount(
   alignEnd: boolean
 ) {
   alignEnd ? (distance -= sandwich ? firstWidth : firstWidth / 2) : (firstWidth = 0)
-  const totalSpace = array.reduce((v, p) => v + p.space * p.repeat, 0)
+  const totalSpace = array.reduce((v, p) => v + p.space * p.count, 0)
   if (totalSpace > 0) {
     const count = Math.round(distance / totalSpace)
-    if (count > 0)
-      return {
-        ratio: distance / (totalSpace * count),
-        count,
-      }
+    return {
+      ratio: distance / (totalSpace * count),
+      count,
+    }
   }
 
   return undefined
@@ -365,9 +365,9 @@ function spacingMatchPolygonX(
     const flexSpacesY: number[] = []
     array.forEach((p) => {
       const fs = p.space * ratio
-      for (let i = 0; i < p.repeat; i++) flexSpacesY.push(fs)
+      for (let i = 0; i < p.count; i++) flexSpacesY.push(fs)
     })
-    // 按repeat生成参数组合
+    // 按 count 生成参数组合
     const boxArray = formatBoxArray(array)
     let y = bounds.min.y
     for (let i = 0; i < count; i++) {
@@ -397,21 +397,23 @@ function spacingMatchPolygonX(
     // 计算用中线拟合的交点。sweepPolygonX 排除在端点的情况
     let pointPairs = sweepPolygonX(y + flexSpaceY / 2, lines)
 
-    pointPairs.forEach((pair) => {
-      const flexWidth = Math.abs(pair[1].x - pair[0].x)
-      boxes.forEach((boxEnum) => {
-        getBoxData(boxEnum, flexWidth).forEach((bd) => result.push(bd))
-      })
-    })
+    // pointPairs.forEach((pair) => {
+    //   const flexWidth = Math.abs(pair[1].x - pair[0].x)
+    //   getTempData()
+    //   boxes.forEach((boxEnum) => {
+    //     getBoxData(boxEnum, flexWidth).forEach((bd) => result.push(bd))
+    //   })
+    // })
   }
 }
 
-/** 因其中的repeat参数，先格式化为数组 */
+/** 因其中的 count 参数，先格式化为数组 */
 function formatBoxArray(array: styleParsed.spacing['array']) {
-  const result: Omit<styleParsed.spacing['array'][number], 'repeat'>[] = []
+  const result: Omit<styleParsed.spacing['array'][number], 'count'>[] = []
   array.forEach((params) => {
-    const p = { space: params.space, boxes: params.boxes }
-    for (let i = 0; i < params.repeat; i++) result.push(p)
+    const { space, boxes } = params
+    const p = { space, boxes }
+    for (let i = 0; i < params.count; i++) result.push(p)
   })
   return result
 }

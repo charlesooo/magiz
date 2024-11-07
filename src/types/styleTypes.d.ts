@@ -60,6 +60,12 @@ export namespace styleTypes {
     transform?: transformType[]
   }
 
+  /** 生成时按概率替换元素 */
+  type replaceBoxEnum = {
+    chance: ns
+    with: box | boxFlex
+  }
+
   /** 组成构件的 box 元素 */
   type box = status & {
     /** 沿边线的宽度，正负值相同，可添加到末尾宽度 */
@@ -72,12 +78,22 @@ export namespace styleTypes {
 
   /** 用于拟合平面的灵活box，按平面拟合计算最终长度 */
   type boxFlex = status & {
-    /** 拟合宽度 */
-    flexDepth?: ns
+    /** 拟合的进深 */
+    depth: ns
+    /** 垂直高度，负值表示朝下 */
+    height: ns
+
     /** 最终长度从两端缩进 */
     indentWidth?: indentType
-    /** 垂直高度，负值表示朝下，省略表示仅占位 */
-    height?: ns
+  }
+
+  type boxArrayEnum = {
+    /** 该构件的间距，无 boxes 表示占位 */
+    space: ns
+
+    boxes?: ((box & { replace?: replaceBoxEnum }) | (boxFlex & { replace?: replaceBoxEnum }))[]
+    /** 自身的数量，默认大于0 */
+    count?: ns
   }
 
   /** 楼层、拟合和立面元素阵列时根据序号控制生成 */
@@ -124,36 +140,17 @@ export namespace styleTypes {
     clamp?: clampType
   }
 
-  /** 阵列相关参数 */
-  type arrayRelated = {
+  /** 按间距组合沿边线阵列 */
+  type spacing = {
+    /** 由不同间距和构件组成的阵列原型 */
+    array: boxArrayEnum[]
+
     /** 生成控制参数 */
     control?: indexController
     /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
     sandwich?: boolean
     /** 默认不考虑元素宽度。若要对齐线段的两端则要考虑元素宽度 */
     alignEnd?: boolean
-  }
-
-  /** 按间距组合沿边线阵列 */
-  type spacing = arrayRelated & {
-    /** 由不同间距和构件组成的阵列原型 */
-    array: {
-      /** 该构件的间距 */
-      space: ns
-
-      /** 组成构件的元素，可选boxFlex作为填充块，可为空表示占位 */
-      boxes?: (box | boxFlex)[]
-      /** 添加repeat个自身的副本到spacing（当repaet等于3时共有3个） */
-      repeat?: ns
-    }[]
-  }
-
-  /** 按固定数量沿边线阵列 */
-  type dividing = arrayRelated & {
-    /** 划分的段数 */
-    count: ns
-    /** 组成构件的元素 */
-    boxes: (box | boxFlex)[]
   }
 
   /** 附属构件 */
@@ -163,7 +160,7 @@ export namespace styleTypes {
 
     /** 放置的位置，位于偏移后的边线或范围内 */
     place?: 'EDGE' | 'AREA'
-    /** 生成的数量，默认为 1 */
+    /** 自身的数量，默认大于0 */
     count?: ns
   }
 
@@ -180,12 +177,8 @@ export namespace styleTypes {
     extrude?: extrude[]
     /** 用spacing拟合平面和高度 */
     matchSpacing?: (spacing & { along?: handleEdgeType['along'] })[]
-    /** 用dividing拟合平面和高度 */
-    matchDividing?: (dividing & { along?: handleEdgeType['along'] })[]
     /** 沿边线按间距组合生成立面的 box 阵列 */
     spacing?: spacing[]
-    /** 沿边线按等分生成立面的 box 阵列 */
-    dividing?: dividing[]
     /** 在平面内生成box组成的构件 */
     appendent?: appendent[]
     /** 按边线 bounding 生成Box元素 */

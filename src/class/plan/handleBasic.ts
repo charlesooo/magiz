@@ -1,68 +1,83 @@
 import { Matrix4 } from 'three'
 import { degToRad } from 'three/src/math/MathUtils.js'
 import { indentBoxFlexWidth } from './handleIdent'
+import { sRand } from './handleMath'
 
 import type { temp } from '../../types/temp'
 import type { styleParsed } from '../../types/stylesParsed'
 
-export { TEMP, applyBasicTransform, getBoxData }
+export { TEMP, applyBasicTransform, getTempData }
 
 /** 计算过程中的缓存矩阵 */
 const TEMP = new Matrix4()
 
-/** 处理facade中的构成元素(FlexBox均格式化为Box)，如有尺寸为0返回空值。沿X轴缩放将导致末尾无法对齐终点 */
-function getBoxData(
+/** 处理facade中的构成元素(FlexBox均格式化为Box)。如有尺寸为0则不会生成数据 */
+function getTempData(boxArray: styleParsed.boxArrayEnum, flexSpace: number): temp.boxReplacable[] {
+  const result: temp.boxReplacable[] = []
+  boxArray.boxes.forEach((boxEnumReplacable) => {
+    let replace: temp.boxReplacable['replace']
+    const br = boxEnumReplacable.replace
+    if (br) {
+      replace = {
+        chance: br.chance,
+        with: boxEnumToTemp(br.with, flexSpace),
+      }
+    }
+    result.push({ replace, boxes: boxEnumToTemp(boxEnumReplacable, flexSpace) })
+  })
+  return result
+}
+
+function boxEnumToTemp(
   boxEnum: styleParsed.box | styleParsed.boxFlex,
-  /** 如果存在flexBox，宽度按此值 */
-  flexWidth: number
+  flexSpace: number
 ): temp.box[] {
   const result: temp.box[] = []
-  if ('flexDepth' in boxEnum) {
-    indentBoxFlexWidth(boxEnum, flexWidth).forEach((data) => {
-      const { boxFlex } = data
-      const bid = getBoxInstanceData(
-        {
-          widthX: data.boxWidth,
-          depthY: boxFlex.flexDepth,
-          heightZ: boxFlex.height,
-          colorID: boxFlex.colorID,
-          transform: boxFlex.transform,
-        },
-        true
-      )
-      if (bid) result.push(bid)
-    })
+  if ('widthX' in boxEnum) {
+    const d = boxToTemp(boxEnum)
+    if (d) result.push(d)
   } else {
-    const bid = getBoxInstanceData(boxEnum, false)
-    if (bid) result.push(bid)
+    indentBoxFlexWidth(boxEnum, flexSpace).forEach((data) => {
+      const d = boxFlexToTemp(data.boxFlex, data.boxWidth)
+      if (d) result.push(d)
+    })
   }
   return result
+}
 
-  /** 根据 styleParsed.box 生成 matrix 与颜色，作为facade元素时x相关数值须进行缩放 */
-  function getBoxInstanceData(box: styleParsed.box, isFlex: boolean): temp.box | undefined {
-    let { widthX: x, depthY: y, heightZ: z } = box
-    if (x === 0 || y === 0 || z === 0) return undefined
+function boxToTemp(box: styleParsed.box): temp.box | undefined {
+  let { widthX, depthY, heightZ } = box
+  if (!widthX || !depthY || !heightZ) return undefined
 
-    const v = isFlex ? 0.5 : 0
-    const matrix = new Matrix4().makeTranslation(v, 0, 0.5)
-    // FlexBox 的锚点在底部中线的左端，Box的锚点在底部正中
-    if (x < 0) {
-      if (isFlex) matrix.premultiply(TEMP.makeTranslation(-1, 0, 0))
-      x = -x
-    }
-    // y值正负不影响定位
-    if (y < 0) {
-      y = -y
-    }
-    if (z < 0) {
-      matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
-      z = -z
-    }
-    matrix.premultiply(TEMP.makeScale(x, y, z))
-    applyBasicTransform(box, matrix, TEMP)
-
-    return { matrix, colorID: box.colorID }
+  const matrix = new Matrix4().makeTranslation(0, 0, 0.5)
+  if (widthX < 0) widthX = -widthX
+  if (depthY < 0) depthY = -depthY
+  if (heightZ < 0) {
+    matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
+    heightZ = -heightZ
   }
+  matrix.premultiply(TEMP.makeScale(widthX, depthY, heightZ))
+  applyBasicTransform(box, matrix, TEMP)
+  return { matrix, colorID: box.colorID }
+}
+
+function boxFlexToTemp(boxFlex: styleParsed.boxFlex, flexWidth: number): temp.box | undefined {
+  let { depth, height } = boxFlex
+  if (!depth || !height) return undefined
+
+  const matrix = new Matrix4().makeTranslation(0.5, 0, 0.5)
+  if (flexWidth < 0) {
+    matrix.premultiply(TEMP.makeTranslation(-1, 0, 0))
+    flexWidth = -flexWidth
+  }
+  if (depth < 0) depth = -depth
+  if (height < 0) {
+    matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
+    height = -height
+  }
+  matrix.premultiply(TEMP.makeScale(flexWidth, depth, height))
+  applyBasicTransform(boxFlex, matrix, TEMP)
+  return { matrix, colorID: boxFlex.colorID }
 }
 
 /** 应用 styleParsed.status.transform 到 matrix */

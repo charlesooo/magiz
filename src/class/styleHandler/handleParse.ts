@@ -14,8 +14,8 @@ export {
   parseControl,
   parseClamp,
   parseEdgeParams,
-  parseBoxOnly,
-  parseBoxes,
+  parseBoxEnums,
+  parseBox,
 }
 
 const evaluator = new Mexp()
@@ -143,26 +143,45 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
   )
 }
 
-function parseBoxOnly(box: styleTypes.box): styleParsed.box {
-  return parseStatus(box, {
-    widthX: parse(box.widthX),
-    depthY: parse(box.depthY),
-    heightZ: parse(box.heightZ),
+function parseReplace(
+  replace?: styleTypes.replaceBoxEnum
+): styleParsed.replaceBoxEnum | undefined {
+  if (replace) {
+    const w = replace.with
+    return {
+      chance: parse(replace.chance),
+      with: 'widthX' in w ? parseBox(w) : parseBoxFlex(w),
+    }
+  } else return undefined
+}
+
+function parseBoxEnums(
+  boxEnums?: styleTypes.boxArrayEnum['boxes']
+): styleParsed.boxArrayEnum['boxes'] {
+  return boxEnums
+    ? boxEnums.map((b) => {
+        if ('widthX' in b) {
+          return { ...parseBox(b), replace: parseReplace(b.replace) }
+        } else {
+          return { ...parseBoxFlex(b), replace: parseReplace(b.replace) }
+        }
+      })
+    : []
+}
+
+function parseBox(b: styleTypes.box): styleParsed.box {
+  return parseStatus(b, {
+    widthX: parse(b.widthX),
+    depthY: parse(b.depthY),
+    heightZ: parse(b.heightZ),
   })
 }
 
-/** 解析 (box|boxFlex)[]  */
-function parseBoxes(
-  model: (styleTypes.box | styleTypes.boxFlex)[]
-): (styleParsed.box | styleParsed.boxFlex)[] {
-  return model.map((b) => {
-    return 'widthX' in b
-      ? parseBoxOnly(b)
-      : parseStatus(b, {
-          flexDepth: parse(b.flexDepth),
-          indentWidth: parseIndent(b.indentWidth),
-          height: parse(b.height),
-        })
+function parseBoxFlex(b: styleTypes.boxFlex): styleParsed.boxFlex {
+  return parseStatus(b, {
+    depth: parse(b.depth),
+    height: parse(b.height),
+    indentWidth: parseIndent(b.indentWidth),
   })
 }
 
@@ -187,7 +206,7 @@ function parseEdgeParams(params?: styleTypes.handleEdgeType[]): styleParsed.hand
 /** 解析偏移边线参数 */
 function parseOffsetEdge(
   params: styleTypes.handleEdgeType['offset']
-): styleParsed.offsetEdgeType['offset'] {
+): styleParsed.handleEdgeType['offset'] {
   if (typeof params === 'object') {
     return {
       x: parse(params.x),
