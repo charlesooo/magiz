@@ -1,5 +1,5 @@
-import { preset } from '../../class/styleHandler'
-import { presetData } from '../presetData'
+import { preset } from '../../class/styles'
+import { floorPreset } from '../floorPreset'
 import type { styleTypes } from '../../types/styleTypes'
 
 export const styles: styleTypes.styles = {
@@ -10,8 +10,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], {
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], {
                 color: { 颜色: '#666' },
                 unit: { 缩进: 1 },
               }),
@@ -45,7 +45,7 @@ export const styles: styleTypes.styles = {
             ],
           },
           {
-            presets: [preset(presetData['CM:随机垂直墙板'], { color: { 墙板: '_WOOD' } })],
+            presets: [preset(floorPreset['CM:随机垂直墙板'], { color: { 墙板: '_WOOD' } })],
           },
         ],
       },
@@ -55,7 +55,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CB:角柱A'], {
+              preset(floorPreset['CB:角柱A'], {
                 color: { 角柱: '#666', 柱子: '#666', 楼板: '#333', 门: '_WOOD' },
               }),
             ],
@@ -71,8 +71,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], { color: { 颜色: '_WOOD' } }),
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], { color: { 颜色: '_WOOD' } }),
             ],
           },
           {},
@@ -104,7 +104,7 @@ export const styles: styleTypes.styles = {
           },
           {
             presets: [
-              preset(presetData['CM:随机垂直墙板'], {
+              preset(floorPreset['CM:随机垂直墙板'], {
                 unit: { 窗宽: 4, 降低: 0.5 },
                 color: { 墙板: '_WOOD' },
               }),
@@ -118,7 +118,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CB:角柱A'], {
+              preset(floorPreset['CB:角柱A'], {
                 unit: { 降低: 1 },
                 color: { 角柱: '#666', 柱子: '#666', 楼板: '_WOOD', 门: '_WOOD' },
               }),
@@ -135,8 +135,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], {
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], {
                 color: { 颜色: '#666' },
                 unit: { 缩进: 1 },
               }),
@@ -169,7 +169,7 @@ export const styles: styleTypes.styles = {
             ],
           },
           {
-            presets: [preset(presetData['CM:随机垂直墙板'])],
+            presets: [preset(floorPreset['CM:随机垂直墙板'])],
           },
         ],
       },
@@ -179,7 +179,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CB:角柱A'], {
+              preset(floorPreset['CB:角柱A'], {
                 color: { 角柱: '#666', 楼板: '#333', 门: '_WOOD' },
               }),
             ],
@@ -195,8 +195,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], { unit: { 缩进: 1 } }),
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], { unit: { 缩进: 1 } }),
             ],
           },
         ],

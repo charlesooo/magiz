@@ -1,7 +1,7 @@
 import { Vector2, Matrix4 } from 'three'
 import { TEMP, applyBasicTransform } from './handleBasic'
 import { getClampedRects } from './handleMath'
-import { pushBoxData } from './utils'
+import { pushBoxData } from './handleArray'
 
 import type { styleParsed } from '../../types/stylesParsed'
 import type { magizTypes } from '../../types/magizTypes'

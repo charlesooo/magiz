@@ -1,7 +1,6 @@
 import { Matrix4 } from 'three'
 import { degToRad } from 'three/src/math/MathUtils.js'
 import { indentBoxFlexWidth } from './handleIdent'
-import { sRand } from './handleMath'
 
 import type { temp } from '../../types/temp'
 import type { styleParsed } from '../../types/stylesParsed'
@@ -12,36 +11,38 @@ export { TEMP, applyBasicTransform, getTempData }
 const TEMP = new Matrix4()
 
 /** 处理facade中的构成元素(FlexBox均格式化为Box)。如有尺寸为0则不会生成数据 */
-function getTempData(boxArray: styleParsed.boxArrayEnum, flexSpace: number): temp.boxReplacable[] {
+function getTempData(arrayUnit: styleParsed.arrayUnit, flexSpace: number): temp.boxReplacable[] {
   const result: temp.boxReplacable[] = []
-  boxArray.boxes.forEach((boxEnumReplacable) => {
+  arrayUnit.boxes.forEach((boxEnumReplacable) => {
     let replace: temp.boxReplacable['replace']
     const br = boxEnumReplacable.replace
     if (br) {
       replace = {
         chance: br.chance,
-        with: boxEnumToTemp(br.with, flexSpace),
+        with: boxEnumsToTemp(br.with, flexSpace),
       }
     }
-    result.push({ replace, boxes: boxEnumToTemp(boxEnumReplacable, flexSpace) })
+    result.push({ replace, boxes: boxEnumsToTemp([boxEnumReplacable], flexSpace) })
   })
   return result
 }
 
-function boxEnumToTemp(
-  boxEnum: styleParsed.box | styleParsed.boxFlex,
+function boxEnumsToTemp(
+  boxEnums: (styleParsed.box | styleParsed.boxFlex)[],
   flexSpace: number
 ): temp.box[] {
   const result: temp.box[] = []
-  if ('widthX' in boxEnum) {
-    const d = boxToTemp(boxEnum)
-    if (d) result.push(d)
-  } else {
-    indentBoxFlexWidth(boxEnum, flexSpace).forEach((data) => {
-      const d = boxFlexToTemp(data.boxFlex, data.boxWidth)
+  boxEnums.forEach((b) => {
+    if ('widthX' in b) {
+      const d = boxToTemp(b)
       if (d) result.push(d)
-    })
-  }
+    } else {
+      indentBoxFlexWidth(b, flexSpace).forEach((data) => {
+        const d = boxFlexToTemp(data.boxFlex, data.boxWidth)
+        if (d) result.push(d)
+      })
+    }
+  })
   return result
 }
 

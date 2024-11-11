@@ -1,8 +1,8 @@
-import { check } from '../class/styleHandler'
+import { check } from '../class/styles/utils'
 
 /** 唯一的预设样式数据
  * @命名规则 标记 (S|C|V|M) 适用部位 (T|M|B|省略表示通用) : 名称 */
-export const presetData = {
+export const floorPreset = {
   // #region Simple 简单
   'ST:女儿墙': check({
     unit: { 缩进: 0, 高度: 1.2, 厚度: 0.2, 抬升: 0 },
@@ -117,7 +117,13 @@ export const presetData = {
                   {
                     depth: 1,
                     height: 3,
-                    replace: { with: { widthX: 2, depthY: 12, heightZ: '1BH' }, chance: 0.3 },
+                    replace: {
+                      with: [
+                        { widthX: 2, depthY: 2, heightZ: '1SH' },
+                        { widthX: 1, depthY: 12, heightZ: '1SH' },
+                      ],
+                      chance: 0.3,
+                    },
                   },
                 ],
                 space: 6,

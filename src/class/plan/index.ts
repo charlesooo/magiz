@@ -8,7 +8,7 @@ import { handleSpacingMatch, handleAppendent } from './handleMatchPlan'
 import { handleExtrude } from './handleExtrude'
 import { offsetRayLoops, rectClampRays } from './handleRays'
 import { indentRays } from './handleIdent'
-import { StyleHandler } from '../styleHandler'
+import { StyleHandler } from '../styles'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleParsed } from '../../types/stylesParsed'

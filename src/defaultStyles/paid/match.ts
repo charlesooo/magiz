@@ -1,5 +1,5 @@
-import { preset } from '../../class/styleHandler'
-import { presetData } from '../presetData'
+import { preset } from '../../class/styles'
+import { floorPreset } from '../floorPreset'
 import type { styleTypes } from '../../types/styleTypes'
 
 export const styles: styleTypes.styles = {
@@ -11,20 +11,20 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], { color: { 颜色: '_WOOD' } }),
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], { color: { 颜色: '_WOOD' } }),
             ],
           },
         ],
       },
-      middle: { floor: [{ presets: [preset(presetData['MM:45度拟合'])] }] },
+      middle: { floor: [{ presets: [preset(floorPreset['MM:45度拟合'])] }] },
       bottom: {
         height: '0.15BH',
         floorHeight: 5,
         floor: [
           {
             presets: [
-              preset(presetData['CB:角柱A'], {
+              preset(floorPreset['CB:角柱A'], {
                 color: { 角柱: '_WOOD' },
                 unit: { 降低: 1 },
               }),
@@ -42,14 +42,14 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], { color: { 颜色: '#666' } }),
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], { color: { 颜色: '#666' } }),
             ],
           },
         ],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['MM:45度拟合'], { unit: { 出挑: 0.4 } })] }],
+        floor: [{ presets: [preset(floorPreset['MM:45度拟合'], { unit: { 出挑: 0.4 } })] }],
       },
       bottom: {
         height: '0.2BH',
@@ -57,7 +57,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CB:立面A'], {
+              preset(floorPreset['CB:立面A'], {
                 color: { 柱: '#666', 格: '#eee', 楼板: '_WOOD', 门: '#fff' },
                 unit: { 降低: 1 },
               }),
@@ -75,15 +75,15 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], { unit: { 缩进: 1 } }),
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], { unit: { 缩进: 1 } }),
             ],
           },
         ],
       },
       middle: {
         floor: [
-          { presets: [preset(presetData['MM:开间拟合'], { unit: { 修正标高: -0.5 } })] },
+          { presets: [preset(floorPreset['MM:开间拟合'], { unit: { 修正标高: -0.5 } })] },
           {
             edge: [{ offset: 0.5 }],
             extrude: [
@@ -109,7 +109,7 @@ export const styles: styleTypes.styles = {
           {
             edge: [{ offset: 0.5 }],
             presets: [
-              preset(presetData['CB:立面A'], {
+              preset(floorPreset['CB:立面A'], {
                 color: { 柱: '#fff', 楼板: '_WOOD', 门: '_WOOD' },
                 unit: { 降低: 1 },
               }),
@@ -127,15 +127,15 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], { color: { 颜色: '#666' } }),
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], { color: { 颜色: '#666' } }),
             ],
           },
         ],
       },
       middle: {
         floor: [
-          { presets: [preset(presetData['MM:开间拟合'], { unit: { 修正标高: -0.5 } })] },
+          { presets: [preset(floorPreset['MM:开间拟合'], { unit: { 修正标高: -0.5 } })] },
           {
             control: { last: 1 },
             edge: [{ offset: { x: 0.5, y: -1 } }],
@@ -150,7 +150,7 @@ export const styles: styleTypes.styles = {
           {
             edge: [{ offset: 0.5 }],
             presets: [
-              preset(presetData['CB:角柱A'], {
+              preset(floorPreset['CB:角柱A'], {
                 unit: { 柱宽比例: 0.1, 降低: 1 },
                 color: { 角柱: '#fff', 柱子: '#fff', 门: '_WOOD' },
               }),
@@ -172,8 +172,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], {
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], {
                 unit: { 厚度: 0.4, 缩进: -0.4 },
                 color: { 颜色: '#bbb' },
               }),
@@ -186,7 +186,7 @@ export const styles: styleTypes.styles = {
           {
             edge: [{ offset: -0.5 }],
             presets: [
-              preset(presetData['MM:开间拟合'], {
+              preset(floorPreset['MM:开间拟合'], {
                 unit: { 板宽: 2, 窗宽: 2, 窗进深: 0.4, 修正标高: -0.5 },
                 color: { 颜色: '_WOOD' },
               }),
@@ -201,7 +201,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CB:立面A'], {
+              preset(floorPreset['CB:立面A'], {
                 color: { 柱: '#bbb', 格: '#fff', 楼板: '#666', 门: '_WOOD' },
                 unit: { 间距: 5, 柱宽: 2, 降低: 1 },
               }),
@@ -219,8 +219,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], {
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], {
                 unit: { 缩进: 1 },
                 color: { 颜色: '#666' },
               }),
@@ -233,7 +233,7 @@ export const styles: styleTypes.styles = {
           {
             control: { last: 0.15, asRatio: true, reverse: true },
             presets: [
-              preset(presetData['MM:开间拟合'], {
+              preset(floorPreset['MM:开间拟合'], {
                 unit: { 窗进深: -0.4 },
                 color: { 颜色: '#666' },
               }),
@@ -273,7 +273,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CB:格栅A'], {
+              preset(floorPreset['CB:格栅A'], {
                 unit: { 柱宽: 2, 降低: 1 },
                 color: { 深色: '#666', 浅色: '#fff' },
               }),
@@ -295,8 +295,8 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CT:随机设备']),
-              preset(presetData['CT:女儿墙'], { color: { 颜色: '#666' } }),
+              preset(floorPreset['CT:随机设备']),
+              preset(floorPreset['CT:女儿墙'], { color: { 颜色: '#666' } }),
             ],
           },
         ],
@@ -305,7 +305,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['MM:开间拟合'], {
+              preset(floorPreset['MM:开间拟合'], {
                 unit: { 窗进深: -0.4 },
                 color: { 颜色: '#666' },
               }),
@@ -326,7 +326,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['CB:立面A'], {
+              preset(floorPreset['CB:立面A'], {
                 unit: { 柱宽: 2, 降低: 1 },
                 color: { 柱: '#666', 格: '#666', 楼板: '_WOOD', 门: '_WOOD' },
               }),

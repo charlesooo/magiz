@@ -6,7 +6,7 @@ import {
   sRotateLinesAlong,
   spacingMatchPolygonX,
 } from './handleMath'
-import { getValidIndexes, pushBoxData } from './utils'
+import { getValidIndexes, pushBoxData } from './handleArray'
 import { TEMP, applyBasicTransform } from './handleBasic'
 
 import type { magizTypes } from '../../types/magizTypes'

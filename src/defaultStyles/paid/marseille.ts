@@ -1,5 +1,5 @@
-import { preset } from '../../class/styleHandler'
-import { presetData } from '../presetData'
+import { preset } from '../../class/styles'
+import { floorPreset } from '../floorPreset'
 import type { styleTypes } from '../../types/styleTypes'
 
 export const styles: styleTypes.styles = {
@@ -15,7 +15,7 @@ export const styles: styleTypes.styles = {
           {
             control: { total: 1 },
             edge: [{ offset: { x: 0.2, y: 0.2, asRatio: true } }],
-            presets: [preset(presetData['CB:马赛通风塔'], { unit: { 数量: 3 } })],
+            presets: [preset(floorPreset['CB:马赛通风塔'], { unit: { 数量: 3 } })],
             boxInside: [
               {
                 once: true,
@@ -59,20 +59,20 @@ export const styles: styleTypes.styles = {
           {
             control: { first: 0.35, last: 0.5, asRatio: true, reverse: true },
             edge: [{ clamp: { xMax: 0.5 } }],
-            presets: [preset(presetData['CS:马赛撞色阳台'])],
+            presets: [preset(floorPreset['CS:马赛撞色阳台'])],
           },
           {
             edge: [{ clamp: { xMin: 0.6, xMax: 0.1 } }],
-            presets: [preset(presetData['CS:马赛撞色阳台'])],
+            presets: [preset(floorPreset['CS:马赛撞色阳台'])],
           },
           {
             edge: [{ clamp: { xMin: 0.9 } }, { along: 'DEPTH' }],
-            presets: [preset(presetData['CS:马赛撞色阳台'])],
+            presets: [preset(floorPreset['CS:马赛撞色阳台'])],
           },
           // 中部方窗
           {
             edge: [{ clamp: { xMin: 0.5, xMax: 0.4 } }],
-            presets: [preset(presetData['CM:马赛中段方窗'])],
+            presets: [preset(floorPreset['CM:马赛中段方窗'])],
           },
           // 端部板墙
           {

@@ -1,4 +1,4 @@
-import { preset } from '../class/styleHandler'
+import { preset } from '../class/styles/utils'
 import type { magizTypes } from './magizTypes'
 
 export namespace styleTypes {
@@ -52,18 +52,26 @@ export namespace styleTypes {
     reverse?: boolean
   }
 
+  /** 楼层、拟合和立面元素阵列时根据序号控制生成 */
+  type indexController = {
+    /** 指定从0开始的序号总数 */
+    total?: ns
+    /** 按序号缩进 */
+    indent?: indentType
+    /** 跳过一定序号间隔生成 */
+    skip?: ns
+    /** 按一定序号间隔生成 */
+    every?: ns
+    /** 按概率生成 */
+    chance?: ns
+  }
+
   /** 所有体块的基本状态参数 */
   type status = {
     /** 定义材质的颜色值，以"G"结尾表示玻璃（默认为实墙），如: '#ff0000 G' 或 'G'。也可以用数组表示随机颜色。 */
     color?: colorType | colorType[]
     /** 轴向的旋转和移动组合 */
     transform?: transformType[]
-  }
-
-  /** 生成时按概率替换元素 */
-  type replaceBoxEnum = {
-    chance: ns
-    with: box | boxFlex
   }
 
   /** 组成构件的 box 元素 */
@@ -83,34 +91,41 @@ export namespace styleTypes {
     /** 垂直高度，负值表示朝下 */
     height: ns
 
-    /** 最终长度从两端缩进 */
+    /** 最终长度从两端缩进，用于拟合平面时的立面效果 */
     indentWidth?: indentType
   }
 
-  type boxArrayEnum = {
-    /** 该构件的间距，无 boxes 表示占位 */
+  /** 生成时按概率替换元素 */
+  type replaceBoxEnum = {
+    chance: ns
+    with: (box | boxFlex)[]
+  }
+
+  /** 阵列组合的基本单元 */
+  type arrayUnit = {
+    /** 该单元的间距，无 boxes 表示占位 */
     space: ns
 
+    /** 该单元的构成元素 */
     boxes?: ((box & { replace?: replaceBoxEnum }) | (boxFlex & { replace?: replaceBoxEnum }))[]
-    /** 自身的数量，默认大于0 */
+    /** 该单元的数量，默认为1，用于减少重复输入 */
     count?: ns
   }
 
-  /** 楼层、拟合和立面元素阵列时根据序号控制生成 */
-  type indexController = {
-    /** 指定从0开始的序号总数 */
-    total?: ns
-    /** 按序号缩进 */
-    indent?: indentType
-    /** 跳过一定序号间隔生成 */
-    skip?: ns
-    /** 按一定序号间隔生成 */
-    every?: ns
-    /** 按概率生成 */
-    chance?: ns
-  }
-
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
+
+  /** 沿边线按间距组合阵列 */
+  type spacing = {
+    /** 由不同间距和构件组成的阵列原型 */
+    array: arrayUnit[]
+
+    /** 生成控制参数 */
+    control?: indexController
+    /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
+    sandwich?: boolean
+    /** 默认不考虑元素宽度。若要对齐线段的两端则要考虑元素宽度 */
+    alignEnd?: boolean
+  }
 
   /** 用box拟合挤出的平面 */
   type extrude = status & {
@@ -138,19 +153,6 @@ export namespace styleTypes {
     height: ns
     /** 按边线的 bounding 修正 */
     clamp?: clampType
-  }
-
-  /** 按间距组合沿边线阵列 */
-  type spacing = {
-    /** 由不同间距和构件组成的阵列原型 */
-    array: boxArrayEnum[]
-
-    /** 生成控制参数 */
-    control?: indexController
-    /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
-    sandwich?: boolean
-    /** 默认不考虑元素宽度。若要对齐线段的两端则要考虑元素宽度 */
-    alignEnd?: boolean
   }
 
   /** 附属构件 */
@@ -195,7 +197,7 @@ export namespace styleTypes {
   }
 
   /** 建筑样式 */
-  type style = {
+  type buildingStyle = {
     /** 用于按样式特点进行筛选的标签 */
     tags: {
       /** V:竖向 | L:横向 */
@@ -222,7 +224,7 @@ export namespace styleTypes {
   }
 
   /** 建筑样式 */
-  type styles = { [name: string]: style }
+  type styles = { [name: string]: buildingStyle }
 
   /** 可重复利用的楼层预设样式 */
   type preset<

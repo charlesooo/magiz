@@ -15,7 +15,7 @@ import {
 } from 'three'
 import { OrbitControls, addOrbitControls } from './controls'
 import { presetOtherMaterials } from './materials'
-import { presetColors, presetLight } from '../styleHandler/color'
+import { presetColors, presetLight } from '../styles/color'
 import { generateModel } from './raw'
 
 import type { temp } from '../../types/temp'

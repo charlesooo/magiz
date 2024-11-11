@@ -38,11 +38,6 @@ export namespace styleParsed {
     colorID: colorDataType[]
   }
 
-  type replaceBoxEnum = {
-    chance: number
-    with: box | boxFlex
-  }
-
   type box = status & {
     widthX: number
     depthY: number
@@ -55,7 +50,12 @@ export namespace styleParsed {
     indentWidth: undefined | indentType
   }
 
-  type boxArrayEnum = {
+  type replaceBoxEnum = {
+    chance: number
+    with: (box | boxFlex)[]
+  }
+
+  type arrayUnit = {
     space: number
     boxes: (
       | (box & { replace: undefined | replaceBoxEnum })
@@ -91,7 +91,7 @@ export namespace styleParsed {
   }
 
   type spacing = {
-    array: boxArrayEnum[]
+    array: arrayUnit[]
     control: undefined | indexController
     sandwich: boolean
     alignEnd: boolean

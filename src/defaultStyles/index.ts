@@ -4,7 +4,7 @@
 // import { styles as random } from './paid/random'
 import { styles as free1 } from './free/1'
 
-import { StyleHandler } from '../class/styleHandler'
+import { StyleHandler } from '../class/styles'
 
 export { styles }
 

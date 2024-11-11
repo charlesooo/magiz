@@ -8,7 +8,7 @@
 
 import { View } from '../src/class/view'
 import { Plan } from '../src/class/plan'
-import { styles } from '../src/styles'
+import { styles } from '../src/defaultStyles'
 
 export { View, Plan, styles }
 

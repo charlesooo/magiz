@@ -1,5 +1,5 @@
-import { preset } from '../../class/styleHandler'
-import { presetData } from '../presetData'
+import { preset } from '../../class/styles/utils'
+import { floorPreset } from '../presetData'
 import type { styleTypes } from '../../types/styleTypes'
 
 export const styles: styleTypes.styles = {
@@ -11,13 +11,13 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['ST:女儿墙'], { unit: { 高度: 2 }, color: { 颜色: '#999' } }),
+              preset(floorPreset['ST:女儿墙'], { unit: { 高度: 2 }, color: { 颜色: '#999' } }),
             ],
           },
         ],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['SM:横向'])] }],
+        floor: [{ presets: [preset(floorPreset['SM:横向'])] }],
       },
       bottom: {
         height: '0.2BH',
@@ -25,7 +25,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             edge: [{ offset: 1 }],
-            presets: [preset(presetData['SB:横向']), preset(presetData['SB:通高核心筒'])],
+            presets: [preset(floorPreset['SB:横向']), preset(floorPreset['SB:通高核心筒'])],
           },
         ],
       },
@@ -36,15 +36,17 @@ export const styles: styleTypes.styles = {
     type: 'FREE',
     section: {
       roof: {
-        floor: [{ presets: [preset(presetData['ST:女儿墙'], { unit: { 高度: 2 } })] }],
+        floor: [{ presets: [preset(floorPreset['ST:女儿墙'], { unit: { 高度: 2 } })] }],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['SM:横向'])] }],
+        floor: [{ presets: [preset(floorPreset['SM:横向'])] }],
       },
       bottom: {
         height: '0.2BH',
         floorHeight: 5,
-        floor: [{ presets: [preset(presetData['SB:竖向']), preset(presetData['SB:通高核心筒'])] }],
+        floor: [
+          { presets: [preset(floorPreset['SB:竖向']), preset(floorPreset['SB:通高核心筒'])] },
+        ],
       },
     },
   },
@@ -53,15 +55,15 @@ export const styles: styleTypes.styles = {
     type: 'FREE',
     section: {
       roof: {
-        floor: [{ presets: [preset(presetData['ST:女儿墙'], { unit: { 缩进: 1 } })] }],
+        floor: [{ presets: [preset(floorPreset['ST:女儿墙'], { unit: { 缩进: 1 } })] }],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['SM:竖向'])] }],
+        floor: [{ presets: [preset(floorPreset['SM:竖向'])] }],
       },
       bottom: {
         height: '0.2BH',
         floorHeight: 5,
-        floor: [{ presets: [preset(presetData['SB:角柱'])] }],
+        floor: [{ presets: [preset(floorPreset['SB:角柱'])] }],
       },
     },
   },
@@ -73,7 +75,7 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['ST:女儿墙'], {
+              preset(floorPreset['ST:女儿墙'], {
                 unit: { 高度: 2 },
                 color: { 颜色: '#bbb' },
               }),
@@ -82,12 +84,12 @@ export const styles: styleTypes.styles = {
         ],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['SM:竖向'])] }],
+        floor: [{ presets: [preset(floorPreset['SM:竖向'])] }],
       },
       bottom: {
         height: '0.2BH',
         floorHeight: 5,
-        floor: [{ presets: [preset(presetData['SB:角柱'])] }],
+        floor: [{ presets: [preset(floorPreset['SB:角柱'])] }],
       },
     },
   },
@@ -96,17 +98,17 @@ export const styles: styleTypes.styles = {
     type: 'FREE',
     section: {
       roof: {
-        floor: [{ presets: [preset(presetData['ST:女儿墙'], { unit: { 高度: 2 } })] }],
+        floor: [{ presets: [preset(floorPreset['ST:女儿墙'], { unit: { 高度: 2 } })] }],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['SM:竖向'], { unit: { 间距: 3 } })] }],
+        floor: [{ presets: [preset(floorPreset['SM:竖向'], { unit: { 间距: 3 } })] }],
       },
       bottom: {
         height: '0.2BH',
         floorHeight: 5,
         floor: [
           {
-            presets: [preset(presetData['SB:马赛克加核心筒'], { color: { 马赛克: ['#eee'] } })],
+            presets: [preset(floorPreset['SB:马赛克加核心筒'], { color: { 马赛克: ['#eee'] } })],
           },
         ],
       },
@@ -120,18 +122,18 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             presets: [
-              preset(presetData['ST:女儿墙'], { unit: { 高度: 3, 缩进: -0.2, 抬升: -1 } }),
+              preset(floorPreset['ST:女儿墙'], { unit: { 高度: 3, 缩进: -0.2, 抬升: -1 } }),
             ],
           },
         ],
       },
       middle: {
-        floor: [{ presets: [preset(presetData['SM:竖向'], { unit: { 柱宽: 1.4 } })] }],
+        floor: [{ presets: [preset(floorPreset['SM:竖向'], { unit: { 柱宽: 1.4 } })] }],
       },
       bottom: {
         height: '0.15BH',
         floorHeight: 5,
-        floor: [{ presets: [preset(presetData['SB:竖向'], { unit: { 柱宽: 1 } })] }],
+        floor: [{ presets: [preset(floorPreset['SB:竖向'], { unit: { 柱宽: 1 } })] }],
       },
     },
   },

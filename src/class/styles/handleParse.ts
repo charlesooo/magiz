@@ -147,17 +147,14 @@ function parseReplace(
   replace?: styleTypes.replaceBoxEnum
 ): styleParsed.replaceBoxEnum | undefined {
   if (replace) {
-    const w = replace.with
     return {
       chance: parse(replace.chance),
-      with: 'widthX' in w ? parseBox(w) : parseBoxFlex(w),
+      with: replace.with.map((w) => ('widthX' in w ? parseBox(w) : parseBoxFlex(w))),
     }
   } else return undefined
 }
 
-function parseBoxEnums(
-  boxEnums?: styleTypes.boxArrayEnum['boxes']
-): styleParsed.boxArrayEnum['boxes'] {
+function parseBoxEnums(boxEnums?: styleTypes.arrayUnit['boxes']): styleParsed.arrayUnit['boxes'] {
   return boxEnums
     ? boxEnums.map((b) => {
         if ('widthX' in b) {

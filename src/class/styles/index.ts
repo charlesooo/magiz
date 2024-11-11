@@ -10,49 +10,18 @@ import {
   parseBoxEnums,
   parseBox,
 } from './handleParse'
-import { getValidIndexes } from '../plan/utils'
+import { getValidIndexes } from '../plan/handleArray'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleTypes } from '../../types/styleTypes'
 import type { styleParsed } from '../../types/stylesParsed'
 
-export { check, preset, StyleHandler }
-
-/** 为 preset 参数单元提供类型检查和提示 */
-function check<
-  U extends { [k: string]: styleTypes.ns },
-  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] }
->(params: styleTypes.preset<U, C>) {
-  return params
-}
-
-/** 通过函数将 任意presetData 转为带自定义单位的floor[]参数 */
-function preset<
-  U extends { [k: string]: styleTypes.ns },
-  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] },
-  P extends styleTypes.preset<U, C>
->(
-  presetData: P,
-  params?: {
-    unit?: Partial<P['unit']>
-    color?: Partial<P['color']>
-  }
-): {
-  floor: styleTypes.floor[]
-  unit: P['unit']
-  color: P['color']
-} {
-  return {
-    floor: presetData.floor,
-    unit: Object.assign({ ...presetData.unit }, params?.unit),
-    color: Object.assign({ ...presetData.color }, params?.color),
-  }
-}
+export { StyleHandler }
 
 /** 用于管理多个样式文件的样式库类 */
 class StyleHandler {
-  /** 受保护的默认样式 Blocks */
-  Blocks: styleTypes.style
+  /** 默认样式 Blocks */
+  Blocks: styleTypes.buildingStyle
   /** 整合后的样式参数 */
   data: styleTypes.styles
 
@@ -153,8 +122,8 @@ class StyleHandler {
 
 /** 解析样式的段，须调用 styles  */
 function parseSection(
-  type: keyof styleTypes.style['section'],
-  sectionParams: styleTypes.style['section'],
+  type: keyof styleTypes.buildingStyle['section'],
+  sectionParams: styleTypes.buildingStyle['section'],
   sectionElevation: number,
   sectionHeight: number,
   floorHeight: number
