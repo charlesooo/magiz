@@ -84,42 +84,71 @@ export namespace styleTypes {
     heightZ: ns
   }
 
-  /** 用于拟合平面的灵活box，按平面拟合计算最终长度 */
-  type boxFlex = status & {
+  /** 按概率替换flex元素 */
+  type flexReplace = {
+    chance: ns
+    /** 空值表示占位 */
+    with?: box[]
+    /** 默认就近合并段落 */
+    split?: boolean
+  }
+
+  /** 灵活线性元素，根据 unitHeight 拟合分段，合并未被replace的段落 */
+  type flexVertical = status & {
+    /** 基准段高 */
+    unitHeight: ns
+    /** 进深 */
+    flexDepth: ns
+    /** 开间 */
+    flexwidth: ns
+    /** 按概率替换该单元的元素 */
+    replace?: flexReplace
+  }
+
+  /** 沿边线阵列的立面基本单元 */
+  type verticalUnit = {
+    /** 该单元的间距，无 boxes 表示占位 */
+    space: ns
+
+    /** 该单元在阵列点处生成的元素 */
+    boxes?: (box | flexVertical)[]
+    /** 按概率替换该单元的元素 */
+    replace?: { chance: ns; with?: (box | flexVertical)[] }
+    /** 该单元的数量，默认为1，用于减少重复输入 */
+    count?: ns
+  }
+
+  /** 拟合平面的基本单元，按平面计算最终的 width */
+  type matchUnit = status & {
     /** 拟合的进深 */
-    depth: ns
+    flexDepth: ns
     /** 垂直高度，负值表示朝下 */
-    height: ns
+    flexHeight: ns
 
     /** 最终长度从两端缩进，用于拟合平面时的立面效果 */
     indentWidth?: indentType
   }
 
-  /** 生成时按概率替换元素 */
-  type replaceBoxEnum = {
-    chance: ns
-    with: (box | boxFlex)[]
-  }
-
-  /** 阵列组合的基本单元 */
-  type arrayUnit = {
-    /** 该单元的间距，无 boxes 表示占位 */
-    space: ns
-
-    /** 该单元的构成元素 */
-    boxes?: ((box & { replace?: replaceBoxEnum }) | (boxFlex & { replace?: replaceBoxEnum }))[]
-    /** 该单元的数量，默认为1，用于减少重复输入 */
-    count?: ns
-  }
-
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
 
-  /** 沿边线按间距组合阵列 */
-  type spacing = {
-    /** 由不同间距和构件组成的阵列原型 */
-    array: arrayUnit[]
+  /** 灵活边线元素，根据 unitWidth 拟合分段，合并未被replace的段落 */
+  type flexEdge = status & {
+    /** 基准段高 */
+    unitWidth: ns
+    /** 进深 */
+    flexDepth: ns
+    /** 开间 */
+    flexHeight: ns
+    /** 按概率替换该单元的元素 */
+    replace?: flexReplace
+  }
 
-    /** 生成控制参数 */
+  /** 沿边线按间距组合阵列 */
+  type spacing<T> = {
+    /** 由不同间距和构件组成的阵列原型 */
+    array: T[]
+
+    /** 每个序号生成一批 T[]，按序号进行控制  */
     control?: indexController
     /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
     sandwich?: boolean
@@ -134,6 +163,8 @@ export namespace styleTypes {
 
     /** 用box构成围墙，数值为围墙厚度 */
     thickness?: ns
+    /** 拟合平面时的基准边线 */
+    along?: handleEdgeType['along']
   }
 
   /** 根据 boundingBox 生成坡屋顶 */
@@ -158,7 +189,7 @@ export namespace styleTypes {
   /** 附属构件 */
   type appendent = {
     /** 构件的组合原型 */
-    parts: box[]
+    boxes: box[]
 
     /** 放置的位置，位于偏移后的边线或范围内 */
     place?: 'EDGE' | 'AREA'
@@ -175,12 +206,15 @@ export namespace styleTypes {
     /** 通过函数生成预设样式参数 */
     presets?: ReturnType<typeof preset>[]
 
-    /** 从平面挤出体块 */
+    /** 从平面挤出高度 (可按此参数用box拟合平面和高度) */
     extrude?: extrude[]
-    /** 用spacing拟合平面和高度 */
-    matchSpacing?: (spacing & { along?: handleEdgeType['along'] })[]
+    /** 用box拟合平面和高度 */
+    match?: (spacing<matchUnit> & { along?: handleEdgeType['along'] })[]
     /** 沿边线按间距组合生成立面的 box 阵列 */
-    spacing?: spacing[]
+    vertical?: spacing<verticalUnit>[]
+    /** 沿边线生成灵活线性元素 */
+    horizontal?: flexEdge[]
+
     /** 在平面内生成box组成的构件 */
     appendent?: appendent[]
     /** 按边线 bounding 生成Box元素 */

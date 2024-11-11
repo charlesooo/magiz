@@ -33,6 +33,14 @@ export namespace styleParsed {
     reverse: boolean
   }
 
+  type indexController = {
+    total: number
+    skip: number
+    every: number
+    chance: number
+    indent: undefined | indentType
+  }
+
   type status = {
     transform: transformType[]
     colorID: colorDataType[]
@@ -44,35 +52,47 @@ export namespace styleParsed {
     heightZ: number
   }
 
-  type boxFlex = status & {
-    depth: number
-    height: number
-    indentWidth: undefined | indentType
+  type flexVertical = status & {
+    unitHeight: number
+    flexDepth: number
+    flexwidth: number
+    replace: undefined | flexReplace
   }
 
-  type replaceBoxEnum = {
+  type flexEdge = status & {
+    unitWidth: number
+    flexDepth: number
+    flexHeight: number
+    replace: undefined | flexReplace
+  }
+
+  type flexReplace = {
     chance: number
-    with: (box | boxFlex)[]
+    with: box[]
+    split: boolean
   }
 
-  type arrayUnit = {
+  type verticalUnit = {
     space: number
-    boxes: (
-      | (box & { replace: undefined | replaceBoxEnum })
-      | (boxFlex & { replace: undefined | replaceBoxEnum })
-    )[]
+    boxes: (box | flexVertical)[]
+    replace: undefined | { chance: number; with: (box | flexVertical)[] }
     count: number
   }
 
-  type indexController = {
-    total: number
-    skip: number
-    every: number
-    chance: number
-    indent: undefined | indentType
+  type matchUnit = status & {
+    flexDepth: number
+    flexHeight: number
+    indentWidth?: indentType
   }
 
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
+
+  type spacing<T> = {
+    array: T[]
+    control: undefined | indexController
+    sandwich: boolean
+    alignEnd: boolean
+  }
 
   type extrude = status & {
     height: number
@@ -90,15 +110,8 @@ export namespace styleParsed {
     clamp: undefined | clampType
   }
 
-  type spacing = {
-    array: arrayUnit[]
-    control: undefined | indexController
-    sandwich: boolean
-    alignEnd: boolean
-  }
-
   type appendent = {
-    parts: box[]
+    boxes: box[]
     place: NonNullable<styleTypes.appendent['place']>
     count: number
   }
@@ -106,9 +119,12 @@ export namespace styleParsed {
   type floorResult = {
     elevations: number[]
     edgeParams: handleEdgeType[]
+
     extrude: extrude[]
-    matchSpacing: (spacing & { along: handleEdgeType['along'] })[]
-    spacing: spacing[]
+    match: (spacing<matchUnit> & { along: handleEdgeType['along'] })[]
+    vertical: spacing<verticalUnit>[]
+    horizontal: flexEdge[]
+
     appendent: appendent[]
     boundingBox: boundingBox[]
     slopingRoof: slopingRoof[]

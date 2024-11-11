@@ -29,7 +29,7 @@ export {
   sweepPolygonX,
   spacingMatchPolygonX,
   sRotateLinesAlong,
-  getBoxesWidth,
+  getVerticalUnitWidth,
   getClampedRects,
   getLoopNext,
   formatBoxArray,
@@ -281,8 +281,11 @@ function isPointInPolygon(point: Vector2, polygon: Vector2[]): boolean {
 
 /** 计算用间距组合拟合指定长度的缩放系数，alignEnd等于firstWidth是否为0 */
 function matchRatioAndCount(
-  array: styleParsed.spacing['array'],
+  /** 生成的第一个元素的宽度 */
   firstWidth: number,
+  /** 用于拟合的基准间距组合 */
+  spaces: number[],
+  /** 用于拟合的总长度 */
   distance: number,
   /** 默认不在终点生成元素。将终点纳入考虑时将在计算终点时添加起点元素firstWidth让阵列对齐两端 */
   sandwich: boolean,
@@ -290,7 +293,7 @@ function matchRatioAndCount(
   alignEnd: boolean
 ) {
   alignEnd ? (distance -= sandwich ? firstWidth : firstWidth / 2) : (firstWidth = 0)
-  const totalSpace = array.reduce((v, p) => v + p.space * p.count, 0)
+  const totalSpace = spaces.reduce((v, s) => v + s, 0)
   if (totalSpace > 0) {
     const count = Math.round(distance / totalSpace)
     return {
@@ -303,11 +306,13 @@ function matchRatioAndCount(
 }
 
 /** group 由不同宽度的box组成，不考虑boxFlex计算最大宽度 */
-function getBoxesWidth(data: styleParsed.spacing['array'][number]): number {
-  return data.boxes.reduce((a, b) => {
-    const w = 'widthX' in b ? b.widthX : a
-    return a < w ? w : a
-  }, 0)
+function getVerticalUnitWidth(unit?: styleParsed.verticalUnit): number {
+  return unit
+    ? unit.boxes.reduce((a, b) => {
+        const w = 'widthX' in b ? b.widthX : b.flexwidth
+        return a < w ? w : a
+      }, 0)
+    : 0
 }
 
 /** 计算平行X轴的直线与多边形所有边的交点，排除在端点的情况，结果按x值从小到大排序 */

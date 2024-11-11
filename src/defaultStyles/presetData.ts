@@ -115,8 +115,8 @@ export const floorPreset = {
                 boxes: [
                   { widthX: 2, depthY: 2, heightZ: '1SH' },
                   {
-                    depth: 1,
-                    height: 3,
+                    flexDepth: 1,
+                    flexHeight: 3,
                     replace: {
                       with: [
                         { widthX: 2, depthY: 2, heightZ: '1SH' },

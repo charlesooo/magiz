@@ -14,8 +14,10 @@ export {
   parseControl,
   parseClamp,
   parseEdgeParams,
-  parseBoxEnums,
+  parseVerticalUnits,
+  parseFlexEdge,
   parseBox,
+  parseBoxes,
 }
 
 const evaluator = new Mexp()
@@ -143,28 +145,36 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
   )
 }
 
-function parseReplace(
-  replace?: styleTypes.replaceBoxEnum
-): styleParsed.replaceBoxEnum | undefined {
-  if (replace) {
-    return {
-      chance: parse(replace.chance),
-      with: replace.with.map((w) => ('widthX' in w ? parseBox(w) : parseBoxFlex(w))),
-    }
-  } else return undefined
-}
+// function parseReplace(
+//   replace?: styleTypes.replaceBoxEnum
+// ): styleParsed.replaceBoxEnum | undefined {
+//   if (replace) {
+//     return {
+//       chance: parse(replace.chance),
+//       with: replace.with.map((w) => ('widthX' in w ? parseBox(w) : parseBoxFlex(w))),
+//     }
+//   } else return undefined
+// }
 
-function parseBoxEnums(boxEnums?: styleTypes.arrayUnit['boxes']): styleParsed.arrayUnit['boxes'] {
-  return boxEnums
-    ? boxEnums.map((b) => {
-        if ('widthX' in b) {
-          return { ...parseBox(b), replace: parseReplace(b.replace) }
-        } else {
-          return { ...parseBoxFlex(b), replace: parseReplace(b.replace) }
-        }
-      })
-    : []
-}
+// function parseBoxEnums(boxEnums?: styleTypes.arrayUnit['boxes']): styleParsed.arrayUnit['boxes'] {
+//   return boxEnums
+//     ? boxEnums.map((b) => {
+//         if ('widthX' in b) {
+//           return { ...parseBox(b), replace: parseReplace(b.replace) }
+//         } else {
+//           return { ...parseBoxFlex(b), replace: parseReplace(b.replace) }
+//         }
+//       })
+//     : []
+// }
+
+// function parseBoxFlex(b: styleTypes.boxFlex): styleParsed.boxFlex {
+//   return parseStatus(b, {
+//     flexDepth: parse(b.flexDepth),
+//     flexHeight: parse(b.flexHeight),
+//     indentWidth: parseIndent(b.indentWidth),
+//   })
+// }
 
 function parseBox(b: styleTypes.box): styleParsed.box {
   return parseStatus(b, {
@@ -174,11 +184,59 @@ function parseBox(b: styleTypes.box): styleParsed.box {
   })
 }
 
-function parseBoxFlex(b: styleTypes.boxFlex): styleParsed.boxFlex {
-  return parseStatus(b, {
-    depth: parse(b.depth),
-    height: parse(b.height),
-    indentWidth: parseIndent(b.indentWidth),
+function parseBoxes(bs?: styleTypes.box[]): styleParsed.box[] {
+  return bs?.map(parseBox) || []
+}
+
+function parseFlexReplace(params?: styleTypes.flexReplace): styleParsed.flexReplace | undefined {
+  return params
+    ? {
+        chance: parse(params.chance),
+        with: parseBoxes(params.with),
+        split: params.split || false,
+      }
+    : undefined
+}
+
+function parseVerticalBoxes(
+  boxes?: (styleTypes.box | styleTypes.flexVertical)[]
+): (styleParsed.box | styleParsed.flexVertical)[] {
+  return boxes
+    ? boxes.map((x) => {
+        if ('widthX' in x) {
+          return parseBox(x)
+        } else {
+          return parseStatus(x, {
+            unitHeight: parse(x.unitHeight),
+            flexDepth: parse(x.flexDepth),
+            flexwidth: parse(x.flexwidth),
+            replace: parseFlexReplace(x.replace),
+          })
+        }
+      })
+    : []
+}
+
+function parseVerticalUnits(params: styleTypes.verticalUnit[]): styleParsed.verticalUnit[] {
+  return params.map((unit) => {
+    const { replace } = unit
+    return {
+      space: parse(unit.space),
+      boxes: parseVerticalBoxes(unit.boxes),
+      replace: replace
+        ? { chance: parse(replace.chance), with: parseVerticalBoxes(replace.with) }
+        : undefined,
+      count: parse(unit.count) || 1,
+    }
+  })
+}
+
+function parseFlexEdge(params: styleTypes.flexEdge): styleParsed.flexEdge {
+  return parseStatus(params, {
+    unitWidth: parse(params.unitWidth),
+    flexDepth: parse(params.flexDepth),
+    flexHeight: parse(params.flexHeight),
+    replace: parseFlexReplace(params.replace),
   })
 }
 

@@ -1,5 +1,11 @@
 import { Matrix4 } from 'three'
-import { matchRatioAndCount, getBoxesWidth, getLoopNext, sRand, sSample } from './handleMath'
+import {
+  matchRatioAndCount,
+  getVerticalUnitWidth,
+  getLoopNext,
+  sRand,
+  sSample,
+} from './handleMath'
 import { TEMP, getTempData } from './handleBasic'
 import { indentIndexes } from './handleIdent'
 
@@ -7,45 +13,63 @@ import type { magizTypes } from '../../types/magizTypes'
 import type { styleParsed } from '../../types/stylesParsed'
 import type { temp } from '../../types/temp'
 
-export { handleSpacing, raySpacing, getValidIndexes, pushBoxData }
+export { handleVertical, getValidIndexes, pushBoxData }
 
-function handleSpacing(
+function handleVertical(
   result: magizTypes.rawBuilding,
   parsedStyle: styleParsed.floorResult,
   rayLoops: temp.ray[][]
 ) {
-  const { spacing, elevations } = parsedStyle
+  const { vertical, elevations } = parsedStyle
   rayLoops.forEach((rayLoop) => {
     rayLoop.forEach((ray) => {
-      spacing.forEach((params) => {
-        raySpacing(result, elevations, ray, params)
+      vertical.forEach((params) => {
+        raySpacingVertical(result, elevations, ray, params)
       })
     })
   })
 }
 
+// function handleSpacing(
+//   result: magizTypes.rawBuilding,
+//   parsedStyle: styleParsed.floorResult,
+//   rayLoops: temp.ray[][]
+// ) {
+//   const { spacing, elevations } = parsedStyle
+//   rayLoops.forEach((rayLoop) => {
+//     rayLoop.forEach((ray) => {
+//       spacing.forEach((params) => {
+//         raySpacing(result, elevations, ray, params)
+//       })
+//     })
+//   })
+// }
+
 /** 沿一段线按间距组合阵列Boxes */
-function raySpacing(
+function raySpacingVertical(
   result: magizTypes.rawBuilding,
   elevations: number[],
   ray: temp.ray,
-  spacingParams: styleParsed.spacing
+  spacingParams: styleParsed.spacing<styleParsed.verticalUnit>
 ) {
   const { control, sandwich, alignEnd, array } = spacingParams
 
   // 计算参数在该段上生成时的批数和缩放系数
-  const first = array[0]
-  const firstWidth = first ? getBoxesWidth(first) : 0
   const distance = ray.direction.length()
-  const rc = matchRatioAndCount(array, firstWidth, distance, sandwich, alignEnd)
+  const spaces: number[] = []
+  array.forEach((vu) => {
+    for (let i = 0; i < vu.count; i++) spaces.push(vu.space)
+  })
+  const firstWidth = getVerticalUnitWidth(array[0])
+  const rc = matchRatioAndCount(firstWidth, spaces, distance, sandwich, alignEnd)
   if (rc) {
     // 按 ratio, count 缩放数据
     const { ratio, count } = rc
     const scaledArrayData: temp.scaledArrayData[] = []
-    array.forEach((boxArray) => {
-      const spaceScaled = boxArray.space * ratio
-      const tempData = getTempData(boxArray, spaceScaled)
-      for (let i = 0; i < boxArray.count; i++) {
+    array.forEach((verticalUnit) => {
+      const spaceScaled = verticalUnit.space * ratio
+      const tempData = getTempData(verticalUnit, spaceScaled)
+      for (let i = 0; i < verticalUnit.count; i++) {
         scaledArrayData.push({ spaceScaled, tempData })
       }
     })

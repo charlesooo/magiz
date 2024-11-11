@@ -6,8 +6,10 @@ import {
   parseStatus,
   parseClamp,
   parseControl,
+  parseIndent,
   parseEdgeParams,
-  parseBoxEnums,
+  parseVerticalUnits,
+  parseFlexEdge,
   parseBox,
 } from './handleParse'
 import { getValidIndexes } from '../plan/handleArray'
@@ -199,8 +201,9 @@ function parseFloor(
     elevations,
     edgeParams,
     extrude: [],
-    matchSpacing: [],
-    spacing: [],
+    match: [],
+    vertical: [],
+    horizontal: [],
     appendent: [],
     boundingBox: [],
     slopingRoof: [],
@@ -212,16 +215,12 @@ function parseFloor(
     : (RESULT.classified[edgeParamsJSON] = { params: edgeParams, parsed: [saveAs] })
 
   parseExtrude(saveAs, floorParams)
+  parseMatch(saveAs, floorParams)
+  parseVertical(saveAs, floorParams)
+  parseHorizontal(saveAs, floorParams)
   parseAppendent(saveAs, floorParams)
   parseSlopingRoof(saveAs, floorParams)
   parseBoundingBox(saveAs, floorParams)
-
-  floorParams.spacing?.forEach((p) => {
-    saveAs.spacing.push(parseSpacingParams(p))
-  })
-  floorParams.matchSpacing?.forEach((p) => {
-    saveAs.matchSpacing.push({ ...parseSpacingParams(p), along: p.along })
-  })
 }
 
 function parseExtrude(to: styleParsed.floorResult, params?: styleTypes.floor) {
@@ -233,6 +232,39 @@ function parseExtrude(to: styleParsed.floorResult, params?: styleTypes.floor) {
       })
     )
   })
+}
+
+function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floor) {
+  params?.match?.forEach((p) => {
+    to.match.push({
+      array: p.array.map((u) => {
+        return parseStatus(u, {
+          flexDepth: parse(u.flexDepth),
+          flexHeight: parse(u.flexHeight),
+          indentWidth: parseIndent(u.indentWidth),
+        })
+      }),
+      control: parseControl(p.control),
+      sandwich: p.sandwich || false,
+      alignEnd: p.alignEnd || false,
+      along: p.along || 'WIDTH',
+    })
+  })
+}
+
+function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
+  params?.vertical?.forEach((p) => {
+    to.vertical.push({
+      array: parseVerticalUnits(p.array),
+      control: parseControl(p.control),
+      sandwich: p.sandwich || false,
+      alignEnd: p.alignEnd || false,
+    })
+  })
+}
+
+function parseHorizontal(to: styleParsed.floorResult, params?: styleTypes.floor) {
+  params?.horizontal?.forEach((p) => to.horizontal.push(parseFlexEdge(p)))
 }
 
 function parseSlopingRoof(to: styleParsed.floorResult, params?: styleTypes.floor) {
@@ -264,25 +296,25 @@ function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floor) 
     to.appendent.push({
       count: parse(p.count) || 1,
       place: p.place || 'EDGE',
-      parts: p.parts.map(parseBox),
+      boxes: p.boxes.map(parseBox),
     })
   })
 }
 
-function parseSpacingParams(params: styleTypes.spacing): styleParsed.spacing {
-  return {
-    array: params.array.map((ap) => {
-      // 代表自身数量，不能小于1
-      let count = parse(ap.count)
-      if (count < 1) count = 1
-      return {
-        space: parse(ap.space),
-        boxes: parseBoxEnums(ap.boxes),
-        count,
-      }
-    }),
-    control: parseControl(params.control),
-    sandwich: params.sandwich || false,
-    alignEnd: params.alignEnd || false,
-  }
-}
+// function parseSpacingParams(params: styleTypes.spacing): styleParsed.spacing {
+//   return {
+//     array: params.array.map((ap) => {
+//       // 代表自身数量，不能小于1
+//       let count = parse(ap.count)
+//       if (count < 1) count = 1
+//       return {
+//         space: parse(ap.space),
+//         boxes: parseBoxEnums(ap.boxes),
+//         count,
+//       }
+//     }),
+//     control: parseControl(params.control),
+//     sandwich: params.sandwich || false,
+//     alignEnd: params.alignEnd || false,
+//   }
+// }
