@@ -14,7 +14,7 @@ export {
   parseControl,
   parseClamp,
   parseEdgeParams,
-  parseVerticalUnits,
+  parseEdgeUnits,
   parseFlexEdge,
   parseBox,
   parseBoxes,
@@ -102,24 +102,24 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
     : [c.trim()]
   return Object.assign(
     {
-      transform: status.transform
-        ? status.transform.map((trans) => {
-            if ('rotateX' in trans) {
-              return { rotateX: parse(trans.rotateX) }
-            } else if ('rotateY' in trans) {
-              return { rotateY: parse(trans.rotateY) }
-            } else if ('rotateZ' in trans) {
-              return { rotateZ: parse(trans.rotateZ) }
+      trans: status.trans
+        ? status.trans.map((transform) => {
+            if ('rotateX' in transform) {
+              return { rotateX: parse(transform.rotateX) }
+            } else if ('rotateY' in transform) {
+              return { rotateY: parse(transform.rotateY) }
+            } else if ('rotateZ' in transform) {
+              return { rotateZ: parse(transform.rotateZ) }
             } else {
               return {
-                moveX: parse(trans.moveX),
-                moveY: parse(trans.moveY),
-                moveZ: parse(trans.moveZ),
+                moveX: parse(transform.moveX),
+                moveY: parse(transform.moveY),
+                moveZ: parse(transform.moveZ),
               }
             }
           })
         : [],
-      colorID: colors.map((c) => {
+      color: colors.map((c) => {
         const isPresetGlass = c === '_GLASS'
         const cv =
           isPresetGlass ||
@@ -188,16 +188,6 @@ function parseBoxes(bs?: styleTypes.box[]): styleParsed.box[] {
   return bs?.map(parseBox) || []
 }
 
-function parseFlexReplace(params?: styleTypes.flexReplace): styleParsed.flexReplace | undefined {
-  return params
-    ? {
-        chance: parse(params.chance),
-        with: parseBoxes(params.with),
-        split: params.split || false,
-      }
-    : undefined
-}
-
 function parseVerticalBoxes(
   boxes?: (styleTypes.box | styleTypes.flexVertical)[]
 ): (styleParsed.box | styleParsed.flexVertical)[] {
@@ -208,16 +198,17 @@ function parseVerticalBoxes(
         } else {
           return parseStatus(x, {
             unitHeight: parse(x.unitHeight),
+            totalHeight: parse(x.totalHeight),
             flexDepth: parse(x.flexDepth),
             flexwidth: parse(x.flexwidth),
-            replace: parseFlexReplace(x.replace),
+            dash: parseControl(x.dash)!,
           })
         }
       })
     : []
 }
 
-function parseVerticalUnits(params: styleTypes.verticalUnit[]): styleParsed.verticalUnit[] {
+function parseEdgeUnits(params: styleTypes.edgeUnit[]): styleParsed.edgeUnit[] {
   return params.map((unit) => {
     const { replace } = unit
     return {
@@ -236,13 +227,13 @@ function parseFlexEdge(params: styleTypes.flexEdge): styleParsed.flexEdge {
     unitWidth: parse(params.unitWidth),
     flexDepth: parse(params.flexDepth),
     flexHeight: parse(params.flexHeight),
-    replace: parseFlexReplace(params.replace),
+    dash: parseControl(params.dash)!,
   })
 }
 
 /** 解析 styleTypes.floor 中边线相关的参数 */
-function parseEdgeParams(params?: styleTypes.handleEdgeType[]): styleParsed.handleEdgeType[] {
-  const result: styleParsed.handleEdgeType[] = []
+function parseEdgeParams(params?: styleTypes.handleEdge[]): styleParsed.handleEdge[] {
+  const result: styleParsed.handleEdge[] = []
   params?.forEach((handleEdge) => {
     const { offset, along, clamp, indent } = handleEdge
     if (offset) {
@@ -260,8 +251,8 @@ function parseEdgeParams(params?: styleTypes.handleEdgeType[]): styleParsed.hand
 
 /** 解析偏移边线参数 */
 function parseOffsetEdge(
-  params: styleTypes.handleEdgeType['offset']
-): styleParsed.handleEdgeType['offset'] {
+  params: styleTypes.handleEdge['offset']
+): styleParsed.handleEdge['offset'] {
   if (typeof params === 'object') {
     return {
       x: parse(params.x),

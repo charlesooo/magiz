@@ -1,7 +1,7 @@
 import { Matrix4, Vector2 } from 'three'
 import { sSample } from './handleMath'
-import { TEMP, applyBasicTransform } from './handleBasic'
-import { handleSpacingMatch } from './handleMatchPlan'
+import { TEMP, applyBasicTransform } from './handleBox'
+import { handleMatch } from './planMatch'
 import { crossLines } from './handleMath'
 
 import type { temp } from '../../types/temp'
@@ -21,8 +21,8 @@ function handleExtrude(
 ) {
   const { extrude, elevations } = parsedStyle
   extrude.forEach((params) => {
-    const { colorID, transform, height, thickness } = params
-    const { index, glass } = sSample(colorID)!
+    const { color, trans, height, thickness } = params
+    const { index, glass } = sSample(color)!
     const matrix = new Matrix4()
     if (thickness) {
       // 先判断是否用box生成围墙
@@ -37,7 +37,7 @@ function handleExtrude(
               TEMP.makeScale(ray.direction.length(), Math.abs(thickness), Math.abs(height))
             )
             .premultiply(TEMP.makeRotationZ(ray.direction.angle()))
-          applyBasicTransform(params, boxMatrix, TEMP)
+          applyBasicTransform(params, boxMatrix)
 
           elevations.forEach((elevation) => {
             const m = boxMatrix.clone()
@@ -48,41 +48,24 @@ function handleExtrude(
         })
       })
     } else if (globalMatchWidth > 0) {
-      // 再判断通过全局变量是否用box挤出平面
-      const parsedMatchParams: styleParsed.floorResult = {
-        edgeParams: [],
-        extrude: [],
-        spacing: [],
-        appendent: [],
-        boundingBox: [],
-        slopingRoof: [],
-        elevations,
-        matchSpacing: [
+      const matchParam: styleParsed.match = {
+        simplify: true,
+        along: undefined,
+        control: undefined,
+        sandwich: false,
+        array: [
           {
-            along: 'WIDTH',
-            array: [
-              {
-                space: 1,
-                boxes: [
-                  {
-                    replace: undefined,
-                    indentWidth: undefined,
-                    depth: globalMatchWidth,
-                    height,
-                    transform,
-                    colorID,
-                  },
-                ],
-                count: 1,
-              },
-            ],
-            sandwich: false,
-            alignEnd: true,
-            control: undefined,
+            count: 1,
+            unitDepth: globalMatchWidth,
+            flexHeight: params.height,
+            color,
+            trans,
+            indentWidth: undefined,
           },
         ],
       }
-      handleSpacingMatch(result, parsedMatchParams, rayLoops, true)
+      // 再判断通过全局变量是否用box挤出平面
+      handleMatch(result, [matchParam], elevations, rayLoops)
     } else {
       const loop = outterRaysToLoop(rayLoops)
       const save = result.extruded[glass ? 'glass' : 'solid']
@@ -91,7 +74,7 @@ function handleExtrude(
       const saveAs = saveFound
       if (height < 0) matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
       matrix.premultiply(TEMP.makeScale(1, 1, Math.abs(height)))
-      applyBasicTransform(params, matrix, TEMP)
+      applyBasicTransform(params, matrix)
       elevations.forEach((elevation) => {
         saveAs.matrices.push(
           matrix.clone().premultiply(TEMP.makeTranslation(0, 0, elevation)).toArray()

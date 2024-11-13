@@ -8,11 +8,11 @@ import {
   parseControl,
   parseIndent,
   parseEdgeParams,
-  parseVerticalUnits,
+  parseEdgeUnits,
   parseFlexEdge,
   parseBox,
 } from './handleParse'
-import { getValidIndexes } from '../plan/handleArray'
+import { getValidIndexes } from '../plan/handleBox'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleTypes } from '../../types/styleTypes'
@@ -239,15 +239,16 @@ function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floor) {
     to.match.push({
       array: p.array.map((u) => {
         return parseStatus(u, {
-          flexDepth: parse(u.flexDepth),
+          count: parse(u.count) || 1,
+          unitDepth: parse(u.unitDepth),
           flexHeight: parse(u.flexHeight),
           indentWidth: parseIndent(u.indentWidth),
         })
       }),
+      along: p.along || 'WIDTH',
       control: parseControl(p.control),
       sandwich: p.sandwich || false,
-      alignEnd: p.alignEnd || false,
-      along: p.along || 'WIDTH',
+      simplify: p.simplify || false,
     })
   })
 }
@@ -255,7 +256,7 @@ function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floor) {
 function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
   params?.vertical?.forEach((p) => {
     to.vertical.push({
-      array: parseVerticalUnits(p.array),
+      array: parseEdgeUnits(p.array),
       control: parseControl(p.control),
       sandwich: p.sandwich || false,
       alignEnd: p.alignEnd || false,

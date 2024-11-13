@@ -2,7 +2,7 @@ import type { styleTypes } from '../../types/styleTypes'
 
 export { check, preset }
 
-/** 为 preset 参数单元提供类型检查和提示 */
+/** 构建preset静态类型，为参数提供类型检查和提示 */
 function check<
   U extends { [k: string]: styleTypes.ns },
   C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] }

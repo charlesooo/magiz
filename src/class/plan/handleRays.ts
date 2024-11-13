@@ -1,9 +1,10 @@
 import { Vector2 } from 'three'
 import { lineInsideRect, offsetRay, rayIntersectRay } from './handleMath'
 
+import type { styleParsed } from '../../types/stylesParsed'
 import type { temp } from '../../types/temp'
 
-export { offsetRayLoops, rectClampRays }
+export { offsetRayLoops, rectClampRays, indentRays }
 
 /** 偏移边线，返回新的 rayLoops */
 function offsetRayLoops(
@@ -66,4 +67,41 @@ function rectClampRays(
 
     return clamped
   })
+}
+
+function indentRays(rays: temp.ray[], indent: styleParsed.indentType): temp.ray[] {
+  const { asRatio, reverse, start, end } = indent
+  const result: temp.ray[] = []
+  rays.forEach((ray) => {
+    const distance = ray.direction.length()
+    const dStart = asRatio ? distance * start : start
+    const dEnd = asRatio ? distance * start : start
+    // 反向操作均生成新数据，正向操作修改原数据
+    if (reverse) {
+      if (start) {
+        const direction = ray.direction.clone().setLength(dStart)
+        result.push({
+          start: ray.start.clone(),
+          end: ray.start.clone().add(direction),
+          direction,
+        })
+      }
+      if (end) {
+        const direction = ray.direction.clone().setLength(dEnd)
+        result.push({
+          start: ray.end.clone().add(direction.clone().negate()),
+          end: ray.end.clone(),
+          direction,
+        })
+      } else if (start) {
+        ray.end.copy(ray.direction.clone().setLength(-dEnd))
+      } else if (end) {
+      }
+    } else {
+      if (start) ray.start.add(ray.direction.clone().setLength(dStart))
+      if (end) ray.end.add(ray.direction.clone().setLength(-dEnd))
+      result.push(ray)
+    }
+  })
+  return result
 }

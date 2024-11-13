@@ -10,9 +10,16 @@ export namespace temp {
 
   type line = { start: Vector2; end: Vector2 }
 
+  type lineSweepX = line & {
+    depth: number
+    matchUnit: styleParsed.matchUnit
+    /** color和transform拼接字符串，用于比较 */
+    statusJSON: string
+  }
+
   type ray = line & { direction: Vector2 }
 
-  type splitted = ray & {
+  type raySplitted = ray & {
     split: { startRay?: ray; middleRay?: ray; endRay?: ray }
   }
 
@@ -24,35 +31,18 @@ export namespace temp {
 
   type box = {
     matrix: Matrix4
-    colorID: styleParsed.colorDataType[]
-  }
-
-  type boxReplacable = {
-    boxes: box[]
-    replace: { chance: number; with: box[] } | undefined
+    color: styleParsed.colorDataType[]
   }
 
   /** spacing 和 dividing 通用的阵列数据，spacing时须整体沿X轴缩放，数据均为scaled */
-  type scaledArrayData = {
-    tempData: temp.boxReplacable[] | undefined
+  type arrayUnit = {
+    tempBoxes: temp.box[] | undefined
     spaceScaled: number
   }
 
-  type match = styleParsed.status & {
-    flexDepth: number
-    height: number
-    /** 如果有孔洞，可能一行存在多个pair */
-    pairs: {
-      center: { x: number; y: number }
-      width: number
-    }[]
-  }
-
-  type matchResult = {
-    /** 拟合的结果 */
-    matchData: match[]
-    /** 拟合的角度，恢复原位须旋转 -radian */
-    radian: number
+  type matchUnit = {
+    tempBoxes: temp.box[] | undefined
+    spaceScaled: number
   }
 
   /** 能被清理的对象类型 */

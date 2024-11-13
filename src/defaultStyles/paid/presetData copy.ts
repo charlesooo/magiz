@@ -1,4 +1,4 @@
-import { check } from '../class/styles/utils'
+import { check } from '../../class/styles/utils'
 
 /** 唯一的预设样式数据
  * @命名规则 标记 (S|C|V|M) 适用部位 (T|M|B|省略表示通用) : 名称 */
@@ -15,20 +15,75 @@ export const floorPreset = {
             height: '1高度',
             thickness: '1厚度',
             color: '颜色',
-            transform: [{ moveZ: '1抬升' }],
+            trans: [{ moveZ: '1抬升' }],
+          },
+        ],
+      },
+    ],
+  }),
+  'CM:拟合': check({
+    unit: { 楼板缩进: -1, 楼板厚: 1 },
+    color: { 颜色: '_METAL' },
+    floor: [
+      {
+        edge: [{ offset: { x: 0.6, y: 0.2 } }],
+        extrude: [{ height: -0.6 }, { height: 1.2, thickness: 0.2, color: 'G' }],
+      },
+      {
+        control: { total: 1 },
+        extrude: [{ height: -0.6, trans: [{ moveZ: '1SH' }] }],
+        match: [
+          {
+            along: 'DEPTH',
+            array: [
+              { unitDepth: 0.6, flexHeight: '1SH-0.6' },
+              {
+                unitDepth: 2,
+                flexHeight: '1SH-0.6',
+                color: 'G',
+                indentWidth: { start: 2, end: 2 },
+                count: 3,
+              },
+            ],
+            sandwich: true,
+            simplify: true,
           },
         ],
       },
     ],
   }),
   'SM:横向': check({
-    unit: { 楼板缩进: -1, 楼板厚: 1 },
+    unit: { 楼板缩进: -1, 楼板厚: 0.6, 开间: 4 },
     color: { 颜色: '_METAL' },
     floor: [
       {
         control: { indent: { end: -1 } },
         edge: [{ offset: '1楼板缩进' }],
         extrude: [{ height: '-1楼板厚' }],
+      },
+      {
+        control: { total: 1 },
+        vertical: [
+          { array: [{ space: '1开间', boxes: [{ widthX: 0.6, depthY: 0.6, heightZ: '1SH' }] }] },
+        ],
+      },
+      {
+        horizontal: [
+          {
+            unitWidth: '1开间',
+            flexDepth: '2楼板缩进',
+            flexHeight: 0.2,
+            dash: { chance: 0.8 },
+            trans: [{ moveZ: '(1FH-1楼板厚)/3-0.1' }],
+          },
+          {
+            unitWidth: '1开间',
+            flexDepth: '-2楼板缩进',
+            flexHeight: 0.2,
+            dash: { chance: 0.8 },
+            trans: [{ moveZ: '(1FH-1楼板厚)/3*2-0.1' }],
+          },
+        ],
       },
       {
         control: { total: 1 },
@@ -47,8 +102,8 @@ export const floorPreset = {
       },
       {
         control: { total: 1 },
-        extrude: [{ height: '1SH-1幕墙降顶', transform: [{ moveZ: '1幕墙抬升' }], color: 'G' }],
-        spacing: [
+        extrude: [{ height: '1SH-1幕墙降顶', trans: [{ moveZ: '1幕墙抬升' }], color: 'G' }],
+        vertical: [
           {
             sandwich: true,
             alignEnd: true,
@@ -75,7 +130,7 @@ export const floorPreset = {
       {
         extrude: [{ height: '1SH', color: 'G' }],
 
-        spacing: [
+        vertical: [
           {
             control: { chance: '1概率' },
             array: [
@@ -87,7 +142,7 @@ export const floorPreset = {
                     depthY: 0.5,
                     heightZ: '1SH',
                     color: '墙板',
-                    transform: [{ moveX: '0.5墙宽' }],
+                    trans: [{ moveX: '0.5墙宽' }],
                   },
                 ],
               },
@@ -103,30 +158,26 @@ export const floorPreset = {
     floor: [
       {
         edge: [{ offset: '1楼板缩进' }],
-        extrude: [{ height: '-1楼板厚', transform: [{ moveZ: '1FH' }] }],
+        // extrude: [{ height: '-1楼板厚', trans: [{ moveZ: '1FH' }] }],
       },
       {
         control: { total: 1 },
         extrude: [{ height: '1SH-1降顶', color: 'G' }],
-        spacing: [
+        vertical: [
           {
             array: [
               {
                 boxes: [
-                  { widthX: 2, depthY: 2, heightZ: '1SH' },
+                  // { widthX: 2, depthY: 2, heightZ: '1SH' },
                   {
+                    unitHeight: '1',
+                    totalHeight: '1SH',
                     flexDepth: 1,
-                    flexHeight: 3,
-                    replace: {
-                      with: [
-                        { widthX: 2, depthY: 2, heightZ: '1SH' },
-                        { widthX: 1, depthY: 12, heightZ: '1SH' },
-                      ],
-                      chance: 0.3,
-                    },
+                    flexwidth: 0.2,
+                    dash: { chance: 0.6 },
                   },
                 ],
-                space: 6,
+                space: 2,
               },
             ],
           },
@@ -146,7 +197,7 @@ export const floorPreset = {
       {
         control: { total: 1 },
         extrude: [{ height: '1SH-1降低', color: 'G' }],
-        spacing: [
+        vertical: [
           {
             array: [
               {
@@ -165,7 +216,7 @@ export const floorPreset = {
                     widthX: '1间距',
                     depthY: 2,
                     heightZ: 0.2,
-                    transform: [{ moveX: '0.5间距', moveZ: 3 }],
+                    trans: [{ moveX: '0.5间距', moveZ: 3 }],
                     color: '门',
                   },
                   {
@@ -173,7 +224,7 @@ export const floorPreset = {
                     depthY: 1,
                     heightZ: 3,
                     color: '门',
-                    transform: [{ moveX: '0.5间距' }],
+                    trans: [{ moveX: '0.5间距' }],
                   },
                 ],
               },
@@ -189,12 +240,12 @@ export const floorPreset = {
     floor: [
       {
         edge: [{ offset: '1楼板缩进' }],
-        extrude: [{ height: '-1楼板厚', transform: [{ moveZ: '1FH' }] }],
+        extrude: [{ height: '-1楼板厚', trans: [{ moveZ: '1FH' }] }],
       },
       {
         extrude: [{ height: '1SH-1楼板厚', color: 'G' }],
 
-        spacing: [
+        vertical: [
           {
             control: { indent: { start: 1 } },
             array: [
@@ -205,7 +256,7 @@ export const floorPreset = {
                     widthX: '1柱宽',
                     depthY: '1放大宽度',
                     heightZ: '1SH-1降低',
-                    transform: [{ moveY: '0.5放大宽度-0.5柱宽' }],
+                    trans: [{ moveY: '0.5放大宽度-0.5柱宽' }],
                   },
                 ],
               },
@@ -222,7 +273,7 @@ export const floorPreset = {
       {
         extrude: [{ height: '1SH', color: 'G' }],
 
-        spacing: [
+        vertical: [
           {
             control: { chance: '1概率' },
             array: [
@@ -234,7 +285,7 @@ export const floorPreset = {
                     depthY: 0.5,
                     heightZ: '1FH-0.6',
                     color: '马赛克',
-                    transform: [{ moveX: 2 }],
+                    trans: [{ moveX: 2 }],
                   },
                 ],
               },
@@ -262,7 +313,7 @@ export const floorPreset = {
       {
         edge: [{ offset: 0.4 }],
 
-        spacing: [
+        vertical: [
           {
             array: [{ space: 4, boxes: [{ widthX: 1, depthY: 1, heightZ: '1SH-0.6' }] }],
           },
@@ -303,7 +354,7 @@ export const floorPreset = {
         //         flexDepth: '0.8厚度',
         //         height: '0.4FH',
         //         color: '颜色',
-        //         transform: [{ moveZ: '1SH-0.4FH-1降顶' }],
+        //         trans: [{ moveZ: '1SH-0.4FH-1降顶' }],
         //       },
         //     ],
         //   },
@@ -312,7 +363,7 @@ export const floorPreset = {
       // 楼板
       {
         edge: [{ offset: '1楼板缩进' }],
-        extrude: [{ height: -1, transform: [{ moveZ: '1FH' }] }],
+        extrude: [{ height: -1, trans: [{ moveZ: '1FH' }] }],
       },
 
       {
@@ -347,7 +398,7 @@ export const floorPreset = {
   //               width: 4,
   //               height: '1高度',
   //               color: '颜色A',
-  //               transform: [{ moveZ: '1抬升' }],
+  //               trans: [{ moveZ: '1抬升' }],
   //             },
   //           ],
   //           control: { chance: 0.8 },
@@ -361,7 +412,7 @@ export const floorPreset = {
   //               width: 2,
   //               height: '0.5高度',
   //               color: '颜色B',
-  //               transform: [{ moveZ: '1抬升' }],
+  //               trans: [{ moveZ: '1抬升' }],
   //             },
   //           ],
   //           control: { chance: 0.2 },
@@ -383,7 +434,7 @@ export const floorPreset = {
   //           height: '1高度',
   //           thickness: '1厚度',
   //           color: '颜色',
-  //           transform: [{ moveZ: '1抬升' }],
+  //           trans: [{ moveZ: '1抬升' }],
   //         },
   //       ],
   //     },
@@ -399,7 +450,7 @@ export const floorPreset = {
   //         {
   //           array: [
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   control: { chance: '1概率' },
   //                   space: '1墙宽+1窗宽',
@@ -409,7 +460,7 @@ export const floorPreset = {
   //                      depthY: 0.2,
   //                      heightZ: '1SH-1降低',
   //                       color: '墙板',
-  //                       transform: [{ moveX: '0.5墙宽' }],
+  //                       trans: [{ moveX: '0.5墙宽' }],
   //                     },
   //                   ],
   //                 },
@@ -451,7 +502,7 @@ export const floorPreset = {
   //                       width: '1.6厚度',
   //                       height: '0.2*(1SH-1降低)',
   //                       color: '楼板',
-  //                       transform: [{ moveZ: '0.8*(1SH-1降低)' }],
+  //                       trans: [{ moveZ: '0.8*(1SH-1降低)' }],
   //                     },
   //                   ],
   //                 },
@@ -459,7 +510,7 @@ export const floorPreset = {
   //             },
   //             // 柱子
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   space: 4,
   //                   boxes: [
@@ -468,7 +519,7 @@ export const floorPreset = {
   //                      depthY: '1厚度',
   //                      heightZ: '0.8*(1SH-1降低)',
   //                       color: '柱子',
-  //                       transform: [{ moveY: '0.5厚度-0.2' }],
+  //                       trans: [{ moveY: '0.5厚度-0.2' }],
   //                     },
   //                   ],
   //                 },
@@ -476,7 +527,7 @@ export const floorPreset = {
   //             },
   //             // 入口和挑檐
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   control: { chance: 0.2 },
   //                   space: 4,
@@ -486,14 +537,14 @@ export const floorPreset = {
   //                      depthY: 0.2,
   //                      heightZ: 3,
   //                       color: '门',
-  //                       transform: [{ moveX: 2 }],
+  //                       trans: [{ moveX: 2 }],
   //                     },
   //                     {
   //                      widthX: 4,
   //                      depthY: 2,
   //                      heightZ: 0.2,
   //                       color: '挑檐',
-  //                       transform: [{ moveX: 2, moveZ: 3 }],
+  //                       trans: [{ moveX: 2, moveZ: 3 }],
   //                     },
   //                   ],
   //                 },
@@ -538,7 +589,7 @@ export const floorPreset = {
   //           array: [
   //             // 竖向柱子
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   space: '1柱宽+(1间距-1柱宽)/4',
   //                   boxes: [
@@ -547,7 +598,7 @@ export const floorPreset = {
   //                      depthY: 0.6,
   //                      heightZ: '1SH-1降低',
   //                       color: '柱',
-  //                       transform: [{ moveX: '1柱宽/2' }],
+  //                       trans: [{ moveX: '1柱宽/2' }],
   //                     },
   //                   ],
   //                 },
@@ -559,7 +610,7 @@ export const floorPreset = {
   //                      depthY: 1,
   //                      heightZ: '1SH-1FH+1-1降低',
   //                       color: '格',
-  //                       transform: [{ moveZ: '1FH-1' }],
+  //                       trans: [{ moveZ: '1FH-1' }],
   //                     },
   //                   ],
   //                   count: 2,
@@ -568,7 +619,7 @@ export const floorPreset = {
   //             },
   //             // 门和挑檐
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   control: { chance: 0.2 },
   //                   space: '1间距',
@@ -578,21 +629,21 @@ export const floorPreset = {
   //                      depthY: 3,
   //                      heightZ: 0.2,
   //                       color: '挑檐',
-  //                       transform: [{ moveX: '0.5间距+0.5柱宽', moveY: 0.5, moveZ: 3.1 }],
+  //                       trans: [{ moveX: '0.5间距+0.5柱宽', moveY: 0.5, moveZ: 3.1 }],
   //                     },
   //                     {
   //                      widthX: 0.8,
   //                      depthY: 0.2,
   //                      heightZ: 3,
   //                       color: '门',
-  //                       transform: [{ moveX: '0.5间距+0.5柱宽-0.4' }],
+  //                       trans: [{ moveX: '0.5间距+0.5柱宽-0.4' }],
   //                     },
   //                     {
   //                      widthX: 0.8,
   //                      depthY: 0.2,
   //                      heightZ: 3,
   //                       color: '门',
-  //                       transform: [{ moveX: '0.5间距+0.5柱宽+0.4' }],
+  //                       trans: [{ moveX: '0.5间距+0.5柱宽+0.4' }],
   //                     },
   //                   ],
   //                 },
@@ -623,7 +674,7 @@ export const floorPreset = {
   //           array: [
   //             // 格栅
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   space: 1,
   //                   boxes: [
@@ -632,7 +683,7 @@ export const floorPreset = {
   //                      depthY: 0.6,
   //                      heightZ: '1SH-1.6',
   //                       color: '深色',
-  //                       transform: [{ moveZ: 0.6 }],
+  //                       trans: [{ moveZ: 0.6 }],
   //                     },
   //                   ],
   //                 },
@@ -654,7 +705,7 @@ export const floorPreset = {
   //             },
   //             // 门和挑檐
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   control: { chance: 0.2 },
   //                   space: '1间距',
@@ -664,14 +715,14 @@ export const floorPreset = {
   //                      depthY: 1,
   //                      heightZ: 3,
   //                       color: '门',
-  //                       transform: [{ moveX: '0.5间距+0.5柱宽-0.4' }],
+  //                       trans: [{ moveX: '0.5间距+0.5柱宽-0.4' }],
   //                     },
   //                     {
   //                      widthX: 0.8,
   //                      depthY: 1,
   //                      heightZ: 3,
   //                       color: '门',
-  //                       transform: [{ moveX: '0.5间距+0.5柱宽+0.4' }],
+  //                       trans: [{ moveX: '0.5间距+0.5柱宽+0.4' }],
   //                     },
   //                   ],
   //                 },
@@ -697,9 +748,9 @@ export const floorPreset = {
   //     },
   //     {
   //       extrude: [
-  //         { thickness: -0.4, height: 0.2, transform: [{ moveZ: '(1FH-1楼板厚)*0.25' }] },
-  //         { thickness: -0.4, height: 0.2, transform: [{ moveZ: '(1FH-1楼板厚)*0.5' }] },
-  //         { thickness: -0.4, height: 0.2, transform: [{ moveZ: '(1FH-1楼板厚)*0.75' }] },
+  //         { thickness: -0.4, height: 0.2, trans: [{ moveZ: '(1FH-1楼板厚)*0.25' }] },
+  //         { thickness: -0.4, height: 0.2, trans: [{ moveZ: '(1FH-1楼板厚)*0.5' }] },
+  //         { thickness: -0.4, height: 0.2, trans: [{ moveZ: '(1FH-1楼板厚)*0.75' }] },
   //       ],
   //     },
   //     {
@@ -733,7 +784,7 @@ export const floorPreset = {
   //                     {
   //                       width: '-1出挑',
   //                       height: -0.4,
-  //                       transform: [{ moveY: '-0.5出挑', moveZ: '1SH' }],
+  //                       trans: [{ moveY: '-0.5出挑', moveZ: '1SH' }],
   //                     },
   //                   ],
   //                 },
@@ -753,14 +804,14 @@ export const floorPreset = {
   //                     {
   //                       width: 0.2,
   //                       height: 0.4,
-  //                       transform: [{ moveY: '0.1-1出挑', moveZ: 1 }],
+  //                       trans: [{ moveY: '0.1-1出挑', moveZ: 1 }],
   //                     },
   //                     // 阳台护墙
   //                     {
   //                       width: 0.2,
   //                       height: 1,
   //                       color: '#bbb',
-  //                       transform: [{ moveY: '0.2-1出挑' }],
+  //                       trans: [{ moveY: '0.2-1出挑' }],
   //                     },
   //                     // 阳台楼板
   //                     { width: '-2出挑', height: -0.4 },
@@ -770,7 +821,7 @@ export const floorPreset = {
   //             },
   //             // 随机彩色隔墙
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   space: 4,
   //                   boxes: [
@@ -802,7 +853,7 @@ export const floorPreset = {
   //                     {
   //                       width: '-1出挑',
   //                       height: -0.4,
-  //                       transform: [{ moveZ: '1SH' }],
+  //                       trans: [{ moveZ: '1SH' }],
   //                     },
   //                   ],
   //                   count: 1,
@@ -811,14 +862,14 @@ export const floorPreset = {
   //             },
   //             // 竖向通高隔板
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   boxes: [
   //                     {
   //                      widthX: 0.2,
   //                      depthY: '2出挑+0.2',
   //                      heightZ: '1SH',
-  //                       transform: [{ moveZ: -0.2 }],
+  //                       trans: [{ moveZ: -0.2 }],
   //                     },
   //                   ],
   //                   space: 4,
@@ -841,7 +892,7 @@ export const floorPreset = {
   //           padding: { start: '0.5柱宽', end: '0.5柱宽', asRatio: false },
   //           array: [
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   boxes: [{widthX: '1柱宽',depthY: 0.5,heightZ: '1SH' }],
   //                   space: '1间距',
@@ -875,44 +926,44 @@ export const floorPreset = {
   //         {
   //           count: '1数量',
   //           boxes: [
-  //             {widthX: 2,depthY: 2,heightZ: 10, transform: [{ rotateX: 5 }] },
+  //             {widthX: 2,depthY: 2,heightZ: 10, trans: [{ rotateX: 5 }] },
   //             {
   //              widthX: 2,
   //              depthY: 2,
   //              heightZ: 10,
-  //               transform: [{ rotateX: 5 }, { rotateZ: 120 }],
+  //               trans: [{ rotateX: 5 }, { rotateZ: 120 }],
   //             },
   //             {
   //              widthX: 2,
   //              depthY: 2,
   //              heightZ: 10,
-  //               transform: [{ rotateX: 5 }, { rotateZ: 240 }],
+  //               trans: [{ rotateX: 5 }, { rotateZ: 240 }],
   //             },
-  //             {widthX: 0.2,depthY: 1.8,heightZ: 10.5, transform: [{ rotateX: 5 }] },
+  //             {widthX: 0.2,depthY: 1.8,heightZ: 10.5, trans: [{ rotateX: 5 }] },
   //             {
   //              widthX: 0.2,
   //              depthY: 1.8,
   //              heightZ: 10.5,
-  //               transform: [{ rotateX: 5 }, { rotateZ: 120 }],
+  //               trans: [{ rotateX: 5 }, { rotateZ: 120 }],
   //             },
   //             {
   //              widthX: 0.2,
   //              depthY: 1.8,
   //              heightZ: 10.5,
-  //               transform: [{ rotateX: 5 }, { rotateZ: 240 }],
+  //               trans: [{ rotateX: 5 }, { rotateZ: 240 }],
   //             },
-  //             {widthX: 2,depthY: 2,heightZ: 0.2, transform: [{ moveY: -1, moveZ: 10.5 }] },
+  //             {widthX: 2,depthY: 2,heightZ: 0.2, trans: [{ moveY: -1, moveZ: 10.5 }] },
   //             {
   //              widthX: 2,
   //              depthY: 2,
   //              heightZ: 0.2,
-  //               transform: [{ moveY: -1, moveZ: 10.5 }, { rotateZ: 120 }],
+  //               trans: [{ moveY: -1, moveZ: 10.5 }, { rotateZ: 120 }],
   //             },
   //             {
   //              widthX: 2,
   //              depthY: 2,
   //              heightZ: 0.2,
-  //               transform: [{ moveY: -1, moveZ: 10.5 }, { rotateZ: 240 }],
+  //               trans: [{ moveY: -1, moveZ: 10.5 }, { rotateZ: 240 }],
   //             },
   //           ],
   //         },
@@ -932,13 +983,13 @@ export const floorPreset = {
   //           form: '4',
   //           height: '1高度-0.3',
   //           color: '屋顶颜色',
-  //           transform: [{ moveZ: 0.3 }],
+  //           trans: [{ moveZ: 0.3 }],
   //         },
   //       ],
   //     },
   //     {
   //       // scaleEdges: '-1出挑',
-  //       extrude: [{ height: 0.2, color: '颜色', transform: [{ moveZ: 0.1 }] }],
+  //       extrude: [{ height: 0.2, color: '颜色', trans: [{ moveZ: 0.1 }] }],
   //     },
   //     {
   //       // scaleEdges: '0.1-1出挑',
@@ -956,12 +1007,12 @@ export const floorPreset = {
   //         {
   //           height: 0.1,
   //           color: '颜色',
-  //           transform: [{ moveZ: '1标高+1总高-0.1' }],
+  //           trans: [{ moveZ: '1标高+1总高-0.1' }],
   //         },
   //         {
   //           height: 0.1,
   //           color: '颜色',
-  //           transform: [{ moveZ: '1标高' }],
+  //           trans: [{ moveZ: '1标高' }],
   //         },
   //       ],
   //     },
@@ -970,14 +1021,14 @@ export const floorPreset = {
   //         {
   //           height: '1总高-0.2',
   //           color: '颜色',
-  //           transform: [{ moveZ: '1标高+0.1' }],
+  //           trans: [{ moveZ: '1标高+0.1' }],
   //         },
   //       ],
   //       facade: [
   //         {
   //           array: [
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   boxes: [
   //                     {
@@ -985,7 +1036,7 @@ export const floorPreset = {
   //                      depthY: 0.2,
   //                      heightZ: '1总高-0.2',
   //                       color: '颜色',
-  //                       transform: [{ moveZ: '1标高+0.1' }],
+  //                       trans: [{ moveZ: '1标高+0.1' }],
   //                     },
   //                   ],
   //                   space: 0.6,
@@ -1008,7 +1059,7 @@ export const floorPreset = {
   //           array: [
   //             // 门上饰面，填充剩余段高
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   space: 0.3,
   //                   boxes: [
@@ -1017,7 +1068,7 @@ export const floorPreset = {
   //                      depthY: 0.4,
   //                      heightZ: '1SH-1标高-2.6',
   //                       color: '颜色',
-  //                       transform: [{ moveZ: '1标高+2.6' }],
+  //                       trans: [{ moveZ: '1标高+2.6' }],
   //                     },
   //                   ],
   //                 },
@@ -1025,7 +1076,7 @@ export const floorPreset = {
   //             },
   //             // 门上横隔断
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 { space: 0.1 },
   //                 {
   //                   space: 1.4,
@@ -1034,14 +1085,14 @@ export const floorPreset = {
   //                       width: -0.5,
   //                       height: 0.2,
   //                       color: '颜色',
-  //                       transform: [{ moveZ: '1标高+2.4' }],
+  //                       trans: [{ moveZ: '1标高+2.4' }],
   //                     },
   //                   ],
   //                 },
   //               ],
   //             },
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 { space: 0.1, boxes: [{widthX: 0.2,depthY: 0.8,heightZ: '1总高', color: '颜色' }] },
   //                 {
   //                   space: 0.7,
@@ -1050,7 +1101,7 @@ export const floorPreset = {
   //                       width: -0.2,
   //                       height: 2.4,
   //                       color: '颜色',
-  //                       transform: [{ moveZ: '1标高' }],
+  //                       trans: [{ moveZ: '1标高' }],
   //                     },
   //                   ],
   //                 },
@@ -1061,20 +1112,20 @@ export const floorPreset = {
   //                       width: -0.2,
   //                       height: 2.4,
   //                       color: '颜色',
-  //                       transform: [{ moveZ: '1标高' }],
+  //                       trans: [{ moveZ: '1标高' }],
   //                     },
   //                     // 该处为正中心，生成门把手
   //                     {
   //                      widthX: 0.1,
   //                      depthY: 0.5,
   //                      heightZ: 0.6,
-  //                       transform: [{ moveX: -0.2, moveZ: '1标高+0.6' }],
+  //                       trans: [{ moveX: -0.2, moveZ: '1标高+0.6' }],
   //                     },
   //                     {
   //                      widthX: 0.1,
   //                      depthY: 0.5,
   //                      heightZ: 0.6,
-  //                       transform: [{ moveX: 0.2, moveZ: '1标高+0.6' }],
+  //                       trans: [{ moveX: 0.2, moveZ: '1标高+0.6' }],
   //                     },
   //                   ],
   //                 },
@@ -1104,7 +1155,7 @@ export const floorPreset = {
   //                       height: 0.2,
   //                       color: '颜色',
   //                       shrink: -0.6,
-  //                       transform: [{ moveX: -0.3, moveZ: 2.2 }],
+  //                       trans: [{ moveX: -0.3, moveZ: 2.2 }],
   //                     },
   //                   ],
   //                   count: 1,
@@ -1126,7 +1177,7 @@ export const floorPreset = {
   //         {
   //           array: [
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 { space: 1, boxes: [{ width: 0.2, height: '1总高' }] },
   //                 { space: 0.1, boxes: [{widthX: 0.1,depthY: 0.3,heightZ: '1总高', color: '浅色' }] },
   //                 { space: 0.6, boxes: [{widthX: 0.1,depthY: 0.1,heightZ: '1总高', color: '深色' }] },
@@ -1150,7 +1201,7 @@ export const floorPreset = {
   //         {
   //           array: [
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 { space: 1 },
   //                 {
   //                   space: 2.6,
@@ -1160,14 +1211,14 @@ export const floorPreset = {
   //                       width: -0.1,
   //                       height: 0.05,
   //                       color: '深色',
-  //                       transform: [{ moveZ: 2.2 }],
+  //                       trans: [{ moveZ: 2.2 }],
   //                     },
   //                     // 横墙板
   //                     {
   //                       width: -0.2,
   //                       height: '1墙板高',
   //                       color: '浅色',
-  //                       transform: [{ moveZ: '-1墙板降低' }],
+  //                       trans: [{ moveZ: '-1墙板降低' }],
   //                     },
   //                   ],
   //                 },
@@ -1196,7 +1247,7 @@ export const floorPreset = {
   //                      depthY: 0.7,
   //                      heightZ: -0.6,
   //                       color: '颜色',
-  //                       transform: [{ moveZ: '1柱高' }],
+  //                       trans: [{ moveZ: '1柱高' }],
   //                     },
   //                     {widthX: 0.6,depthY: 0.6,heightZ: '1柱高-0.6' },
   //                     {widthX: 0.7,depthY: 0.7,heightZ: 1, color: '颜色' },
@@ -1229,15 +1280,15 @@ export const floorPreset = {
   //                      depthY: 0.7,
   //                      heightZ: 0.3,
   //                       color: '颜色',
-  //                       transform: [{ moveZ: '1柱高-0.4', moveY: '-1出挑' }],
+  //                       trans: [{ moveZ: '1柱高-0.4', moveY: '-1出挑' }],
   //                     },
-  //                     {widthX: 0.6,depthY: 0.6,heightZ: '1柱高', transform: [{ moveY: '-1出挑' }] },
+  //                     {widthX: 0.6,depthY: 0.6,heightZ: '1柱高', trans: [{ moveY: '-1出挑' }] },
   //                     {
   //                      widthX: 0.7,
   //                      depthY: 0.7,
   //                      heightZ: 1,
   //                       color: '颜色',
-  //                       transform: [{ moveY: '-1出挑' }],
+  //                       trans: [{ moveY: '-1出挑' }],
   //                     },
   //                     // 灯
   //                     {
@@ -1245,20 +1296,20 @@ export const floorPreset = {
   //                      depthY: 0.8,
   //                      heightZ: 0.1,
   //                       color: '颜色',
-  //                       transform: [{ moveZ: 2.4, moveY: '-1出挑' }],
+  //                       trans: [{ moveZ: 2.4, moveY: '-1出挑' }],
   //                     },
   //                     {
   //                      widthX: 0.08,
   //                      depthY: 0.78,
   //                      heightZ: 0.9,
-  //                       transform: [{ moveZ: 1.5, moveY: '-1出挑' }],
+  //                       trans: [{ moveZ: 1.5, moveY: '-1出挑' }],
   //                     },
   //                     {
   //                      widthX: 0.1,
   //                      depthY: 0.8,
   //                      heightZ: 0.1,
   //                       color: '颜色',
-  //                       transform: [{ moveZ: 1.4, moveY: '-1出挑' }],
+  //                       trans: [{ moveZ: 1.4, moveY: '-1出挑' }],
   //                     },
   //                   ],
   //                   count: 1,
@@ -1286,19 +1337,19 @@ export const floorPreset = {
   //                     {
   //                       width: '2出挑',
   //                       height: 0.15,
-  //                       transform: [{ moveZ: 0.3 }],
+  //                       trans: [{ moveZ: 0.3 }],
   //                     },
   //                     {
   //                       width: '2出挑+0.6',
   //                       height: 0.15,
   //                       shrink: -0.6,
-  //                       transform: [{ moveX: -0.3, moveZ: 0.15 }],
+  //                       trans: [{ moveX: -0.3, moveZ: 0.15 }],
   //                     },
   //                     {
   //                       width: '2出挑+1.2',
   //                       height: 0.15,
   //                       shrink: -1.2,
-  //                       transform: [{ moveX: -0.6 }],
+  //                       trans: [{ moveX: -0.6 }],
   //                     },
   //                   ],
   //                   count: 1,
@@ -1322,14 +1373,14 @@ export const floorPreset = {
   //         {
   //           array: [
   //             {
-  //               spacing: [
+  //               vertical: [
   //                 {
   //                   boxes: [
   //                     {
   //                      widthX: 0.2,
   //                      depthY: '2出挑+1',
   //                      heightZ: 0.4,
-  //                       transform: [{ moveZ: '1SH-0.5' }],
+  //                       trans: [{ moveZ: '1SH-0.5' }],
   //                     },
   //                   ],
   //                   space: 0.6,
@@ -1347,31 +1398,31 @@ export const floorPreset = {
   //                       height: 0.2,
   //                       shrink: -1.6,
   //                       color: '#863',
-  //                       transform: [{ moveX: -0.8, moveZ: '1SH+0.1' }],
+  //                       trans: [{ moveX: -0.8, moveZ: '1SH+0.1' }],
   //                     },
   //                     {
   //                       width: '2出挑+1.2',
   //                       height: 0.1,
   //                       shrink: -1.2,
-  //                       transform: [{ moveX: -0.6, moveZ: '1SH' }],
+  //                       trans: [{ moveX: -0.6, moveZ: '1SH' }],
   //                     },
   //                     {
   //                       width: '2出挑+1',
   //                       height: 0.1,
   //                       shrink: -1,
-  //                       transform: [{ moveX: -0.5, moveZ: '1SH-0.1' }],
+  //                       trans: [{ moveX: -0.5, moveZ: '1SH-0.1' }],
   //                     },
   //                     {
   //                       width: '2出挑+0.8',
   //                       height: 0.4,
   //                       shrink: -0.8,
-  //                       transform: [{ moveX: -0.4, moveZ: '1SH-0.5' }],
+  //                       trans: [{ moveX: -0.4, moveZ: '1SH-0.5' }],
   //                     },
   //                     {
   //                       width: '2出挑+1',
   //                       height: 0.1,
   //                       shrink: -1,
-  //                       transform: [{ moveX: -0.5, moveZ: '1SH-0.6' }],
+  //                       trans: [{ moveX: -0.5, moveZ: '1SH-0.6' }],
   //                     },
   //                   ],
   //                 },
@@ -1392,7 +1443,7 @@ export const floorPreset = {
   //                      depthY: '1出挑',
   //                      heightZ: 1,
   //                       color: 'G',
-  //                       transform: [{ moveY: '-0.5出挑' }],
+  //                       trans: [{ moveY: '-0.5出挑' }],
   //                     },
   //                   ],
   //                   count: 1,
@@ -1408,7 +1459,7 @@ export const floorPreset = {
   //                       width: 0.02,
   //                       height: 1,
   //                       color: 'G',
-  //                       transform: [{ moveY: '-1出挑' }],
+  //                       trans: [{ moveY: '-1出挑' }],
   //                     },
   //                   ],
   //                   count: 1,
@@ -1421,21 +1472,21 @@ export const floorPreset = {
   //                       height: -0.1,
   //                       shrink: -1,
   //                       color: '颜色',
-  //                       transform: [{ moveX: -0.5 }],
+  //                       trans: [{ moveX: -0.5 }],
   //                     },
   //                     {
   //                       width: '2出挑+0.8',
   //                       height: '0.2-1楼板厚',
   //                       shrink: -0.7,
   //                       color: '颜色',
-  //                       transform: [{ moveX: -0.35, moveZ: -0.1 }],
+  //                       trans: [{ moveX: -0.35, moveZ: -0.1 }],
   //                     },
   //                     {
   //                       width: '2出挑+1',
   //                       height: 0.1,
   //                       shrink: -0.8,
   //                       color: '颜色',
-  //                       transform: [{ moveX: -0.4, moveZ: '-1楼板厚' }],
+  //                       trans: [{ moveX: -0.4, moveZ: '-1楼板厚' }],
   //                     },
   //                   ],
   //                   count: 1,
@@ -1484,14 +1535,14 @@ export const floorPreset = {
   //               width: '1板宽',
   //               height: '1SH+1修正高度',
   //               color: '颜色',
-  //               transform: [{ moveZ: '1修正标高' }],
+  //               trans: [{ moveZ: '1修正标高' }],
   //             },
   //             {
   //               width: '1窗宽',
   //               height: '1SH+1修正高度',
   //               color: 'G',
   //               shrink: '2窗进深',
-  //               transform: [{ moveZ: '1修正标高' }],
+  //               trans: [{ moveZ: '1修正标高' }],
   //             },
   //           ],
   //           along: 'DEPTH',

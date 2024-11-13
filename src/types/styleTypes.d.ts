@@ -14,7 +14,7 @@ export namespace styleTypes {
     | { moveX?: ns; moveY?: ns; moveZ?: ns }
 
   /** 对边线进行修正 */
-  type handleEdgeType = {
+  type handleEdge = {
     /** 偏移边线 */
     offset?: ns | { x: ns; y: ns; asRatio?: boolean }
     /** 按朝向生成或角度，默认along=0 (世界坐标X轴) */
@@ -70,8 +70,8 @@ export namespace styleTypes {
   type status = {
     /** 定义材质的颜色值，以"G"结尾表示玻璃（默认为实墙），如: '#ff0000 G' 或 'G'。也可以用数组表示随机颜色。 */
     color?: colorType | colorType[]
-    /** 轴向的旋转和移动组合 */
-    transform?: transformType[]
+    /** 不同顺序的旋转和移动组合产生不同的变换效果 */
+    trans?: transformType[]
   }
 
   /** 组成构件的 box 元素 */
@@ -84,29 +84,22 @@ export namespace styleTypes {
     heightZ: ns
   }
 
-  /** 按概率替换flex元素 */
-  type flexReplace = {
-    chance: ns
-    /** 空值表示占位 */
-    with?: box[]
-    /** 默认就近合并段落 */
-    split?: boolean
-  }
-
   /** 灵活线性元素，根据 unitHeight 拟合分段，合并未被replace的段落 */
   type flexVertical = status & {
     /** 基准段高 */
     unitHeight: ns
+    /** 总高度 */
+    totalHeight: ns
     /** 进深 */
     flexDepth: ns
     /** 开间 */
     flexwidth: ns
-    /** 按概率替换该单元的元素 */
-    replace?: flexReplace
+    /** 按序号控制生成 */
+    dash: indexController
   }
 
   /** 沿边线阵列的立面基本单元 */
-  type verticalUnit = {
+  type edgeUnit = {
     /** 该单元的间距，无 boxes 表示占位 */
     space: ns
 
@@ -120,41 +113,18 @@ export namespace styleTypes {
 
   /** 拟合平面的基本单元，按平面计算最终的 width */
   type matchUnit = status & {
-    /** 拟合的进深 */
-    flexDepth: ns
+    /** 拟合的基准进深 */
+    unitDepth: ns
     /** 垂直高度，负值表示朝下 */
     flexHeight: ns
 
     /** 最终长度从两端缩进，用于拟合平面时的立面效果 */
     indentWidth?: indentType
+    /** 该单元的数量，默认为1，用于减少重复输入 */
+    count?: ns
   }
 
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
-
-  /** 灵活边线元素，根据 unitWidth 拟合分段，合并未被replace的段落 */
-  type flexEdge = status & {
-    /** 基准段高 */
-    unitWidth: ns
-    /** 进深 */
-    flexDepth: ns
-    /** 开间 */
-    flexHeight: ns
-    /** 按概率替换该单元的元素 */
-    replace?: flexReplace
-  }
-
-  /** 沿边线按间距组合阵列 */
-  type spacing<T> = {
-    /** 由不同间距和构件组成的阵列原型 */
-    array: T[]
-
-    /** 每个序号生成一批 T[]，按序号进行控制  */
-    control?: indexController
-    /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
-    sandwich?: boolean
-    /** 默认不考虑元素宽度。若要对齐线段的两端则要考虑元素宽度 */
-    alignEnd?: boolean
-  }
 
   /** 用box拟合挤出的平面 */
   type extrude = status & {
@@ -164,7 +134,45 @@ export namespace styleTypes {
     /** 用box构成围墙，数值为围墙厚度 */
     thickness?: ns
     /** 拟合平面时的基准边线 */
-    along?: handleEdgeType['along']
+    along?: handleEdge['along']
+  }
+
+  type match = {
+    /** 由不同间距和构件组成的阵列原型 */
+    array: matchUnit[]
+
+    /** 每个序号生成一批 T[]，按序号进行控制  */
+    control?: indexController
+    /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
+    sandwich?: boolean
+    /** 沿特点边线阵列 */
+    along?: handleEdge['along']
+    /** 合并相同计算长度和颜色的box */
+    simplify?: boolean
+  }
+
+  type edgeArray = {
+    /** 由不同间距和构件组成的阵列原型 */
+    array: edgeUnit[]
+
+    /** 每个序号生成一批 T[]，按序号进行控制  */
+    control?: indexController
+    /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
+    sandwich?: boolean
+    /** 默认不考虑元素宽度。若要对齐线段的两端则要考虑元素宽度 */
+    alignEnd?: boolean
+  }
+
+  /** 灵活边线元素，根据 unitWidth 拟合分段，合并未被replace的段落 */
+  type flexEdge = status & {
+    /** 基准开间 */
+    unitWidth: ns
+    /** 进深 */
+    flexDepth: ns
+    /** 高度 */
+    flexHeight: ns
+    /** 按序号控制生成 */
+    dash: indexController
   }
 
   /** 根据 boundingBox 生成坡屋顶 */
@@ -201,7 +209,7 @@ export namespace styleTypes {
     /** 按楼层序号控制竖向生成 */
     control?: indexController
     /** 修改边线，按组合的顺序操作 */
-    edge?: handleEdgeType[]
+    edge?: handleEdge[]
 
     /** 通过函数生成预设样式参数 */
     presets?: ReturnType<typeof preset>[]
@@ -209,9 +217,10 @@ export namespace styleTypes {
     /** 从平面挤出高度 (可按此参数用box拟合平面和高度) */
     extrude?: extrude[]
     /** 用box拟合平面和高度 */
-    match?: (spacing<matchUnit> & { along?: handleEdgeType['along'] })[]
+    match?: match[]
     /** 沿边线按间距组合生成立面的 box 阵列 */
-    vertical?: spacing<verticalUnit>[]
+    vertical?: edgeArray[]
+
     /** 沿边线生成灵活线性元素 */
     horizontal?: flexEdge[]
 

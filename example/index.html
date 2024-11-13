@@ -22,8 +22,9 @@
     // to bundle magizAndView.module.js --- npm run build
     import { View, Plan, styles } from '../dist/magizAndView.module.js'
 
-    const style = 'SV'
-    const height = 40
+    const style = 'SV0'
+    const height = 50
+    const floorHeight = 3
     const match = 0
 
     console.log(`${style} h=${height}m (m:${match})`)
@@ -33,7 +34,7 @@
     view.camera.position.set(100, 50, 100)
 
     // 2. create a plan instance
-    const params = { style, height, match, floorHeight: 3, elevation: 0, seed: 0 }
+    const params = { style, height, match, floorHeight, elevation: 0, seed: 0 }
     let loops = [
       [
         [0, 0],

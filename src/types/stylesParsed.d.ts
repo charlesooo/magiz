@@ -10,9 +10,9 @@ export namespace styleParsed {
     | { rotateZ: number }
     | { moveX: number; moveY: number; moveZ: number }
 
-  type handleEdgeType = {
+  type handleEdge = {
     offset?: { x: number; y: number; asRatio: boolean }
-    along?: styleTypes.handleEdgeType['along']
+    along?: styleTypes.handleEdge['along']
     clamp?: clampType
     indent?: indentType
   }
@@ -42,8 +42,8 @@ export namespace styleParsed {
   }
 
   type status = {
-    transform: transformType[]
-    colorID: colorDataType[]
+    trans: transformType[]
+    color: colorDataType[]
   }
 
   type box = status & {
@@ -54,25 +54,13 @@ export namespace styleParsed {
 
   type flexVertical = status & {
     unitHeight: number
+    totalHeight: number
     flexDepth: number
     flexwidth: number
-    replace: undefined | flexReplace
+    dash: indexController
   }
 
-  type flexEdge = status & {
-    unitWidth: number
-    flexDepth: number
-    flexHeight: number
-    replace: undefined | flexReplace
-  }
-
-  type flexReplace = {
-    chance: number
-    with: box[]
-    split: boolean
-  }
-
-  type verticalUnit = {
+  type edgeUnit = {
     space: number
     boxes: (box | flexVertical)[]
     replace: undefined | { chance: number; with: (box | flexVertical)[] }
@@ -80,23 +68,39 @@ export namespace styleParsed {
   }
 
   type matchUnit = status & {
-    flexDepth: number
+    unitDepth: number
     flexHeight: number
     indentWidth?: indentType
+    count: number
   }
 
   ////////////////////////// BASIC TYPES ABOVE //////////////////////////
 
-  type spacing<T> = {
-    array: T[]
-    control: undefined | indexController
+  type extrude = status & {
+    height: number
+    thickness: number
+  }
+
+  type match = {
+    array: matchUnit[]
+    along: handleEdge['along']
+    control: indexController | undefined
+    sandwich: boolean
+    simplify: boolean
+  }
+
+  type edgeArray = {
+    array: edgeUnit[]
+    control: indexController | undefined
     sandwich: boolean
     alignEnd: boolean
   }
 
-  type extrude = status & {
-    height: number
-    thickness: number
+  type flexEdge = status & {
+    unitWidth: number
+    flexDepth: number
+    flexHeight: number
+    dash: indexController
   }
 
   type slopingRoof = status & {
@@ -118,11 +122,11 @@ export namespace styleParsed {
 
   type floorResult = {
     elevations: number[]
-    edgeParams: handleEdgeType[]
+    edgeParams: handleEdge[]
 
     extrude: extrude[]
-    match: (spacing<matchUnit> & { along: handleEdgeType['along'] })[]
-    vertical: spacing<verticalUnit>[]
+    match: match[]
+    vertical: edgeArray[]
     horizontal: flexEdge[]
 
     appendent: appendent[]
@@ -139,7 +143,7 @@ export namespace styleParsed {
     /** 参数按边线参数分类保存 */
     classified: {
       [edgeParamsJSON: string]: {
-        params: handleEdgeType[]
+        params: handleEdge[]
         parsed: floorResult[]
       }
     }

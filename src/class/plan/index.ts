@@ -1,13 +1,12 @@
 import { Vector2 } from 'three'
 import { ShapeUtils } from 'three/src/extras/ShapeUtils.js'
 import { sRand, getBounds, isAlongAxis, getClampedRects } from './handleMath'
-import { handleSlopingRoof } from './handleSlopingRoof'
-import { handleBoundingBox } from './handleBoundingBox'
-import { handleSpacing } from './handleArray'
-import { handleSpacingMatch, handleAppendent } from './handleMatchPlan'
-import { handleExtrude } from './handleExtrude'
-import { offsetRayLoops, rectClampRays } from './handleRays'
-import { indentRays } from './handleIdent'
+import { handleBoundingBox, handleSlopingRoof, handleAppendent } from './others'
+import { handleVertical } from './arrayVertical'
+import { handleHorizontal } from './arrayHorizontal'
+import { handleMatch } from './planMatch'
+import { handleExtrude } from './planExtrude'
+import { offsetRayLoops, rectClampRays, indentRays } from './handleRays'
 import { StyleHandler } from '../styles'
 
 import type { magizTypes } from '../../types/magizTypes'
@@ -105,7 +104,7 @@ class Plan {
   }
 
   /** 根据样式参数中的 setEdges 处理边线向量并生成新的向量数组。不处理内部的边线。 */
-  getEdges(edgeParams: styleParsed.handleEdgeType[]) {
+  getEdges(edgeParams: styleParsed.handleEdge[]) {
     let rayLoops: temp.ray[][] = []
     const outter = this.relative.rayLoops[0]
     if (outter) {
@@ -217,8 +216,9 @@ class Plan {
       const rayLoops = this.getEdges(params)
       parsed.forEach((dataParsed) => {
         handleExtrude(building, dataParsed, rayLoops, this.styleParams.match)
-        handleSpacingMatch(building, dataParsed, rayLoops)
-        handleSpacing(building, dataParsed, rayLoops)
+        handleMatch(building, dataParsed.match, dataParsed.elevations, rayLoops)
+        handleVertical(building, dataParsed, rayLoops)
+        handleHorizontal(building, dataParsed, rayLoops)
         handleAppendent(building, dataParsed, rayLoops)
 
         const outter = rayLoops[0]

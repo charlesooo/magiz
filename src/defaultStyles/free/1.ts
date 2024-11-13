@@ -1,23 +1,45 @@
 import { preset } from '../../class/styles/utils'
-import { floorPreset } from '../presetData'
+import { simple } from './preset'
 import type { styleTypes } from '../../types/styleTypes'
 
 export const styles: styleTypes.styles = {
-  SV: {
+  SV0: {
     tags: { orient: 'V' },
     type: 'FREE',
     section: {
       roof: {
         floor: [
           {
+            presets: [preset(simple['T:女儿墙'])],
+          },
+        ],
+      },
+      bottom: {
+        height: '1BH',
+        floor: [
+          {
             presets: [
-              preset(floorPreset['ST:女儿墙'], { unit: { 高度: 2 }, color: { 颜色: '#999' } }),
+              preset(simple['M:竖向'], { unit: { 底部修正: 2 } }),
+              preset(simple['B:核心筒']),
             ],
           },
         ],
       },
+    },
+  },
+  SV1: {
+    tags: { orient: 'V' },
+    type: 'FREE',
+    section: {
+      roof: {
+        floor: [
+          {
+            presets: [preset(simple['T:女儿墙'], { unit: { 高度: 2 } })],
+          },
+        ],
+      },
       middle: {
-        floor: [{ presets: [preset(floorPreset['SM:横向'])] }],
+        floor: [{ presets: [preset(simple['M:竖向'], { unit: { 底部修正: 1 } })] }],
       },
       bottom: {
         height: '0.2BH',
@@ -25,115 +47,112 @@ export const styles: styleTypes.styles = {
         floor: [
           {
             edge: [{ offset: 1 }],
-            presets: [preset(floorPreset['SB:横向']), preset(floorPreset['SB:通高核心筒'])],
+            presets: [preset(simple['B:横向']), preset(simple['B:核心筒'])],
           },
         ],
       },
     },
   },
-  SL: {
-    tags: { orient: 'L' },
-    type: 'FREE',
-    section: {
-      roof: {
-        floor: [{ presets: [preset(floorPreset['ST:女儿墙'], { unit: { 高度: 2 } })] }],
-      },
-      middle: {
-        floor: [{ presets: [preset(floorPreset['SM:横向'])] }],
-      },
-      bottom: {
-        height: '0.2BH',
-        floorHeight: 5,
-        floor: [
-          { presets: [preset(floorPreset['SB:竖向']), preset(floorPreset['SB:通高核心筒'])] },
-        ],
-      },
-    },
-  },
-  S2: {
-    tags: {},
-    type: 'FREE',
-    section: {
-      roof: {
-        floor: [{ presets: [preset(floorPreset['ST:女儿墙'], { unit: { 缩进: 1 } })] }],
-      },
-      middle: {
-        floor: [{ presets: [preset(floorPreset['SM:竖向'])] }],
-      },
-      bottom: {
-        height: '0.2BH',
-        floorHeight: 5,
-        floor: [{ presets: [preset(floorPreset['SB:角柱'])] }],
-      },
-    },
-  },
-  S3: {
-    tags: {},
+  SV2: {
+    tags: { orient: 'V' },
     type: 'FREE',
     section: {
       roof: {
         floor: [
           {
+            presets: [preset(simple['T:女儿墙'], { unit: { 高度: 2 } })],
+          },
+        ],
+      },
+      middle: {
+        floor: [{ presets: [preset(simple['M:竖向'])] }],
+      },
+      bottom: {
+        height: '0.2BH',
+        floorHeight: 5,
+        floor: [
+          {
+            edge: [{ offset: 1 }],
+            presets: [preset(simple['B:竖向']), preset(simple['B:核心筒'])],
+          },
+        ],
+      },
+    },
+  },
+  SL0: {
+    tags: { orient: 'V' },
+    type: 'FREE',
+    section: {
+      roof: {
+        floor: [
+          {
+            edge: [{ offset: 1 }],
+            presets: [preset(simple['T:女儿墙'], { unit: { 抬升: 0.5 } })],
+          },
+        ],
+      },
+      bottom: {
+        height: '1BH',
+        floor: [
+          {
+            edge: [{ offset: 1 }],
             presets: [
-              preset(floorPreset['ST:女儿墙'], {
-                unit: { 高度: 2 },
-                color: { 颜色: '#bbb' },
-              }),
+              preset(simple['M:横向'], { unit: { 底部修正: 2 } }),
+              preset(simple['B:核心筒']),
             ],
           },
         ],
       },
-      middle: {
-        floor: [{ presets: [preset(floorPreset['SM:竖向'])] }],
-      },
-      bottom: {
-        height: '0.2BH',
-        floorHeight: 5,
-        floor: [{ presets: [preset(floorPreset['SB:角柱'])] }],
-      },
     },
   },
-  S4: {
-    tags: {},
+  SL1: {
+    tags: { orient: 'V' },
     type: 'FREE',
     section: {
       roof: {
-        floor: [{ presets: [preset(floorPreset['ST:女儿墙'], { unit: { 高度: 2 } })] }],
+        floor: [
+          {
+            presets: [preset(simple['T:女儿墙'], { unit: { 高度: 2 } })],
+          },
+        ],
       },
       middle: {
-        floor: [{ presets: [preset(floorPreset['SM:竖向'], { unit: { 间距: 3 } })] }],
+        floor: [{ presets: [preset(simple['M:横向'], { unit: { 底部修正: 1 } })] }],
       },
       bottom: {
         height: '0.2BH',
         floorHeight: 5,
         floor: [
           {
-            presets: [preset(floorPreset['SB:马赛克加核心筒'], { color: { 马赛克: ['#eee'] } })],
+            presets: [preset(simple['B:横向']), preset(simple['B:核心筒'])],
           },
         ],
       },
     },
   },
-  S5: {
-    tags: {},
+  SL2: {
+    tags: { orient: 'V' },
     type: 'FREE',
     section: {
       roof: {
         floor: [
           {
-            presets: [
-              preset(floorPreset['ST:女儿墙'], { unit: { 高度: 3, 缩进: -0.2, 抬升: -1 } }),
-            ],
+            presets: [preset(simple['T:女儿墙'], { unit: { 高度: 2 } })],
           },
         ],
       },
       middle: {
-        floor: [{ presets: [preset(floorPreset['SM:竖向'], { unit: { 柱宽: 1.4 } })] }],
+        floor: [{ presets: [preset(simple['M:横向'])] }],
       },
       bottom: {
-        height: '0.15BH',
+        height: '0.2BH',
         floorHeight: 5,
-        floor: [{ presets: [preset(floorPreset['SB:竖向'], { unit: { 柱宽: 1 } })] }],
+        floor: [
+          {
+            edge: [{ offset: 1 }],
+            presets: [preset(simple['B:竖向']), preset(simple['B:核心筒'])],
+          },
+        ],
       },
     },
   },
