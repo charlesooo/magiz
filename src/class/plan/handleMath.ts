@@ -79,17 +79,21 @@ function sRandBetween(a: number, b: number, step?: number) {
   return step ? a + Math.floor(((b - a) / step) * sRand()) * step : a + (b - a) * sRand()
 }
 
-/** 根据点积计算定界框的最小点和最大点 */
-function getBounds(points2D: Vector2[]) {
-  const pt = points2D[0]!
-  const min = pt.clone()
-  const max = pt.clone()
-  points2D.forEach((v2) => {
-    const { x, y } = v2
-    x < min.x ? (min.x = x) : x > max.x ? (max.x = x) : 0
-    y < min.y ? (min.y = y) : y > max.y ? (max.y = y) : 0
-  })
-  return { min, max }
+/** 根据点积计算定界框的最小点和最大点，如有轴向长度为0返回空值 */
+function getBounds(points2D?: Vector2[]) {
+  const pt = points2D?.[0]
+  if (pt) {
+    const min = pt.clone()
+    const max = pt.clone()
+    points2D.forEach((v2) => {
+      const { x, y } = v2
+      x < min.x ? (min.x = x) : x > max.x ? (max.x = x) : 0
+      y < min.y ? (min.y = y) : y > max.y ? (max.y = y) : 0
+    })
+    if (Math.round((max.x - min.x) * 1000000) > 0 && Math.round((max.y - min.y) * 1000000) > 0)
+      return { min, max }
+  }
+  return undefined
 }
 
 // threejs 的 ShapeUtils 有相同功能
@@ -337,82 +341,6 @@ function sweepPolygonX(y: number, lines: temp.line[]) {
     return
   }
 }
-
-// /** 沿X轴拟合平面。 */
-// function spacingMatchPolygonX(
-//   lines: temp.line[],
-//   params: styleParsed.matchUnit[],
-//   sandwich: boolean,
-//   alignEnd: boolean
-// ) {
-//   const result: temp.match[] = []
-//   const bounds = getBounds(lines.map((line) => line.start))
-
-//   // 计算沿Y轴的拟合次数和比例
-//   const spaces = params.map((p) => p.unitDepth)
-//   const rc = matchRatioAndCount(
-//     spaces[0]!,
-//     spaces,
-//     bounds.max.y - bounds.min.y,
-//     sandwich,
-//     alignEnd
-//   )
-//   if (rc) {
-//     const temBoxes: temp.box[] = []
-//     let y = bounds.min.y
-//     for (let i = 0; i < rc.count; i++) {
-//       params.forEach((matchUnit, n) => {
-//         /** 按拟合比例缩放后的间距 */
-//         const depth = matchUnit.unitDepth * rc.ratio
-//         const pointPairs = sweepPolygonX(y + depth / 2, lines)
-//         pointPairs.forEach(pair => {
-
-//         })
-//         // pushTempMatch(boxDataArray, data.boxes, flexSpacesY[n]!, y)
-//         // y += flexSpacesY[n]!
-//       })
-//     }
-
-//     // 推送首位到末位
-//     if (sandwich && boxArray[0]) {
-//       pushTempMatch(boxDataArray, boxArray[0].boxes, flexSpacesY[0]!, y)
-//     }
-//   }
-
-//   return result
-
-//   /** 调用公共变量currentY，将拟合结果推送到公共变量result */
-//   function pushTempMatch(
-//     result: temp.box[],
-//     boxes: (styleParsed.box | styleParsed.boxFlex)[],
-//     /** 当前缩放后的间距 */
-//     flexSpaceY: number,
-//     /** 当前批次的相对Y坐标 */
-//     y: number
-//   ) {
-//     // 计算用中线拟合的交点。sweepPolygonX 排除在端点的情况
-//     let pointPairs = sweepPolygonX(y + flexSpaceY / 2, lines)
-
-//     // pointPairs.forEach((pair) => {
-//     //   const flexWidth = Math.abs(pair[1].x - pair[0].x)
-//     //   getTempData()
-//     //   boxes.forEach((boxEnum) => {
-//     //     getBoxData(boxEnum, flexWidth).forEach((bd) => result.push(bd))
-//     //   })
-//     // })
-//   }
-// }
-
-// /** 因其中的 count 参数，先格式化为数组 */
-// function formatBoxArray(array: styleParsed.spacing['array']) {
-//   const result: Omit<styleParsed.spacing['array'][number], 'count'>[] = []
-//   array.forEach((params) => {
-//     const { space, boxes } = params
-//     const p = { space, boxes }
-//     for (let i = 0; i < params.count; i++) result.push(p)
-//   })
-//   return result
-// }
 
 /** 根据along旋转由Plane生成的lines数据，默认按 WIDTH */
 function sRotateLinesAlong(rays: temp.ray[], along?: styleTypes.handleEdge['along']) {

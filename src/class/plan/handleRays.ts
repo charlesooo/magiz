@@ -4,7 +4,7 @@ import { lineInsideRect, offsetRay, rayIntersectRay } from './handleMath'
 import type { styleParsed } from '../../types/stylesParsed'
 import type { temp } from '../../types/temp'
 
-export { offsetRayLoops, rectClampRays, indentRays }
+export { offsetRayLoops, rectClampRays, indentRayLoops }
 
 /** 偏移边线，返回新的 rayLoops */
 function offsetRayLoops(
@@ -69,39 +69,48 @@ function rectClampRays(
   })
 }
 
-function indentRays(rays: temp.ray[], indent: styleParsed.indentType): temp.ray[] {
-  const { asRatio, reverse, start, end } = indent
-  const result: temp.ray[] = []
-  rays.forEach((ray) => {
-    const distance = ray.direction.length()
-    const dStart = asRatio ? distance * start : start
-    const dEnd = asRatio ? distance * start : start
-    // 反向操作均生成新数据，正向操作修改原数据
-    if (reverse) {
-      if (start) {
-        const direction = ray.direction.clone().setLength(dStart)
-        result.push({
-          start: ray.start.clone(),
-          end: ray.start.clone().add(direction),
-          direction,
+function indentRayLoops(rayLoops: temp.ray[][], indent: styleParsed.indentType): temp.ray[][] {
+  const { fromCenter, asRatio, reverse, start, end } = indent
+  return rayLoops.map((rayLoop) => {
+    const newRayLoop: temp.ray[] = []
+    // rayLoop 中前一end与后一start是相同的对象，indent须全部生成新的点
+    rayLoop.forEach((ray) => {
+      const distance = ray.direction.length()
+      const dStart = asRatio ? distance * start : start
+      const dEnd = asRatio ? distance * start : start
+      const mStart = fromCenter ? distance / 2 - dStart : dStart
+      const mEnd = fromCenter ? distance / 2 - dEnd : dEnd
+      // 反向操作均生成新数据，正向操作修改原数据
+      if (reverse) {
+        if (start) {
+          const direction = ray.direction.clone().setLength(mStart)
+          newRayLoop.push({
+            start: ray.start.clone(),
+            end: ray.start.clone().add(direction),
+            direction,
+          })
+        }
+        if (end) {
+          const direction = ray.direction.clone().setLength(mEnd)
+          newRayLoop.push({
+            start: ray.end.clone().add(direction.clone().negate()),
+            end: ray.end.clone(),
+            direction,
+          })
+        }
+      } else {
+        const d = ray.direction.clone()
+        const rayStart = ray.start.clone()
+        const rayEnd = ray.end.clone()
+        if (start) rayStart.add(d.setLength(mStart))
+        if (end) rayEnd.add(d.setLength(-mEnd))
+        newRayLoop.push({
+          start: rayStart,
+          end: rayEnd,
+          direction: rayEnd.clone().sub(rayStart),
         })
       }
-      if (end) {
-        const direction = ray.direction.clone().setLength(dEnd)
-        result.push({
-          start: ray.end.clone().add(direction.clone().negate()),
-          end: ray.end.clone(),
-          direction,
-        })
-      } else if (start) {
-        ray.end.copy(ray.direction.clone().setLength(-dEnd))
-      } else if (end) {
-      }
-    } else {
-      if (start) ray.start.add(ray.direction.clone().setLength(dStart))
-      if (end) ray.end.add(ray.direction.clone().setLength(-dEnd))
-      result.push(ray)
-    }
+    })
+    return newRayLoop
   })
-  return result
 }

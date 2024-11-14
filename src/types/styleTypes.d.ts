@@ -5,6 +5,7 @@ export namespace styleTypes {
   /** 参数可以是数字或代表公式的字符串 */
   type ns = number | string
   type colorType = magizTypes.presetFaceType | magizTypes.presetGlassType | string
+  type alongType = 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number
 
   /** 将元素变形拆解为基本项目。例如按X轴旋转和按Y轴旋转，前后组合的不同，变形的结果也不同 */
   type transformType =
@@ -19,6 +20,8 @@ export namespace styleTypes {
     start?: ns
     /** 从终点缩进一定距离 */
     end?: ns
+    /** 改为从中点向star和end偏移 */
+    fromCenter?: boolean
     /** 按比例，默认按距离 */
     asRatio?: boolean
     /** 反向操作，可能生成一或二段范围 */

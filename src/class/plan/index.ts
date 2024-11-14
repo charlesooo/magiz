@@ -6,7 +6,7 @@ import { handleVertical } from './arrayVertical'
 import { handleHorizontal } from './arrayHorizontal'
 import { handleMatch } from './planMatch'
 import { handleExtrude } from './planExtrude'
-import { offsetRayLoops, rectClampRays, indentRays } from './handleRays'
+import { offsetRayLoops, rectClampRays, indentRayLoops } from './handleRays'
 import { StyleHandler } from '../styles'
 
 import type { magizTypes } from '../../types/magizTypes'
@@ -43,9 +43,9 @@ class Plan {
     this.orignal = input.loops.map((loop) => loop.map((pt) => new Vector2(...pt)))
 
     const outterLoop = this.orignal[0]
+    const bounds = getBounds(outterLoop)
 
-    // 确保外圈至少包含3个点
-    if (outterLoop && outterLoop.length > 2) {
+    if (outterLoop && bounds) {
       if (ShapeUtils.isClockWise(outterLoop)) outterLoop.reverse()
 
       // 计算面积
@@ -73,11 +73,10 @@ class Plan {
         loop.map((v2) => v2.sub(this.center).rotateAround(origin, -radian))
       )
 
-      const { min, max } = getBounds(relativePoints[0]!)
       this.relative = {
         radian,
-        bounds: { min, max },
-        size: { x: max.x - min.x, y: max.y - min.y },
+        bounds,
+        size: { x: bounds.max.x - bounds.min.x, y: bounds.max.y - bounds.min.y },
         rayLoops: relativePoints.map((loop) =>
           loop.map((start, i) => {
             const end = loop[i + 1 === loop.length ? 0 : i + 1]!
@@ -106,9 +105,10 @@ class Plan {
   /** 根据样式参数中的 setEdges 处理边线向量并生成新的向量数组。不处理内部的边线。 */
   getEdges(edgeParams: styleParsed.handleEdge[]) {
     let rayLoops: temp.ray[][] = []
-    const outter = this.relative.rayLoops[0]
-    if (outter) {
-      rayLoops.push(outter)
+    const outterLoop = this.relative.rayLoops[0]
+    const bounds = getBounds(outterLoop?.map((line) => line.start))
+    if (outterLoop && bounds) {
+      rayLoops.push(outterLoop)
       const sizeRef = { x: 0, y: 0, caculated: false }
       // 按顺序多次修正边线
       edgeParams.forEach((params) => {
@@ -116,14 +116,13 @@ class Plan {
         if (offset) {
           // 如有偏移边线，先计算整体尺寸，之后的任何偏移都以此sizeRef为准
           if (!sizeRef.caculated) {
-            const { min, max } = getBounds(outter.map((line) => line.start))
+            const { min, max } = bounds
             sizeRef.x = max.x - min.x
             sizeRef.y = max.y - min.y
             sizeRef.caculated = true
           }
           rayLoops = offsetRayLoops(rayLoops, sizeRef, offset)
         } else if (clamp) {
-          const bounds = getBounds(outter.map((line) => line.start))
           const rects = getClampedRects(bounds, clamp)
           rayLoops = rectClampRays(rayLoops, rects)
         } else if (along !== undefined) {
@@ -147,7 +146,7 @@ class Plan {
             case 'LONGEST':
               {
                 // 找到最长的射线
-                const { direction } = outter.reduce((a, b) =>
+                const { direction } = outterLoop.reduce((a, b) =>
                   a.direction.length() > b.direction.length() ? a : b
                 )
                 rayLoops =
@@ -171,7 +170,7 @@ class Plan {
               break
           }
         } else if (indent) {
-          rayLoops = rayLoops.map((rl) => indentRays(rl, indent))
+          rayLoops = indentRayLoops(rayLoops, indent)
         }
       })
     }
@@ -221,9 +220,9 @@ class Plan {
         handleHorizontal(building, dataParsed, rayLoops)
         handleAppendent(building, dataParsed, rayLoops)
 
-        const outter = rayLoops[0]
-        if (outter) {
-          const bounds = getBounds(outter.map((r) => r.start))
+        const outterLoop = rayLoops[0]
+        const bounds = getBounds(outterLoop?.map((r) => r.start))
+        if (outterLoop && bounds) {
           handleBoundingBox(building, dataParsed, bounds)
           handleSlopingRoof(building, dataParsed, bounds)
         }

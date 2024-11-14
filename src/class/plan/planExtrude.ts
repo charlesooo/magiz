@@ -50,7 +50,7 @@ function handleExtrude(
     } else if (globalMatchWidth > 0) {
       const matchParam: styleParsed.match = {
         simplify: true,
-        along: undefined,
+        along: 'WIDTH',
         control: undefined,
         sandwich: false,
         array: [

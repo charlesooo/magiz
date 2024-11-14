@@ -81,6 +81,7 @@ function parseIndent(params?: styleTypes.indentType): styleParsed.indentType | u
     ? {
         start: parse(params.start),
         end: parse(params.end),
+        fromCenter: params.fromCenter || false,
         asRatio: params.asRatio || false,
         reverse: params.reverse || false,
       }

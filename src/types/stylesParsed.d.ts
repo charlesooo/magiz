@@ -10,9 +10,17 @@ export namespace styleParsed {
     | { rotateZ: number }
     | { moveX: number; moveY: number; moveZ: number }
 
+  type indentType = {
+    start: number
+    end: number
+    fromCenter: boolean
+    asRatio: boolean
+    reverse: boolean
+  }
+
   type handleEdge = {
     offset?: { x: number; y: number; asRatio: boolean }
-    along?: styleTypes.handleEdge['along']
+    along?: styleTypes.alongType
     clamp?: clampType
     indent?: indentType
   }
@@ -22,13 +30,6 @@ export namespace styleParsed {
     endX: number
     startY: number
     endY: number
-    asRatio: boolean
-    reverse: boolean
-  }
-
-  type indentType = {
-    start: number
-    end: number
     asRatio: boolean
     reverse: boolean
   }
@@ -83,7 +84,7 @@ export namespace styleParsed {
 
   type match = {
     array: matchUnit[]
-    along: handleEdge['along']
+    along: styleTypes.alongType
     control: indexController | undefined
     sandwich: boolean
     simplify: boolean

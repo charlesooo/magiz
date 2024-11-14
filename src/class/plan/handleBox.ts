@@ -108,60 +108,61 @@ function matchUnitsToTempBoxRows(
 
   const result: temp.box[][] = []
   const bounds = getBounds(lines.map((line) => line.start))
-
-  /** 处理matchUnit.count，生成间距序列 */
-  const depths: number[] = []
-  params.forEach((matchUnit) => {
-    for (let i = 0; i < matchUnit.count; i++) depths.push(matchUnit.unitDepth)
-  })
-
-  // 计算沿Y轴的拟合次数和比例
-  const rc = matchRatioAndCount(
-    depths[0]!,
-    depths,
-    bounds.max.y - bounds.min.y,
-    sandwich,
-    sandwich
-  )
-
-  if (rc) {
-    const depthData: { depth: number; matchUnit: styleParsed.matchUnit }[] = []
+  if (bounds) {
+    /** 处理matchUnit.count，生成间距序列 */
+    const depths: number[] = []
     params.forEach((matchUnit) => {
-      for (let i = 0; i < matchUnit.count; i++) {
-        depthData.push({ matchUnit, depth: matchUnit.unitDepth * rc.ratio })
-      }
+      for (let i = 0; i < matchUnit.count; i++) depths.push(matchUnit.unitDepth)
     })
-    // 计算沿X轴与平面重合的线段
-    let rowsSweepX: temp.lineSweepX[][] = []
-    let y = bounds.min.y
-    for (let i = 0; i < rc.count; i++) {
-      depthData.forEach((data) => {
-        y = pushSweep(y, rowsSweepX, lines, data)
+
+    // 计算沿Y轴的拟合次数和比例
+    const rc = matchRatioAndCount(
+      depths[0]!,
+      depths,
+      bounds.max.y - bounds.min.y,
+      sandwich,
+      sandwich
+    )
+
+    if (rc) {
+      const depthData: { depth: number; matchUnit: styleParsed.matchUnit }[] = []
+      params.forEach((matchUnit) => {
+        for (let i = 0; i < matchUnit.count; i++) {
+          depthData.push({ matchUnit, depth: matchUnit.unitDepth * rc.ratio })
+        }
       })
-    }
-
-    if (sandwich) {
-      pushSweep(y, rowsSweepX, lines, depthData[0]!)
-    }
-
-    if (simplify) rowsSweepX = simplifySweepX(rowsSweepX)
-
-    rowsSweepX.forEach((row) => {
-      const newRow: temp.box[] = []
-      row.map((line) => {
-        const { depth, start, end } = line
-        const { flexHeight, color, indentWidth } = line.matchUnit
-        const mtx = new Matrix4()
-          .makeTranslation(0.5, 0, flexHeight > 0 ? 0.5 : -0.5)
-          .premultiply(TEMP.makeScale(1, depth, Math.abs(flexHeight)))
-        indentBoxFlexWidth(indentWidth, Math.abs(start.x - end.x), mtx).forEach((matrix) => {
-          applyBasicTransform(line.matchUnit, matrix)
-          matrix.premultiply(TEMP.makeTranslation(start.x, start.y, 0))
-          newRow.push({ matrix, color })
+      // 计算沿X轴与平面重合的线段
+      let rowsSweepX: temp.lineSweepX[][] = []
+      let y = bounds.min.y
+      for (let i = 0; i < rc.count; i++) {
+        depthData.forEach((data) => {
+          y = pushSweep(y, rowsSweepX, lines, data)
         })
+      }
+
+      if (sandwich) {
+        pushSweep(y, rowsSweepX, lines, depthData[0]!)
+      }
+
+      if (simplify) rowsSweepX = simplifySweepX(rowsSweepX)
+
+      rowsSweepX.forEach((row) => {
+        const newRow: temp.box[] = []
+        row.map((line) => {
+          const { depth, start, end } = line
+          const { flexHeight, color, indentWidth } = line.matchUnit
+          const mtx = new Matrix4()
+            .makeTranslation(0.5, 0, flexHeight > 0 ? 0.5 : -0.5)
+            .premultiply(TEMP.makeScale(1, depth, Math.abs(flexHeight)))
+          indentBoxFlexWidth(indentWidth, Math.abs(start.x - end.x), mtx).forEach((matrix) => {
+            applyBasicTransform(line.matchUnit, matrix)
+            matrix.premultiply(TEMP.makeTranslation(start.x, start.y, 0))
+            newRow.push({ matrix, color })
+          })
+        })
+        result.push(newRow)
       })
-      result.push(newRow)
-    })
+    }
   }
   return result
 }
@@ -321,9 +322,17 @@ function indentIndexes(
 ) {
   let startID = 0
   let endID = total - 1
-  const { asRatio, reverse, start, end } = indent
-  if (start) startID = asRatio ? Math.round(total * start) : start
-  if (end) endID = asRatio ? endID - Math.round(total * end) : endID - end
+  const { fromCenter, asRatio, reverse, start, end } = indent
+
+  if (start) {
+    const dStart = asRatio ? Math.round(total * start) : start
+    startID = fromCenter ? Math.round((total - 1) / 2.0 - dStart) : dStart
+  }
+  if (end) {
+    const dEnd = asRatio ? Math.round(total * end) : end
+    endID = fromCenter ? Math.round((total - 1) / 2.0 + dEnd) : total - 1 - dEnd
+  }
+
   if (reverse) {
     for (let i = 0; i < startID; i++) handleValidIndex(i)
     for (let i = endID + 1; i < total; i++) handleValidIndex(i)
@@ -340,26 +349,34 @@ function indentBoxFlexWidth(
 ): Matrix4[] {
   const result: Matrix4[] = []
   if (params) {
-    const { asRatio, reverse, start, end } = params
+    const { fromCenter, asRatio, reverse, start, end } = params
     const wStart = asRatio ? width * start : start
     const wEnd = asRatio ? width * end : end
     if (reverse) {
       if (start) {
-        result.push(matrix.clone().premultiply(TEMP.makeScale(wStart, 1, 1)))
+        const w = fromCenter ? width / 2 - wStart : wStart
+        if (w > 0) result.push(matrix.clone().premultiply(TEMP.makeScale(w, 1, 1)))
       }
-      if (end) {
-        result.push(
-          matrix
-            .premultiply(TEMP.makeScale(wEnd, 1, 1))
-            .premultiply(TEMP.makeTranslation(width - wEnd, 0, 0))
-        )
+      if (end < width - start) {
+        const w = fromCenter ? width / 2 - wEnd : wEnd
+        const x = fromCenter ? width / 2 + wEnd : width - wEnd
+        if (w > 0)
+          result.push(
+            matrix
+              .clone()
+              .premultiply(TEMP.makeScale(w, 1, 1))
+              .premultiply(TEMP.makeTranslation(x, 0, 0))
+          )
       }
     } else {
-      matrix.premultiply(TEMP.makeScale(width - wStart - wEnd, 1, 1))
-      if (start) {
-        matrix.premultiply(TEMP.makeTranslation(wStart, 0, 0))
+      const w = fromCenter ? wStart + wEnd : width - wStart - wEnd
+      if (w > 0) {
+        matrix.premultiply(TEMP.makeScale(w, 1, 1))
+        if (start) {
+          matrix.premultiply(TEMP.makeTranslation(fromCenter ? width / 2 - wStart : wStart, 0, 0))
+        }
+        result.push(matrix)
       }
-      result.push(matrix)
     }
   } else {
     result.push(matrix.premultiply(TEMP.makeScale(width, 1, 1)))
