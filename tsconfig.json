@@ -7,20 +7,18 @@
     "others"
   ],
   "compilerOptions": {
+    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "target": "ESNext",
     "baseUrl": ".",
     "outDir": "dist",
-    "strict": true,
-    "composite": true,
     "removeComments": true,
-    "declarationDir": "dist/types",
     "noEmitOnError": true,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "esModuleInterop": true,
+    "strict": true,
     "lib": [
       "ESNext",
       "DOM"

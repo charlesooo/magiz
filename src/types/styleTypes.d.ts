@@ -13,6 +13,18 @@ export namespace styleTypes {
     | { rotateZ: ns }
     | { moveX?: ns; moveY?: ns; moveZ?: ns }
 
+  /** 从两端向内缩进并生成范围 */
+  type indentType = {
+    /** 从起点缩进一定距离 */
+    start?: ns
+    /** 从终点缩进一定距离 */
+    end?: ns
+    /** 按比例，默认按距离 */
+    asRatio?: boolean
+    /** 反向操作，可能生成一或二段范围 */
+    reverse?: boolean
+  }
+
   /** 对边线进行修正 */
   type handleEdge = {
     /** 偏移边线 */
@@ -37,18 +49,6 @@ export namespace styleTypes {
     /** 按比例，默认按距离 */
     asRatio?: boolean
     /** 反向操作，可能生成二或四段范围 */
-    reverse?: boolean
-  }
-
-  /** 从两端向内缩进并生成范围 */
-  type indentType = {
-    /** 从起点缩进一定距离 */
-    start?: ns
-    /** 从终点缩进一定距离 */
-    end?: ns
-    /** 按比例，默认按距离 */
-    asRatio?: boolean
-    /** 反向操作，可能生成一或二段范围 */
     reverse?: boolean
   }
 

@@ -2,7 +2,7 @@ import type { styleTypes } from '../../types/styleTypes'
 
 export { check, preset }
 
-/** 构建preset静态类型，为参数提供类型检查和提示 */
+/** 为preset参数提供类型检查和提示 */
 function check<
   U extends { [k: string]: styleTypes.ns },
   C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] }
@@ -10,22 +10,14 @@ function check<
   return params
 }
 
-/** 通过函数将 任意floorPreset 转为带自定义单位的floor[]参数 */
+/** 通过函数提示和检查自定义单位和颜色，将预设参数转为floor[]参数 */
 function preset<
   U extends { [k: string]: styleTypes.ns },
-  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] },
-  P extends styleTypes.preset<U, C>
+  C extends { [k: string]: styleTypes.colorType | styleTypes.colorType[] }
 >(
-  floorPreset: P,
-  params?: {
-    unit?: Partial<P['unit']>
-    color?: Partial<P['color']>
-  }
-): {
-  floor: styleTypes.floor[]
-  unit: P['unit']
-  color: P['color']
-} {
+  floorPreset: styleTypes.preset<U, C>,
+  params?: { unit?: Partial<U>; color?: Partial<C> }
+): styleTypes.preset<U, C> {
   return {
     floor: floorPreset.floor,
     unit: Object.assign({ ...floorPreset.unit }, params?.unit),

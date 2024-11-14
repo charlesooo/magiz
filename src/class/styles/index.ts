@@ -43,7 +43,16 @@ class StyleHandler {
       },
     }
     this.data = {}
-    stylesArray.forEach((s) => Object.assign(this.data, s))
+    this.merge(stylesArray)
+  }
+
+  merge(stylesArray: styleTypes.styles[]) {
+    stylesArray.forEach((style) => {
+      for (const key in style) {
+        if (this.data[key]) console.warn(`Style overwrited: ${key}`)
+        this.data[key] = style[key]!
+      }
+    })
   }
 
   /** 输入注册状态，检查样式是否可用 */
