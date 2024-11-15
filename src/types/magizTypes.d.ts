@@ -1,23 +1,16 @@
 import type { styleTypes } from './styleTypes'
+import { COLOR, _COLOR } from '../color'
 
 export namespace magizTypes {
-  /** 预设的玻璃颜色 */
-  type presetGlassType = '_GLASS'
-  /** 预设的表皮颜色 */
-  type presetFaceType = '_CONCRETE' | '_METAL' | '_WOOD' | '_BRICK' | '_ROOF'
-  /** 预设的其他颜色 */
-  type presetOtherType = 'GROUND' | 'EDGE' | 'SKY'
-
-  type presetColor = {
-    face: { [prop in presetFaceType | presetGlassType]: string }
-    other: { [prop in presetOtherType]: string }
-    // 其他自定义的face映射
+  type remapType = {
+    face?: { [prop in keyof typeof COLOR]?: string }
+    others?: { [prop in keyof typeof _COLOR]?: string }
     custom?: { from: string; to: string }[]
   }
 
   type displayParams = {
     freeze: boolean
-    remap: magizTypes.presetColor
+    remap: remapType
     time: number
     materialCN: boolean
     greyScale: boolean
@@ -56,7 +49,7 @@ export namespace magizTypes {
     /** 是否使用无光照效果的基本材质 */
     basicMaterial: boolean
     /** 颜色重映射 */
-    remap: presetColor
+    remap: remapType
   }
 
   type tagsDataType = {

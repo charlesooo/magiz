@@ -1,6 +1,6 @@
-import { preset } from '../../class/styles/utils'
+import { preset } from '../class/styles/utils'
 import { simple } from './preset'
-import type { styleTypes } from '../../types/styleTypes'
+import type { styleTypes } from '../types/styleTypes'
 
 export const styles: styleTypes.styles = {
   SV0: {

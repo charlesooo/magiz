@@ -1,22 +1,4 @@
-import type { magizTypes } from '../../types/magizTypes'
-
-export { presetColors, presetLight }
-
-const presetColors: magizTypes.presetColor = {
-  face: {
-    _GLASS: '#8bf',
-    _CONCRETE: '#eee',
-    _METAL: '#666',
-    _WOOD: '#eb7',
-    _BRICK: '#d66',
-    _ROOF: '#333',
-  },
-  other: {
-    EDGE: '#000',
-    GROUND: '#eee',
-    SKY: '#fff',
-  },
-}
+export { presetLight }
 
 const presetLight = [
   { hour: 5, color: '#116', directional: 0, ambient: 0 },

@@ -4,7 +4,7 @@ import {
   MeshStandardMaterial,
   LineBasicMaterial,
 } from 'three'
-import { presetColors } from '../styles/color'
+import { _COLOR } from '../../color'
 
 export { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials }
 
@@ -27,9 +27,9 @@ const presetFaceMaterials = {
 }
 
 const presetOtherMaterials = {
-  edge: new LineBasicMaterial({ color: presetColors.other.EDGE }),
+  edge: new LineBasicMaterial({ color: _COLOR.EDGE }),
   ground: new MeshLambertMaterial({
-    color: presetColors.other.GROUND,
+    color: _COLOR.GROUND,
     polygonOffset: true,
     polygonOffsetFactor: 1,
     polygonOffsetUnits: 0.1,

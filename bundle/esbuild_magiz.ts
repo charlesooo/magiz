@@ -1,3 +1,5 @@
+// To bundle magiz alone
+
 /*!
   Magiz
   a light weight 3D building model generator for web
@@ -7,8 +9,9 @@
 */
 
 import { Plan } from '../src/class/plan'
-import { styles } from '../src/defaultStyles'
+import { StyleHandler } from '../src/class/styles'
+import { styles as simple } from '../src/defaultStyles/simple'
+
+const styles = new StyleHandler([simple])
 
 export { Plan, styles }
-
-// To bundle magiz alone

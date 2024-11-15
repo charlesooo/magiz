@@ -7,10 +7,8 @@ import {
   parseClamp,
   parseControl,
   parseIndent,
-  parseEdgeParams,
-  parseEdgeUnits,
-  parseFlexEdge,
   parseBox,
+  parseVerticalBoxes,
 } from './handleParse'
 import { getValidIndexes } from '../plan/handleBox'
 
@@ -208,9 +206,24 @@ function parseFloor(
     (i) => sectionElevation + i * floorHeight
   )
 
-  const edgeParams = parseEdgeParams(floorParams.edge)
+  // 格式化边线控制参数序列
+  const edgeParams: styleParsed.handleEdge[] = []
+  floorParams.edge?.forEach((handleEdge) => {
+    const { offset, along, clamp, indent } = handleEdge
+    if (offset) {
+      edgeParams.push({ offset: parseOffsetEdge(offset) })
+    } else if (along) {
+      edgeParams.push({ along })
+    } else if (clamp) {
+      edgeParams.push({ clamp: parseClamp(clamp) })
+    } else if (indent) {
+      edgeParams.push({ indent: parseIndent(indent) })
+    }
+  })
+
   const edgeParamsJSON = JSON.stringify(edgeParams)
   const saveAs: styleParsed.floorResult = {
+    diverse: floorParams.diverse || false,
     elevations,
     edgeParams,
     extrude: [],
@@ -234,6 +247,22 @@ function parseFloor(
   parseAppendent(saveAs, floorParams)
   parseSlopingRoof(saveAs, floorParams)
   parseBoundingBox(saveAs, floorParams)
+}
+
+/** 解析偏移边线参数 */
+function parseOffsetEdge(
+  params: styleTypes.handleEdge['offset']
+): styleParsed.handleEdge['offset'] {
+  if (typeof params === 'object') {
+    return {
+      x: parse(params.x),
+      y: parse(params.y),
+      asRatio: params.asRatio || false,
+    }
+  } else {
+    const x = parse(params)
+    return { x, y: x, asRatio: false }
+  }
 }
 
 function parseExtrude(to: styleParsed.floorResult, params?: styleTypes.floor) {
@@ -269,7 +298,17 @@ function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floor) {
 function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
   params?.vertical?.forEach((p) => {
     to.vertical.push({
-      array: parseEdgeUnits(p.array),
+      array: p.array.map((unit) => {
+        const { replace } = unit
+        return {
+          space: parse(unit.space),
+          boxes: parseVerticalBoxes(unit.boxes),
+          replace: replace
+            ? { chance: parse(replace.chance), with: parseVerticalBoxes(replace.with) }
+            : undefined,
+          count: parse(unit.count) || 1,
+        }
+      }),
       control: parseControl(p.control),
       sandwich: p.sandwich || false,
       endWidth: parse(p.endWidth),
@@ -278,7 +317,19 @@ function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
 }
 
 function parseHorizontal(to: styleParsed.floorResult, params?: styleTypes.floor) {
-  params?.horizontal?.forEach((p) => to.horizontal.push(parseFlexEdge(p)))
+  params?.horizontal?.forEach((p) =>
+    to.horizontal.push(
+      parseStatus(p, {
+        flexDepth: parse(p.flexDepth),
+        flexHeight: parse(p.flexHeight),
+        extend: parse(p.extend),
+        array: p.array.map(parse),
+        control: parseControl(p.control),
+        sandwich: p.sandwich || false,
+        endWidth: parse(p.endWidth),
+      })
+    )
+  )
 }
 
 function parseSlopingRoof(to: styleParsed.floorResult, params?: styleTypes.floor) {

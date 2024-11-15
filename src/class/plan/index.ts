@@ -215,7 +215,7 @@ class Plan {
       const rayLoops = this.getEdges(params)
       parsed.forEach((dataParsed) => {
         handleExtrude(building, dataParsed, rayLoops, this.styleParams.match)
-        handleMatch(building, dataParsed.match, dataParsed.elevations, rayLoops)
+        handleMatch(building, dataParsed, rayLoops)
         handleVertical(building, dataParsed, rayLoops)
         handleHorizontal(building, dataParsed, rayLoops)
         handleAppendent(building, dataParsed, rayLoops)

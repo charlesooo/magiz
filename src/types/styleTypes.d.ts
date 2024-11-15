@@ -1,10 +1,9 @@
 import { preset } from '../class/styles/utils'
-import type { magizTypes } from './magizTypes'
 
 export namespace styleTypes {
   /** 参数可以是数字或代表公式的字符串 */
   type ns = number | string
-  type colorType = magizTypes.presetFaceType | magizTypes.presetGlassType | string
+  type colorType = string | string[]
   type alongType = 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number
 
   /** 将元素变形拆解为基本项目。例如按X轴旋转和按Y轴旋转，前后组合的不同，变形的结果也不同 */
@@ -72,7 +71,7 @@ export namespace styleTypes {
   /** 所有体块的基本状态参数 */
   type status = {
     /** 定义材质的颜色值，以"G"结尾表示玻璃（默认为实墙），如: '#ff0000 G' 或 'G'。也可以用数组表示随机颜色。 */
-    color?: colorType | colorType[]
+    color?: colorType
     /** 不同顺序的旋转和移动组合产生不同的变换效果 */
     trans?: transformType[]
   }
@@ -167,15 +166,22 @@ export namespace styleTypes {
   }
 
   /** 灵活边线元素，根据 unitWidth 拟合分段，合并未被replace的段落 */
-  type flexEdge = status & {
-    /** 基准开间 */
-    unitWidth: ns
+  type edgeFlex = status & {
     /** 进深 */
     flexDepth: ns
     /** 高度 */
     flexHeight: ns
+    /** 延长生成元素的实际宽度 */
+    extend?: ns
+
+    /** 基准开间组合 */
+    array: ns[]
     /** 按序号控制生成 */
-    dash: indexController
+    control?: indexController
+    /** 起点偏移距离 */
+    endWidth?: ns
+    /** 终点也按起点偏移 */
+    sandwich?: boolean
   }
 
   /** 根据 boundingBox 生成坡屋顶 */
@@ -213,6 +219,8 @@ export namespace styleTypes {
     control?: indexController
     /** 修改边线，按组合的顺序操作 */
     edge?: handleEdge[]
+    /** 每层的随机效果都不同 */
+    diverse?: boolean
 
     /** 通过函数生成预设样式参数 */
     presets?: ReturnType<typeof preset>[]
@@ -225,7 +233,7 @@ export namespace styleTypes {
     vertical?: edgeArray[]
 
     /** 沿边线生成灵活线性元素 */
-    horizontal?: flexEdge[]
+    horizontal?: edgeFlex[]
 
     /** 在平面内生成box组成的构件 */
     appendent?: appendent[]
@@ -273,10 +281,7 @@ export namespace styleTypes {
   type styles = { [name: string]: buildingStyle }
 
   /** 可重复利用的楼层预设样式 */
-  type preset<
-    U extends { [k: string]: ns },
-    C extends { [k: string]: colorType | colorType[] }
-  > = {
+  type preset<U extends { [k: string]: ns }, C extends { [k: string]: colorType }> = {
     /** 预设的样式参数 */
     floor: floor[]
     /** 预设的样式变量 */

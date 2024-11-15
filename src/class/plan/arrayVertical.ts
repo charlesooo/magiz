@@ -10,15 +10,21 @@ export { handleVertical }
 
 function handleVertical(
   result: magizTypes.rawBuilding,
-  parsedStyle: styleParsed.floorResult,
+  parsedStyle: Pick<styleParsed.floorResult, 'diverse' | 'vertical' | 'elevations'>,
   rayLoops: temp.ray[][]
 ) {
-  const { vertical, elevations } = parsedStyle
+  const { diverse, vertical, elevations } = parsedStyle
   rayLoops.forEach((rayLoop) => {
     rayLoop.forEach((ray) => {
-      vertical.forEach((params) => {
-        raySpacing(result, elevations, ray, params)
-      })
+      if (diverse) {
+        elevations.forEach((elevation) => {
+          vertical.forEach((params) => raySpacing(result, [elevation], ray, params))
+        })
+      } else {
+        vertical.forEach((params) => {
+          raySpacing(result, elevations, ray, params)
+        })
+      }
     })
   })
 }
@@ -66,8 +72,6 @@ function raySpacing(
         // 按缩放后的数据偏移ray.start
         const start = ray.start.clone()
         if (endWidth) {
-          console.log(312231)
-
           const d = ray.direction.clone()
           start.add(d.setLength((endWidth * rc.ratio) / 2))
         }

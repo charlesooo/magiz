@@ -13,7 +13,7 @@ export { handleExtrude }
 /** 按 parsed.block 挤出平面 */
 function handleExtrude(
   result: magizTypes.rawBuilding,
-  parsedStyle: styleParsed.floorResult,
+  parsedStyle: Pick<styleParsed.floorResult, 'extrude' | 'elevations'>,
   rayLoops: temp.ray[][],
 
   /** 通过全局变量控制是否拟合 */
@@ -65,7 +65,7 @@ function handleExtrude(
         ],
       }
       // 再判断通过全局变量是否用box挤出平面
-      handleMatch(result, [matchParam], elevations, rayLoops)
+      handleMatch(result, { match: [matchParam], elevations }, rayLoops)
     } else {
       const loop = outterRaysToLoop(rayLoops)
       const save = result.extruded[glass ? 'glass' : 'solid']

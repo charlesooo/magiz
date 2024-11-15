@@ -17,8 +17,8 @@ import {
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
-import { presetColors } from '../styles/color'
 import { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials } from './materials'
+import { COLOR } from '../../color'
 
 import type { temp } from '../../types/temp'
 import type { magizTypes } from '../../types/magizTypes'
@@ -239,15 +239,17 @@ function rawToExtrudedTemp(
 
 function getFinalColorMap(
   colorMap: magizTypes.rawData['colorMap'],
-  remap: magizTypes.presetColor | undefined
+  remap: magizTypes.remapType | undefined
 ) {
   // 获取 finalRemap
   const finalRemap: { from: string; to: string }[] = []
   if (remap) {
-    let k: keyof magizTypes.presetColor['face']
-    for (k in remap.face) {
-      const c = remap.face[k]
-      if (c) finalRemap.push({ from: presetColors.face[k], to: c })
+    let k: keyof typeof COLOR
+    if (remap.face) {
+      for (k in remap.face) {
+        const c = remap.face[k]
+        if (c) finalRemap.push({ from: COLOR[k], to: c })
+      }
     }
     if (remap.custom) remap.custom.forEach((r) => finalRemap.push(r))
   }

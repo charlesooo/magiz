@@ -1,4 +1,4 @@
-import { check } from '../../class/styles/utils'
+import { check, COLOR } from '../class/styles/utils'
 
 export const simple = {
   'T:女儿墙': check({
@@ -20,7 +20,7 @@ export const simple = {
   }),
   'M:横向': check({
     unit: { 楼板出挑: 1, 楼板厚: 1, 底部修正: 0 },
-    color: { 颜色: '_METAL' },
+    color: { 颜色: COLOR.METAL },
     floor: [
       {
         control: { indent: { start: '1底部修正', end: -1 } },
@@ -35,7 +35,7 @@ export const simple = {
   }),
   'M:竖向': check({
     unit: { 间距: 8, 楼板缩进: 0.5, 柱宽: 2, 底部修正: 0 },
-    color: { 宽柱颜色: '_CONCRETE', 柱颜色: '_METAL' },
+    color: { 宽柱颜色: COLOR.CONCRETE, 柱颜色: COLOR.METAL },
     floor: [
       {
         control: { indent: { start: '1底部修正', end: -1 } },
@@ -78,7 +78,7 @@ export const simple = {
   }),
   'B:竖向': check({
     unit: { 柱宽: 3, 柱缩进: 0.6, 间距: 8, 楼板缩进: -1, 楼板厚: 1.2, 降低: 0 },
-    color: { 门: '_METAL' },
+    color: { 门: COLOR.METAL },
     floor: [
       {
         control: { indent: { start: 1 } },
@@ -103,7 +103,7 @@ export const simple = {
   }),
   'B:核心筒': check({
     unit: { 缩进: 6, 高度修正: 3 },
-    color: { 颜色: '_CONCRETE' },
+    color: { 颜色: COLOR.CONCRETE },
     floor: [
       {
         control: { total: 1 },

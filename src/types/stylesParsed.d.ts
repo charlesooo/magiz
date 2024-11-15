@@ -97,11 +97,14 @@ export namespace styleParsed {
     sandwich: boolean
   }
 
-  type flexEdge = status & {
-    unitWidth: number
+  type edgeFlex = status & {
     flexDepth: number
     flexHeight: number
-    dash: indexController
+    extend: number
+    array: number[]
+    control: indexController | undefined
+    endWidth: number
+    sandwich: boolean
   }
 
   type slopingRoof = status & {
@@ -122,13 +125,14 @@ export namespace styleParsed {
   }
 
   type floorResult = {
+    diverse: boolean
     elevations: number[]
     edgeParams: handleEdge[]
 
     extrude: extrude[]
     match: match[]
     vertical: edgeArray[]
-    horizontal: flexEdge[]
+    horizontal: edgeFlex[]
 
     appendent: appendent[]
     boundingBox: boundingBox[]

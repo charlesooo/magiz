@@ -13,7 +13,7 @@ export {
   pushBoxData,
   getValidIndexes,
   edgeUnitToTempBoxes,
-  flexEdgeToTempBoxes,
+  edgeFlexToTempBoxes,
   matchUnitsToTempBoxRows,
 }
 
@@ -209,36 +209,45 @@ function simplifySweepX(rowsSweepX: temp.lineSweepX[][]) {
   return result
 }
 
-function flexEdgeToTempBoxes(params: styleParsed.flexEdge, distance: number) {
+function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
   const result: temp.box[] = []
-  const { dash, flexDepth, flexHeight, unitWidth } = params
-  const rc = matchRatioAndCount([unitWidth], distance, unitWidth, false)
+  const { flexDepth, flexHeight, extend, array, control, endWidth, sandwich } = params
+  const rc = matchRatioAndCount(array, distance, endWidth, sandwich)
   if (rc) {
     const flexUnits: { move: number; width: number }[] = []
-    const validIndexes = getValidIndexes(rc.count, dash)
-    const width = unitWidth * rc.ratio
+    const totalCount = rc.count * array.length
+    const validIndexes = getValidIndexes(totalCount, control)
+    const widthsScaled = array.map((w) => w * rc.ratio)
 
-    // 将参数转为垂直线段的全部长度和起点距离
-    validIndexes.forEach((thisIndex, n) => {
-      if (n === 0) {
-        flexUnits.push({ move: thisIndex * width, width })
-      } else {
-        const thisUnit = flexUnits[flexUnits.length - 1]!
-        if (n > 0 && validIndexes[n - 1] === thisIndex - 1) {
-          thisUnit.width += width
+    let move = 0
+    let lastValidIndex = -1
+    for (let i = 0; i < totalCount; i++) {
+      const width = widthsScaled[i % array.length]!
+
+      if (validIndexes.find((vi) => vi === i)) {
+        if (flexUnits.length === 0) {
+          flexUnits.push({ move, width })
         } else {
-          flexUnits.push({ move: thisIndex * width, width })
+          const thisUnit = flexUnits[flexUnits.length - 1]!
+          if (lastValidIndex === i - 1) {
+            thisUnit.width += width
+          } else {
+            flexUnits.push({ move, width })
+          }
         }
+        lastValidIndex = i
       }
-    })
+
+      move += width
+    }
 
     // 将flexUnits转为矩阵和颜色数据
     flexUnits.forEach((u) => {
       const matrix = new Matrix4()
         .makeTranslation(0.5, 0, flexHeight > 0 ? 0.5 : -0.5)
-        .premultiply(TEMP.makeScale(u.width, Math.abs(flexDepth), Math.abs(flexHeight)))
+        .premultiply(TEMP.makeScale(u.width + extend, Math.abs(flexDepth), Math.abs(flexHeight)))
       applyBasicTransform(params, matrix)
-      matrix.premultiply(TEMP.makeTranslation(u.move, 0, 0))
+      matrix.premultiply(TEMP.makeTranslation(u.move - extend / 2.0, 0, 0))
       result.push({ matrix, color: params.color })
     })
   }
@@ -293,9 +302,9 @@ function getValidIndexes(count: number, control: styleParsed.indexController | u
   ) {
     const { every, skip, chance } = controls
     if (every > 0) {
-      if (i % every !== 0) result.push(i)
+      if (i % (every + 1) !== 0) result.push(i)
     } else if (skip > 0) {
-      if (i % skip === 0) result.push(i)
+      if (i % (skip + 1) === 0) result.push(i)
     } else if (chance > 0) {
       if (sRand() < chance) result.push(i)
     } else {

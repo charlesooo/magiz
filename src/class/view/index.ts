@@ -15,11 +15,12 @@ import {
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { presetOtherMaterials } from './materials'
-import { presetColors, presetLight } from '../styles/color'
+import { presetLight } from '../styles/color'
 import { generateModel } from './raw'
 
 import type { temp } from '../../types/temp'
 import type { magizTypes } from '../../types/magizTypes'
+import { _COLOR } from '../../color'
 
 export { View }
 
@@ -112,12 +113,11 @@ class View {
     this.renderer.setPixelRatio(window.devicePixelRatio)
 
     // 重映射相关设置
-    const { other } = presetColors
     this.remapCaching = {
       envMapTexture: null,
-      edge: other.EDGE,
-      ground: other.GROUND,
-      lightFogSky: other.SKY,
+      edge: _COLOR.EDGE,
+      ground: _COLOR.GROUND,
+      lightFogSky: _COLOR.SKY,
     }
 
     // 阴影设置案例 https://threejs.org/docs/index.html?q=DirectionalLight#api/en/lights/shadows/DirectionalLightShadow
