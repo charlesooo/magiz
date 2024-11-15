@@ -131,7 +131,7 @@ export namespace styleTypes {
 
   /** 用box拟合挤出的平面 */
   type extrude = status & {
-    /** 挤出的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
+    /** 挤出的高度，默认的单位：总高 `H`、段高 `SH`、层高 `FH` */
     height: ns
 
     /** 用box构成围墙，数值为围墙厚度 */
@@ -160,10 +160,10 @@ export namespace styleTypes {
 
     /** 每个序号生成一批 T[]，按序号进行控制  */
     control?: indexController
-    /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
+    /** 默认时元素中心对齐线段的端点。若要将元素一边对齐起点则要添加元素宽度的一半 */
+    endWidth?: ns
+    /** 默认环状阵列时每段的终点不生成元素。此参数控制终点是否生成元素，以及是否将endWidth加入终点的计算 */
     sandwich?: boolean
-    /** 默认不考虑元素宽度。若要对齐线段的两端则要考虑元素宽度 */
-    alignEnd?: boolean
   }
 
   /** 灵活边线元素，根据 unitWidth 拟合分段，合并未被replace的段落 */
@@ -182,7 +182,7 @@ export namespace styleTypes {
   type slopingRoof = status & {
     /** 双坡或四坡 */
     form: '2' | '4'
-    /** 坡屋顶的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
+    /** 坡屋顶的高度，默认的单位：总高 `H`、段高 `SH`、层高 `FH` */
     height: ns
 
     /** 檐口出挑距离 */
@@ -191,7 +191,7 @@ export namespace styleTypes {
 
   /** clamp 缩放后平面而成的 box 元素， */
   type boundingBox = status & {
-    /** 挤出的高度，默认的单位：总高 `BH`、段高 `SH`、层高 `FH` */
+    /** 挤出的高度，默认的单位：总高 `H`、段高 `SH`、层高 `FH` */
     height: ns
     /** 按边线的 bounding 修正 */
     clamp?: clampType

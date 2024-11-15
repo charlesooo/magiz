@@ -93,8 +93,8 @@ export namespace styleParsed {
   type edgeArray = {
     array: edgeUnit[]
     control: indexController | undefined
+    endWidth: number
     sandwich: boolean
-    alignEnd: boolean
   }
 
   type flexEdge = status & {

@@ -20,15 +20,20 @@ export {
 /** 计算过程中的缓存矩阵 */
 const TEMP = new Matrix4()
 
-function edgeUnitToTempBoxes(params: (styleParsed.box | styleParsed.flexVertical)[]): temp.box[] {
+function edgeUnitToTempBoxes(
+  params: (styleParsed.box | styleParsed.flexVertical)[],
+  xRatio: number
+): temp.box[] {
   const result: temp.box[] = []
-  params.forEach((x) => {
-    'widthX' in x ? handleBoxParams(result, x) : handleFlexVerticalParams(result, x)
+  params.forEach((element) => {
+    'widthX' in element
+      ? handleBoxParams(result, element, xRatio)
+      : handleFlexVerticalParams(result, element, xRatio)
   })
   return result
 }
 
-function handleBoxParams(result: temp.box[], params: styleParsed.box) {
+function handleBoxParams(result: temp.box[], params: styleParsed.box, xRatio: number) {
   let { widthX, depthY, heightZ } = params
   if (widthX || depthY || heightZ) {
     const matrix = new Matrix4().makeTranslation(0, 0, 0.5)
@@ -38,20 +43,24 @@ function handleBoxParams(result: temp.box[], params: styleParsed.box) {
       matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
       heightZ = -heightZ
     }
-    matrix.premultiply(TEMP.makeScale(widthX, depthY, heightZ))
+    matrix.premultiply(TEMP.makeScale(widthX * xRatio, depthY, heightZ))
     applyBasicTransform(params, matrix)
     result.push({ matrix, color: params.color })
   }
 }
 
-function handleFlexVerticalParams(result: temp.box[], params: styleParsed.flexVertical) {
+function handleFlexVerticalParams(
+  result: temp.box[],
+  params: styleParsed.flexVertical,
+  xRatio: number
+) {
   const { unitHeight, totalHeight, flexDepth, flexwidth, dash } = params
-  const rc = matchRatioAndCount(unitHeight, [unitHeight], totalHeight, false, false)
-  if (rc) {
+  const vrc = matchRatioAndCount([unitHeight], totalHeight, unitHeight, false)
+  if (vrc) {
     /** 根据参数合并未被替换的连续竖向box，计算最终的长度和标高 */
     const flexUnits: { moveZ: number; height: number }[] = []
-    const validIndexes = getValidIndexes(rc.count, dash)
-    const height = unitHeight * rc.ratio
+    const validIndexes = getValidIndexes(vrc.count, dash)
+    const height = unitHeight * vrc.ratio
 
     // 将参数转为垂直线段的全部标高和高度
     validIndexes.forEach((thisIndex, n) => {
@@ -71,7 +80,7 @@ function handleFlexVerticalParams(result: temp.box[], params: styleParsed.flexVe
     flexUnits.forEach((u) => {
       const matrix = new Matrix4()
         .makeTranslation(0, 0, 0.5)
-        .premultiply(TEMP.makeScale(flexwidth, flexDepth, u.height))
+        .premultiply(TEMP.makeScale(flexwidth * xRatio, flexDepth, u.height))
       applyBasicTransform(params, matrix)
       matrix.premultiply(TEMP.makeTranslation(0, 0, u.moveZ))
       result.push({ matrix, color: params.color })
@@ -116,13 +125,7 @@ function matchUnitsToTempBoxRows(
     })
 
     // 计算沿Y轴的拟合次数和比例
-    const rc = matchRatioAndCount(
-      depths[0]!,
-      depths,
-      bounds.max.y - bounds.min.y,
-      sandwich,
-      sandwich
-    )
+    const rc = matchRatioAndCount(depths, bounds.max.y - bounds.min.y, depths[0]!, sandwich)
 
     if (rc) {
       const depthData: { depth: number; matchUnit: styleParsed.matchUnit }[] = []
@@ -209,7 +212,7 @@ function simplifySweepX(rowsSweepX: temp.lineSweepX[][]) {
 function flexEdgeToTempBoxes(params: styleParsed.flexEdge, distance: number) {
   const result: temp.box[] = []
   const { dash, flexDepth, flexHeight, unitWidth } = params
-  const rc = matchRatioAndCount(unitWidth, [unitWidth], distance, false, false)
+  const rc = matchRatioAndCount([unitWidth], distance, unitWidth, false)
   if (rc) {
     const flexUnits: { move: number; width: number }[] = []
     const validIndexes = getValidIndexes(rc.count, dash)

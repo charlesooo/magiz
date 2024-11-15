@@ -108,7 +108,7 @@ export const simple = {
       {
         control: { total: 1 },
         edge: [{ offset: '1缩进' }],
-        extrude: [{ height: '1BH+1高度修正', color: '颜色' }],
+        extrude: [{ height: '1H+1高度修正', color: '颜色' }],
       },
     ],
   }),

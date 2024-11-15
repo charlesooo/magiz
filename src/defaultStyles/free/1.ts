@@ -15,7 +15,7 @@ export const styles: styleTypes.styles = {
         ],
       },
       bottom: {
-        height: '1BH',
+        height: '1H',
         floor: [
           {
             presets: [
@@ -42,7 +42,7 @@ export const styles: styleTypes.styles = {
         floor: [{ presets: [preset(simple['M:竖向'], { unit: { 底部修正: 1 } })] }],
       },
       bottom: {
-        height: '0.2BH',
+        height: '0.2H',
         floorHeight: 5,
         floor: [
           {
@@ -68,7 +68,7 @@ export const styles: styleTypes.styles = {
         floor: [{ presets: [preset(simple['M:竖向'])] }],
       },
       bottom: {
-        height: '0.2BH',
+        height: '0.2H',
         floorHeight: 5,
         floor: [
           {
@@ -92,7 +92,7 @@ export const styles: styleTypes.styles = {
         ],
       },
       bottom: {
-        height: '1BH',
+        height: '1H',
         floor: [
           {
             edge: [{ offset: 1 }],
@@ -120,7 +120,7 @@ export const styles: styleTypes.styles = {
         floor: [{ presets: [preset(simple['M:横向'], { unit: { 底部修正: 1 } })] }],
       },
       bottom: {
-        height: '0.2BH',
+        height: '0.2H',
         floorHeight: 5,
         floor: [
           {
@@ -145,7 +145,7 @@ export const styles: styleTypes.styles = {
         floor: [{ presets: [preset(simple['M:横向'])] }],
       },
       bottom: {
-        height: '0.2BH',
+        height: '0.2H',
         floorHeight: 5,
         floor: [
           {

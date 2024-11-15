@@ -281,31 +281,23 @@ function isPointInPolygon(point: Vector2, polygon: Vector2[]): boolean {
 
 /** 返回多边形内部的随机点，采样的方式运算效率较低。另有画线与面向交并计算相交线段内的点的方法 */
 
-/** 计算用间距组合拟合指定长度的缩放系数，alignEnd为真时sandwich才生效 */
+/** 计算用间距组合拟合指定长度的缩放系数 */
 function matchRatioAndCount(
-  /** 生成的第一个元素的宽度 */
-  firstWidth: number,
   /** 用于拟合的基准间距组合 */
   spaces: number[],
   /** 用于拟合的总长度 */
   distance: number,
+  /** 生成时从端点偏移的距离 */
+  endWidth: number,
   /** 默认不在终点生成元素。将终点纳入考虑时将在计算终点时添加起点元素firstWidth让阵列对齐两端 */
-  sandwich: boolean,
-  /** 默认按元素中心点对齐线段两端，起点元素宽度视为0。加入起点元素宽度以保证元素一端对齐起点 */
-  alignEnd: boolean
+  sandwich: boolean
 ) {
-  if (alignEnd) {
-    distance -= sandwich ? firstWidth : firstWidth / 2
-  }
   const totalSpace = spaces.reduce((v, s) => v + s, 0)
   if (totalSpace > 0) {
     const count = Math.round(distance / totalSpace)
-    return {
-      ratio: distance / (totalSpace * count),
-      count,
-    }
+    const total = totalSpace * count + (sandwich ? endWidth : endWidth / 2)
+    return { ratio: distance / total, count }
   }
-
   return undefined
 }
 

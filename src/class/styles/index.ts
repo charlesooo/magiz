@@ -37,8 +37,8 @@ class StyleHandler {
       tags: {},
       section: {
         bottom: {
-          height: '1BH',
-          floor: [{ control: { total: 1 }, extrude: [{ height: '1BH' }] }],
+          height: '1H',
+          floor: [{ control: { total: 1 }, extrude: [{ height: '1H' }] }],
         },
       },
     }
@@ -98,7 +98,7 @@ class StyleHandler {
 
     if (styleSelected) {
       /** 内部全局变量，保存解析公式所需的单位 */
-      MAIN.UNITS = Object.assign({ BH: height, FH: floorHeight }, styleSelected.unit)
+      MAIN.UNITS = Object.assign({ H: height, FH: floorHeight }, styleSelected.unit)
 
       const ss = styleSelected.section
 
@@ -116,6 +116,10 @@ class StyleHandler {
       // 底部段高和层高最终根据中部拟合高度确定
       bsh = height - rsh - msh
       bfh = bsh / Math.floor(bsh / bfh)
+
+      MAIN.UNITS.RH = rsh
+      MAIN.UNITS.MH = msh
+      MAIN.UNITS.BH = bsh
 
       parseSection('bottom', ss, elevation, bsh, bfh)
       parseSection('middle', ss, elevation + bsh, msh, mfh)
@@ -268,7 +272,7 @@ function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
       array: parseEdgeUnits(p.array),
       control: parseControl(p.control),
       sandwich: p.sandwich || false,
-      alignEnd: p.alignEnd || false,
+      endWidth: parse(p.endWidth),
     })
   })
 }
@@ -310,21 +314,3 @@ function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floor) 
     })
   })
 }
-
-// function parseSpacingParams(params: styleTypes.spacing): styleParsed.spacing {
-//   return {
-//     array: params.array.map((ap) => {
-//       // 代表自身数量，不能小于1
-//       let count = parse(ap.count)
-//       if (count < 1) count = 1
-//       return {
-//         space: parse(ap.space),
-//         boxes: parseBoxEnums(ap.boxes),
-//         count,
-//       }
-//     }),
-//     control: parseControl(params.control),
-//     sandwich: params.sandwich || false,
-//     alignEnd: params.alignEnd || false,
-//   }
-// }
