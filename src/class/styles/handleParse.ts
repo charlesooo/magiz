@@ -37,7 +37,7 @@ const RESULT: styleParsed.result = {
 }
 
 /** 解析带单位的公式。 */
-function parse(ns?: styleTypes.ns): number {
+function parse(ns: styleTypes.ns | undefined, defaultValue = 0): number {
   let n: number
   if (typeof ns === 'string') {
     // 计算单位值
@@ -48,11 +48,11 @@ function parse(ns?: styleTypes.ns): number {
       n = evaluator.eval(ns)
       // n = eval(ns)
     } catch (error) {
-      console.log('[parse fomula]', error, ns)
-      n = 0
+      console.error('parsing:', ns, error)
+      n = defaultValue
     }
   } else {
-    n = ns || 0
+    n = ns || defaultValue
   }
 
   return n

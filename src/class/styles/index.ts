@@ -101,14 +101,14 @@ class StyleHandler {
       const ss = styleSelected.section
 
       const rsh = parse(ss.roof?.height)
-      const rfh = parse(ss.roof?.floorHeight) || floorHeight
+      const rfh = parse(ss.roof?.floorHeight, floorHeight)
       // 先估算底部高度，按比例计算时初始值最小不小于层高
       let bsh = parse(ss.bottom.height)
-      let bfh = parse(ss.bottom.floorHeight) || floorHeight
+      let bfh = parse(ss.bottom.floorHeight, floorHeight)
       if (bsh < bfh) bsh = bfh
       // 中段按层数拟合，高度可变
       let msh = height - rsh - bsh
-      const mfh = parse(ss.middle?.floorHeight) || floorHeight
+      const mfh = parse(ss.middle?.floorHeight, floorHeight)
       const middleFloors = Math.floor(msh / mfh)
       msh = middleFloors * mfh
       // 底部段高和层高最终根据中部拟合高度确定
@@ -281,7 +281,7 @@ function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floor) {
     to.match.push({
       array: p.array.map((u) => {
         return parseStatus(u, {
-          count: parse(u.count) || 1,
+          count: parse(u.count, 1),
           unitDepth: parse(u.unitDepth),
           flexHeight: parse(u.flexHeight),
           indentWidth: parseIndent(u.indentWidth),
@@ -306,7 +306,7 @@ function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
           replace: replace
             ? { chance: parse(replace.chance), with: parseVerticalBoxes(replace.with) }
             : undefined,
-          count: parse(unit.count) || 1,
+          count: parse(unit.count, 1),
         }
       }),
       control: parseControl(p.control),
@@ -359,7 +359,7 @@ function parseBoundingBox(to: styleParsed.floorResult, params?: styleTypes.floor
 function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floor) {
   params?.appendent?.forEach((p) => {
     to.appendent.push({
-      count: parse(p.count) || 1,
+      count: parse(p.count, 1),
       place: p.place || 'EDGE',
       boxes: p.boxes.map(parseBox),
     })
