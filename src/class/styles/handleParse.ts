@@ -12,7 +12,6 @@ export {
   parseStatus,
   parseIndent,
   parseControl,
-  parseClamp,
   parseBox,
   parseVerticalBoxes,
 }
@@ -78,7 +77,7 @@ function parseIndent(params?: styleTypes.indentType): styleParsed.indentType | u
     ? {
         start: parse(params.start),
         end: parse(params.end),
-        fromCenter: params.fromCenter || false,
+        central: params.central || false,
         asRatio: params.asRatio || false,
         reverse: params.reverse || false,
       }
@@ -160,19 +159,6 @@ function parseVerticalBoxes(
     : []
 }
 
-function parseClamp(params?: styleTypes.clampType): styleParsed.clampType | undefined {
-  return params
-    ? {
-        startX: parse(params.startX),
-        startY: parse(params.startY),
-        endX: parse(params.endX),
-        endY: parse(params.endY),
-        asRatio: params.asRatio || false,
-        reverse: params.reverse || false,
-      }
-    : undefined
-}
-
 function parseControl(
   params?: styleTypes.indexController
 ): styleParsed.indexController | undefined {
@@ -180,8 +166,11 @@ function parseControl(
     ? {
         total: parse(params.total),
         indent: parseIndent(params.indent),
-        skip: parse(params.skip),
-        every: parse(params.every),
+        filter: params.filter
+          ? params.filter.map((f) =>
+              'keep' in f ? { keep: parse(f.keep) } : { skip: parse(f.skip) }
+            )
+          : [],
         chance: parse(params.chance),
       }
     : undefined

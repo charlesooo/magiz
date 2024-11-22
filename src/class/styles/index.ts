@@ -4,7 +4,6 @@ import {
   RESULT,
   parse,
   parseStatus,
-  parseClamp,
   parseControl,
   parseIndent,
   parseBox,
@@ -199,7 +198,7 @@ function parseFloor(
   totalFloors: number,
   floorHeight: number,
   sectionElevation: number,
-  floorParams: styleTypes.floor
+  floorParams: styleTypes.floorParams
 ) {
   // 获取将生成元素的标高
   const elevations = getValidIndexes(totalFloors, parseControl(floorParams.control)).map(
@@ -209,7 +208,7 @@ function parseFloor(
   // 格式化边线控制参数序列
   const edgeParams: styleParsed.handleEdge[] = []
   floorParams.edge?.forEach((handleEdge) => {
-    const { offset, along, clamp, indent } = handleEdge
+    const { offset, along, clamp, indent, split } = handleEdge
     if (offset) {
       edgeParams.push({ offset: parseOffsetEdge(offset) })
     } else if (along) {
@@ -218,6 +217,8 @@ function parseFloor(
       edgeParams.push({ clamp: parseClamp(clamp) })
     } else if (indent) {
       edgeParams.push({ indent: parseIndent(indent) })
+    } else if (split) {
+      edgeParams.push({ split: parseSplit(split) })
     }
   })
 
@@ -265,7 +266,7 @@ function parseOffsetEdge(
   }
 }
 
-function parseExtrude(to: styleParsed.floorResult, params?: styleTypes.floor) {
+function parseExtrude(to: styleParsed.floorResult, params?: styleTypes.floorParams) {
   params?.extrude?.forEach((p) => {
     to.extrude.push(
       parseStatus(p, {
@@ -276,7 +277,7 @@ function parseExtrude(to: styleParsed.floorResult, params?: styleTypes.floor) {
   })
 }
 
-function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floor) {
+function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floorParams) {
   params?.match?.forEach((p) => {
     to.match.push({
       array: p.array.map((u) => {
@@ -295,7 +296,7 @@ function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floor) {
   })
 }
 
-function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
+function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floorParams) {
   params?.vertical?.forEach((p) => {
     to.vertical.push({
       array: p.array.map((unit) => {
@@ -316,8 +317,8 @@ function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floor) {
   })
 }
 
-function parseHorizontal(to: styleParsed.floorResult, params?: styleTypes.floor) {
-  params?.horizontal?.forEach((p) =>
+function parseHorizontal(to: styleParsed.floorResult, params?: styleTypes.floorParams) {
+  params?.horizontal?.forEach((p) => {
     to.horizontal.push(
       parseStatus(p, {
         flexDepth: parse(p.flexDepth),
@@ -326,13 +327,13 @@ function parseHorizontal(to: styleParsed.floorResult, params?: styleTypes.floor)
         array: p.array.map(parse),
         control: parseControl(p.control),
         sandwich: p.sandwich || false,
-        endWidth: parse(p.endWidth),
+        seg: p.seg || false,
       })
     )
-  )
+  })
 }
 
-function parseSlopingRoof(to: styleParsed.floorResult, params?: styleTypes.floor) {
+function parseSlopingRoof(to: styleParsed.floorResult, params?: styleTypes.floorParams) {
   params?.slopingRoof?.forEach((p) => {
     to.slopingRoof.push(
       parseStatus(p, {
@@ -344,7 +345,7 @@ function parseSlopingRoof(to: styleParsed.floorResult, params?: styleTypes.floor
   })
 }
 
-function parseBoundingBox(to: styleParsed.floorResult, params?: styleTypes.floor) {
+function parseBoundingBox(to: styleParsed.floorResult, params?: styleTypes.floorParams) {
   params?.boundingBox?.forEach((p) => {
     to.boundingBox.push(
       parseStatus(p, {
@@ -356,7 +357,7 @@ function parseBoundingBox(to: styleParsed.floorResult, params?: styleTypes.floor
 }
 
 /** 解析 floor.adjunct */
-function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floor) {
+function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floorParams) {
   params?.appendent?.forEach((p) => {
     to.appendent.push({
       count: parse(p.count, 1),
@@ -364,4 +365,29 @@ function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floor) 
       boxes: p.boxes.map(parseBox),
     })
   })
+}
+
+function parseClamp(params?: styleTypes.clampType): styleParsed.clampType | undefined {
+  return params
+    ? {
+        startX: parse(params.startX),
+        startY: parse(params.startY),
+        centralX: params.centralX || false,
+        endX: parse(params.endX),
+        endY: parse(params.endY),
+        centralY: params.centralY || false,
+        asRatio: params.asRatio || false,
+        reverse: params.reverse || false,
+      }
+    : undefined
+}
+
+function parseSplit(
+  params: NonNullable<styleTypes.handleEdge['split']>
+): NonNullable<styleParsed.handleEdge['split']> {
+  return {
+    array: params.array.map(parse),
+    select: params.select,
+    sandwich: params.sandwich || false,
+  }
 }

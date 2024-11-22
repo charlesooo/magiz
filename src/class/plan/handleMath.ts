@@ -296,7 +296,7 @@ function matchRatioAndCount(
   if (totalSpace > 0) {
     const count = Math.round(distance / totalSpace)
     const total = totalSpace * count + (sandwich ? endWidth : endWidth / 2)
-    return { ratio: distance / total, count }
+    if (count > 0) return { ratio: distance / total, count }
   }
   return undefined
 }

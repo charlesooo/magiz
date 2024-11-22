@@ -20,10 +20,29 @@ export namespace styleTypes {
     /** 从终点缩进一定距离 */
     end?: ns
     /** 改为从中点向star和end偏移 */
-    fromCenter?: boolean
+    central?: boolean
     /** 按比例，默认按距离 */
     asRatio?: boolean
     /** 反向操作，可能生成一或二段范围 */
+    reverse?: boolean
+  }
+
+  type clampType = {
+    /** 沿X轴坐标最小的边向内偏移 */
+    startX?: ns
+    /** 沿X轴坐标最大的边向内偏移  */
+    endX?: ns
+    /** 沿X轴改为从中点向star和end偏移 */
+    centralX?: boolean
+    /** 沿Y轴坐标最小的边向内偏移  */
+    startY?: ns
+    /** 沿Y轴坐标最大的边向内偏移  */
+    endY?: ns
+    /** 沿Y轴改为从中点向star和end偏移 */
+    centralY?: boolean
+    /** 按比例，默认按距离 */
+    asRatio?: boolean
+    /** 反向操作，可能生成二或四段范围 */
     reverse?: boolean
   }
 
@@ -32,39 +51,24 @@ export namespace styleTypes {
     /** 偏移边线 */
     offset?: ns | { x: ns; y: ns; asRatio?: boolean }
     /** 按朝向生成或角度，默认along=0 (世界坐标X轴) */
-    along?: 'WIDTH' | 'DEPTH' | 'RANDOM' | 'LONGEST' | 'SHORTEST' | number
+    along?: alongType
     /** 按boundingBox裁剪边线 */
     clamp?: clampType
     /** 每条边线向内缩进 */
     indent?: indentType
-  }
-
-  type clampType = {
-    /** 沿X轴坐标最小的边向内偏移 */
-    startX?: ns
-    /** 沿X轴坐标最大的边向内偏移  */
-    endX?: ns
-    /** 沿Y轴坐标最小的边向内偏移  */
-    startY?: ns
-    /** 沿Y轴坐标最大的边向内偏移  */
-    endY?: ns
-    /** 按比例，默认按距离 */
-    asRatio?: boolean
-    /** 反向操作，可能生成二或四段范围 */
-    reverse?: boolean
+    /** 按间距组合拟合并划分边线，select为选中段落的序号 */
+    split?: { array: ns[]; select: number; sandwich?: boolean }
   }
 
   /** 楼层、拟合和立面元素阵列时根据序号控制生成 */
   type indexController = {
     /** 指定从0开始的序号总数 */
     total?: ns
-    /** 按序号缩进 */
+    /** 按序号整体缩进序号 */
     indent?: indentType
-    /** 跳过一定序号间隔生成 */
-    skip?: ns
-    /** 按一定序号间隔生成 */
-    every?: ns
-    /** 按概率生成 */
+    /** 按跳过或保留数量的组合筛选序号 */
+    filter?: ({ keep: ns } | { skip: ns })[]
+    /** 按概率筛选序号 */
     chance?: ns
   }
 
@@ -136,7 +140,7 @@ export namespace styleTypes {
     /** 用box构成围墙，数值为围墙厚度 */
     thickness?: ns
     /** 拟合平面时的基准边线 */
-    along?: handleEdge['along']
+    along?: alongType
   }
 
   type match = {
@@ -148,7 +152,7 @@ export namespace styleTypes {
     /** 默认按生成元素的中心点生成环状阵列，每段的终点不生成。若想形成对称的外观，终点需生成与起点相同的元素 */
     sandwich?: boolean
     /** 沿特点边线阵列 */
-    along?: handleEdge['along']
+    along?: alongType
     /** 合并相同计算长度和颜色的box */
     simplify?: boolean
   }
@@ -178,10 +182,10 @@ export namespace styleTypes {
     array: ns[]
     /** 按序号控制生成 */
     control?: indexController
-    /** 起点偏移距离 */
-    endWidth?: ns
-    /** 终点也按起点偏移 */
+    /** 将array的第一段添加到末尾 */
     sandwich?: boolean
+    /** 不合并相邻的段落 */
+    seg?: boolean
   }
 
   /** 根据 boundingBox 生成坡屋顶 */
@@ -214,7 +218,7 @@ export namespace styleTypes {
     count?: ns
   }
 
-  type floor = {
+  type floorParams = {
     /** 按楼层序号控制竖向生成 */
     control?: indexController
     /** 修改边线，按组合的顺序操作 */
@@ -222,19 +226,14 @@ export namespace styleTypes {
     /** 每层的随机效果都不同 */
     diverse?: boolean
 
-    /** 通过函数生成预设样式参数 */
-    presets?: ReturnType<typeof preset>[]
-
     /** 从平面挤出高度 (可按此参数用box拟合平面和高度) */
     extrude?: extrude[]
     /** 用box拟合平面和高度 */
     match?: match[]
-    /** 沿边线按间距组合生成立面的 box 阵列 */
+    /** 沿边线按间距组合生成 box 阵列，间距进行拟合，元素宽度不拟合 */
     vertical?: edgeArray[]
-
     /** 沿边线生成灵活线性元素 */
     horizontal?: edgeFlex[]
-
     /** 在平面内生成box组成的构件 */
     appendent?: appendent[]
     /** 按边线 bounding 生成Box元素 */
@@ -245,7 +244,10 @@ export namespace styleTypes {
 
   /** 通过 mod.floor = 1 实现单层生成体块，sections只实现在垂直方向上分段，因此没有basic属性 */
   type section = {
-    floor?: floor[]
+    floor?: (floorParams & {
+      /** 通过函数生成预设样式参数 */
+      presets?: ReturnType<typeof preset>[]
+    })[]
     /** 该段的层高，省略则按解析时输入的标准层高 */
     floorHeight?: ns
   }
@@ -283,7 +285,7 @@ export namespace styleTypes {
   /** 可重复利用的楼层预设样式 */
   type preset<U extends { [k: string]: ns }, C extends { [k: string]: colorType }> = {
     /** 预设的样式参数 */
-    floor: floor[]
+    floor: floorParams[]
     /** 预设的样式变量 */
     unit: U
     /** 预设的样式颜色 */

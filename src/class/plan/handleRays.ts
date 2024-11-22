@@ -1,10 +1,10 @@
 import { Vector2 } from 'three'
-import { lineInsideRect, offsetRay, rayIntersectRay } from './handleMath'
+import { lineInsideRect, offsetRay, rayIntersectRay, matchRatioAndCount } from './handleMath'
 
 import type { styleParsed } from '../../types/stylesParsed'
 import type { temp } from '../../types/temp'
 
-export { offsetRayLoops, rectClampRays, indentRayLoops }
+export { offsetRayLoops, rectClampRayLoops, indentRayLoops, splitRayloops }
 
 /** 偏移边线，返回新的 rayLoops */
 function offsetRayLoops(
@@ -34,7 +34,7 @@ function offsetRayLoops(
 }
 
 /** 根据偏移后的定界框裁剪 edgeData （修改原数据） */
-function rectClampRays(
+function rectClampRayLoops(
   rayLoops: temp.ray[][],
   rectangles: { min: Vector2; max: Vector2 }[]
 ): temp.ray[][] {
@@ -69,8 +69,8 @@ function rectClampRays(
   })
 }
 
-function indentRayLoops(rayLoops: temp.ray[][], indent: styleParsed.indentType): temp.ray[][] {
-  const { fromCenter, asRatio, reverse, start, end } = indent
+function indentRayLoops(rayLoops: temp.ray[][], params: styleParsed.indentType): temp.ray[][] {
+  const { central, asRatio, reverse, start, end } = params
   return rayLoops.map((rayLoop) => {
     const newRayLoop: temp.ray[] = []
     // rayLoop 中前一end与后一start是相同的对象，indent须全部生成新的点
@@ -78,8 +78,8 @@ function indentRayLoops(rayLoops: temp.ray[][], indent: styleParsed.indentType):
       const distance = ray.direction.length()
       const dStart = asRatio ? distance * start : start
       const dEnd = asRatio ? distance * start : start
-      const mStart = fromCenter ? distance / 2 - dStart : dStart
-      const mEnd = fromCenter ? distance / 2 - dEnd : dEnd
+      const mStart = central ? distance / 2 - dStart : dStart
+      const mEnd = central ? distance / 2 - dEnd : dEnd
       // 反向操作均生成新数据，正向操作修改原数据
       if (reverse) {
         if (start) {
@@ -109,6 +109,38 @@ function indentRayLoops(rayLoops: temp.ray[][], indent: styleParsed.indentType):
           end: rayEnd,
           direction: rayEnd.clone().sub(rayStart),
         })
+      }
+    })
+    return newRayLoop
+  })
+}
+
+function splitRayloops(
+  rayLoops: temp.ray[][],
+  params: NonNullable<styleParsed.handleEdge['split']>
+): temp.ray[][] {
+  const { array, sandwich, select } = params
+
+  function moveAndPushTo(saveAs: temp.ray[], isSelected: boolean, point: Vector2, move: Vector2) {
+    const start = point.clone()
+    point.add(move)
+    if (isSelected) saveAs.push({ start, end: point.clone(), direction: move.clone() })
+  }
+
+  return rayLoops.map((rayLoop) => {
+    const newRayLoop: temp.ray[] = []
+    // rayLoop 中前一end与后一start是相同的对象，indent须全部生成新的点
+    rayLoop.forEach((ray) => {
+      const distance = ray.direction.length()
+      const rc = matchRatioAndCount(array, distance, array[0]!, sandwich)
+
+      if (rc) {
+        const pt = ray.start.clone()
+        const moves = array.map((s) => ray.direction.clone().setLength(s * rc.ratio))
+        for (let i = 0; i < rc.count; i++) {
+          moves.forEach((m, n) => moveAndPushTo(newRayLoop, n === select, pt, m))
+        }
+        if (sandwich && select === 0) moveAndPushTo(newRayLoop, true, pt, moves[0]!)
       }
     })
     return newRayLoop

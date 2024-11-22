@@ -13,7 +13,18 @@ export namespace styleParsed {
   type indentType = {
     start: number
     end: number
-    fromCenter: boolean
+    central: boolean
+    asRatio: boolean
+    reverse: boolean
+  }
+
+  type clampType = {
+    startX: number
+    endX: number
+    centralX: boolean
+    startY: number
+    endY: number
+    centralY: boolean
     asRatio: boolean
     reverse: boolean
   }
@@ -23,21 +34,12 @@ export namespace styleParsed {
     along?: styleTypes.alongType
     clamp?: clampType
     indent?: indentType
-  }
-
-  type clampType = {
-    startX: number
-    endX: number
-    startY: number
-    endY: number
-    asRatio: boolean
-    reverse: boolean
+    split?: { array: number[]; select: number; sandwich: boolean }
   }
 
   type indexController = {
     total: number
-    skip: number
-    every: number
+    filter: ({ keep: number } | { skip: number })[]
     chance: number
     indent: undefined | indentType
   }
@@ -103,8 +105,8 @@ export namespace styleParsed {
     extend: number
     array: number[]
     control: indexController | undefined
-    endWidth: number
     sandwich: boolean
+    seg: boolean
   }
 
   type slopingRoof = status & {

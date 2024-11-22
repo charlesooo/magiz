@@ -6,7 +6,7 @@ import { handleVertical } from './arrayVertical'
 import { handleHorizontal } from './arrayHorizontal'
 import { handleMatch } from './planMatch'
 import { handleExtrude } from './planExtrude'
-import { offsetRayLoops, rectClampRays, indentRayLoops } from './handleRays'
+import { offsetRayLoops, rectClampRayLoops, indentRayLoops, splitRayloops } from './handleRays'
 import { StyleHandler } from '../styles'
 
 import type { magizTypes } from '../../types/magizTypes'
@@ -108,11 +108,11 @@ class Plan {
     const outterLoop = this.relative.rayLoops[0]
     const bounds = getBounds(outterLoop?.map((line) => line.start))
     if (outterLoop && bounds) {
-      rayLoops.push(outterLoop)
       const sizeRef = { x: 0, y: 0, caculated: false }
+      rayLoops.push(outterLoop)
       // 按顺序多次修正边线
       edgeParams.forEach((params) => {
-        const { offset, along, clamp, indent } = params
+        const { offset, along, clamp, indent, split } = params
         if (offset) {
           // 如有偏移边线，先计算整体尺寸，之后的任何偏移都以此sizeRef为准
           if (!sizeRef.caculated) {
@@ -124,7 +124,7 @@ class Plan {
           rayLoops = offsetRayLoops(rayLoops, sizeRef, offset)
         } else if (clamp) {
           const rects = getClampedRects(bounds, clamp)
-          rayLoops = rectClampRays(rayLoops, rects)
+          rayLoops = rectClampRayLoops(rayLoops, rects)
         } else if (along !== undefined) {
           switch (along) {
             case 'WIDTH':
@@ -171,6 +171,8 @@ class Plan {
           }
         } else if (indent) {
           rayLoops = indentRayLoops(rayLoops, indent)
+        } else if (split) {
+          rayLoops = splitRayloops(rayLoops, split)
         }
       })
     }
@@ -209,6 +211,7 @@ class Plan {
       extruded: { solid: [], glass: [] },
     }
 
+    // 解析样式参数时按edgeParams进行了分类，以让相同的仅计算一次
     const { classified } = styleParsed
     for (const edgeParamsJSON in classified) {
       const { params, parsed } = classified[edgeParamsJSON]!

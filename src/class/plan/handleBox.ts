@@ -211,8 +211,8 @@ function simplifySweepX(rowsSweepX: temp.lineSweepX[][]) {
 
 function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
   const result: temp.box[] = []
-  const { flexDepth, flexHeight, extend, array, control, endWidth, sandwich } = params
-  const rc = matchRatioAndCount(array, distance, endWidth, sandwich)
+  const { flexDepth, flexHeight, extend, array, control, sandwich, seg } = params
+  const rc = matchRatioAndCount(array, distance, array[0]!, sandwich)
   if (rc) {
     const flexUnits: { move: number; width: number }[] = []
     const totalCount = rc.count * array.length
@@ -224,12 +224,12 @@ function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
     for (let i = 0; i < totalCount; i++) {
       const width = widthsScaled[i % array.length]!
 
-      if (validIndexes.find((vi) => vi === i)) {
+      if (validIndexes.find((vi) => vi === i) !== undefined) {
         if (flexUnits.length === 0) {
           flexUnits.push({ move, width })
         } else {
           const thisUnit = flexUnits[flexUnits.length - 1]!
-          if (lastValidIndex === i - 1) {
+          if (!seg && lastValidIndex === i - 1) {
             thisUnit.width += width
           } else {
             flexUnits.push({ move, width })
@@ -239,6 +239,11 @@ function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
       }
 
       move += width
+    }
+
+    const firstFilter = control?.filter[0]
+    if (sandwich && (!firstFilter || 'keep' in firstFilter)) {
+      flexUnits.push({ move, width: widthsScaled[0]! })
     }
 
     // 将flexUnits转为矩阵和颜色数据
@@ -295,61 +300,63 @@ function pushBoxData(
 
 /** 基于种子和控制器，计算需生成元素的序号 */
 function getValidIndexes(count: number, control: styleParsed.indexController | undefined) {
-  function pushPassedIndexes(
-    controls: { every: number; skip: number; chance: number },
-    result: number[],
-    i: number
-  ) {
-    const { every, skip, chance } = controls
-    if (every > 0) {
-      if (i % (every + 1) !== 0) result.push(i)
-    } else if (skip > 0) {
-      if (i % (skip + 1) === 0) result.push(i)
-    } else if (chance > 0) {
-      if (sRand() < chance) result.push(i)
-    } else {
-      result.push(i)
-    }
-  }
-
-  const result: number[] = []
+  let result: number[] = []
   if (control) {
-    const { total, indent } = control
+    const { total, indent, filter, chance } = control
     if (total > 0) count = total
     if (indent) {
-      indentIndexes(count, indent, (i) => pushPassedIndexes(control, result, i))
+      indentIndexes(count, indent, result)
     } else {
-      for (let i = 0; i < count; i++) pushPassedIndexes(control, result, i)
+      for (let i = 0; i < count; i++) result.push(i)
     }
+
+    const filterSteps = filter.reduce((v, f) => v + ('keep' in f ? f.keep : f.skip), 0)
+    if (filterSteps > 0) {
+      result = result.filter((_, i) => {
+        let fid = i % filterSteps
+        const found = filter.find((f) => {
+          const step = 'keep' in f ? f.keep : f.skip
+          if (fid < step) {
+            return true
+          } else {
+            fid -= step
+            return false
+          }
+        })
+        return !found || 'keep' in found
+      })
+    }
+
+    if (chance > 0) {
+      result = result.filter(() => sRand() < chance)
+    }
+
+    console.log(result)
   } else {
     for (let i = 0; i < count; i++) result.push(i)
   }
   return result
 }
 
-function indentIndexes(
-  total: number,
-  indent: styleParsed.indentType,
-  handleValidIndex: (i: number) => void
-) {
+function indentIndexes(total: number, indent: styleParsed.indentType, result: number[]) {
   let startID = 0
   let endID = total - 1
-  const { fromCenter, asRatio, reverse, start, end } = indent
+  const { central, asRatio, reverse, start, end } = indent
 
   if (start) {
     const dStart = asRatio ? Math.round(total * start) : start
-    startID = fromCenter ? Math.round((total - 1) / 2.0 - dStart) : dStart
+    startID = central ? Math.round((total - 1) / 2.0 - dStart) : dStart
   }
   if (end) {
     const dEnd = asRatio ? Math.round(total * end) : end
-    endID = fromCenter ? Math.round((total - 1) / 2.0 + dEnd) : total - 1 - dEnd
+    endID = central ? Math.round((total - 1) / 2.0 + dEnd) : total - 1 - dEnd
   }
 
   if (reverse) {
-    for (let i = 0; i < startID; i++) handleValidIndex(i)
-    for (let i = endID + 1; i < total; i++) handleValidIndex(i)
+    for (let i = 0; i < startID; i++) result.push(i)
+    for (let i = endID + 1; i < total; i++) result.push(i)
   } else {
-    for (let i = startID; i <= endID; i++) handleValidIndex(i)
+    for (let i = startID; i <= endID; i++) result.push(i)
   }
 }
 
@@ -361,17 +368,17 @@ function indentBoxFlexWidth(
 ): Matrix4[] {
   const result: Matrix4[] = []
   if (params) {
-    const { fromCenter, asRatio, reverse, start, end } = params
+    const { central, asRatio, reverse, start, end } = params
     const wStart = asRatio ? width * start : start
     const wEnd = asRatio ? width * end : end
     if (reverse) {
       if (start) {
-        const w = fromCenter ? width / 2 - wStart : wStart
+        const w = central ? width / 2 - wStart : wStart
         if (w > 0) result.push(matrix.clone().premultiply(TEMP.makeScale(w, 1, 1)))
       }
       if (end < width - start) {
-        const w = fromCenter ? width / 2 - wEnd : wEnd
-        const x = fromCenter ? width / 2 + wEnd : width - wEnd
+        const w = central ? width / 2 - wEnd : wEnd
+        const x = central ? width / 2 + wEnd : width - wEnd
         if (w > 0)
           result.push(
             matrix
@@ -381,11 +388,11 @@ function indentBoxFlexWidth(
           )
       }
     } else {
-      const w = fromCenter ? wStart + wEnd : width - wStart - wEnd
+      const w = central ? wStart + wEnd : width - wStart - wEnd
       if (w > 0) {
         matrix.premultiply(TEMP.makeScale(w, 1, 1))
         if (start) {
-          matrix.premultiply(TEMP.makeTranslation(fromCenter ? width / 2 - wStart : wStart, 0, 0))
+          matrix.premultiply(TEMP.makeTranslation(central ? width / 2 - wStart : wStart, 0, 0))
         }
         result.push(matrix)
       }
