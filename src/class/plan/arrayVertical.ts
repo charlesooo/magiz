@@ -1,6 +1,6 @@
 import { Matrix4 } from 'three'
-import { matchRatioAndCount, getLoopNext, sRand } from './handleMath'
-import { TEMP, edgeUnitToTempBoxes, pushBoxData, getValidIndexes } from './handleBox'
+import { matchRatioAndCount, getLoopNext, sRand, getValidIndexes } from './handleMath'
+import { TEMP, edgeUnitToTempBoxes, pushBoxData } from './handleBox'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleParsed } from '../../types/stylesParsed'
@@ -49,9 +49,9 @@ function raySpacing(
     // 处理replace，将全部参数转为 temp.arrayUnit[]
     const arrayUnits: temp.arrayUnit[] = []
     array.forEach((edgeUnit) => {
-      const { boxes, space, replace } = edgeUnit
-      const tempBoxes = edgeUnitToTempBoxes(boxes, rc.ratio)
-      const replaceBoxes = replace ? edgeUnitToTempBoxes(replace.with, rc.ratio) : undefined
+      const { space, replace } = edgeUnit
+      const tempBoxes = edgeUnitToTempBoxes(edgeUnit, rc.ratio)
+      const replaceBoxes = replace ? edgeUnitToTempBoxes(replace, rc.ratio) : undefined
       const spaceScaled = space * rc.ratio
 
       for (let i = 0; i < edgeUnit.count; i++) {

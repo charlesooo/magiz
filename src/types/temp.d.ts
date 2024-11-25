@@ -12,7 +12,7 @@ export namespace temp {
 
   type lineSweepX = line & {
     depth: number
-    matchUnit: styleParsed.matchUnit
+    matchUnit: styleParsed.flexMatchUnit
     /** color和transform拼接字符串，用于比较 */
     statusJSON: string
   }

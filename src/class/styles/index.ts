@@ -6,10 +6,10 @@ import {
   parseStatus,
   parseControl,
   parseIndent,
-  parseBox,
-  parseVerticalBoxes,
+  parseBoxes,
+  parseFlexes,
 } from './handleParse'
-import { getValidIndexes } from '../plan/handleBox'
+import { getValidIndexes } from '../plan/handleMath'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleTypes } from '../../types/styleTypes'
@@ -303,9 +303,14 @@ function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floorPar
         const { replace } = unit
         return {
           space: parse(unit.space),
-          boxes: parseVerticalBoxes(unit.boxes),
+          boxes: parseBoxes(unit.boxes),
+          flexes: parseFlexes(unit.flexes),
           replace: replace
-            ? { chance: parse(replace.chance), with: parseVerticalBoxes(replace.with) }
+            ? {
+                chance: parse(replace.chance),
+                boxes: parseBoxes(replace.boxes),
+                flexes: parseFlexes(replace.flexes),
+              }
             : undefined,
           count: parse(unit.count, 1),
         }
@@ -362,7 +367,7 @@ function parseAppendent(to: styleParsed.floorResult, params?: styleTypes.floorPa
     to.appendent.push({
       count: parse(p.count, 1),
       place: p.place || 'EDGE',
-      boxes: p.boxes.map(parseBox),
+      boxes: parseBoxes(p.boxes),
     })
   })
 }

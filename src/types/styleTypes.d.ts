@@ -95,30 +95,37 @@ export namespace styleTypes {
     /** 基准段高 */
     unitHeight: ns
     /** 总高度 */
-    totalHeight: ns
+    flexHeight: ns
     /** 进深 */
     flexDepth: ns
     /** 开间 */
-    flexwidth: ns
+    flexWidth: ns
     /** 按序号控制生成 */
     dash: indexController
+    /** 不合并相邻的段落 */
+    seg?: boolean
   }
 
   /** 沿边线阵列的立面基本单元 */
   type edgeUnit = {
     /** 该单元的间距，无 boxes 表示占位 */
     space: ns
-
-    /** 该单元在阵列点处生成的元素 */
-    boxes?: (box | flexVertical)[]
+    /** 在阵列点处生成体块 */
+    boxes?: box[]
+    /** 在阵列点处生成垂直线性元素 */
+    flexes?: flexVertical[]
     /** 按概率替换该单元的元素 */
-    replace?: { chance: ns; with?: (box | flexVertical)[] }
+    replace?: {
+      chance: ns
+      boxes?: box[]
+      flexes?: flexVertical[]
+    }
     /** 该单元的数量，默认为1，用于减少重复输入 */
     count?: ns
   }
 
   /** 拟合平面的基本单元，按平面计算最终的 width */
-  type matchUnit = status & {
+  type flexMatchUnit = status & {
     /** 拟合的基准进深 */
     unitDepth: ns
     /** 垂直高度，负值表示朝下 */
@@ -145,7 +152,7 @@ export namespace styleTypes {
 
   type match = {
     /** 由不同间距和构件组成的阵列原型 */
-    array: matchUnit[]
+    array: flexMatchUnit[]
 
     /** 每个序号生成一批 T[]，按序号进行控制  */
     control?: indexController

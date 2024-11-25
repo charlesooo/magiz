@@ -57,20 +57,28 @@ export namespace styleParsed {
 
   type flexVertical = status & {
     unitHeight: number
-    totalHeight: number
+    flexHeight: number
     flexDepth: number
-    flexwidth: number
+    flexWidth: number
     dash: indexController
+    seg: boolean
   }
 
   type edgeUnit = {
     space: number
-    boxes: (box | flexVertical)[]
-    replace: undefined | { chance: number; with: (box | flexVertical)[] }
+    boxes: box[]
+    flexes: flexVertical[]
+    replace:
+      | undefined
+      | {
+          chance: number
+          boxes: box[]
+          flexes: flexVertical[]
+        }
     count: number
   }
 
-  type matchUnit = status & {
+  type flexMatchUnit = status & {
     unitDepth: number
     flexHeight: number
     indentWidth?: indentType
@@ -85,7 +93,7 @@ export namespace styleParsed {
   }
 
   type match = {
-    array: matchUnit[]
+    array: flexMatchUnit[]
     along: styleTypes.alongType
     control: indexController | undefined
     sandwich: boolean

@@ -12,8 +12,8 @@ export {
   parseStatus,
   parseIndent,
   parseControl,
-  parseBox,
-  parseVerticalBoxes,
+  parseBoxes,
+  parseFlexes,
 }
 
 const evaluator = new Mexp()
@@ -131,33 +131,52 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
   )
 }
 
-function parseBox(b: styleTypes.box): styleParsed.box {
-  return parseStatus(b, {
-    widthX: parse(b.widthX),
-    depthY: parse(b.depthY),
-    heightZ: parse(b.heightZ),
-  })
+function parseBoxes(params?: styleTypes.box[]): styleParsed.box[] {
+  return params
+    ? params.map((b) =>
+        parseStatus(b, {
+          widthX: parse(b.widthX),
+          depthY: parse(b.depthY),
+          heightZ: parse(b.heightZ),
+        })
+      )
+    : []
 }
 
-function parseVerticalBoxes(
-  boxes?: (styleTypes.box | styleTypes.flexVertical)[]
-): (styleParsed.box | styleParsed.flexVertical)[] {
-  return boxes
-    ? boxes.map((x) => {
-        if ('widthX' in x) {
-          return parseBox(x)
-        } else {
-          return parseStatus(x, {
-            unitHeight: parse(x.unitHeight),
-            totalHeight: parse(x.totalHeight),
-            flexDepth: parse(x.flexDepth),
-            flexwidth: parse(x.flexwidth),
-            dash: parseControl(x.dash)!,
-          })
-        }
+function parseFlexes(params?: styleTypes.flexVertical[]): styleParsed.flexVertical[] {
+  return params
+    ? params.map((x) => {
+        return parseStatus(x, {
+          unitHeight: parse(x.unitHeight),
+          flexHeight: parse(x.flexHeight),
+          flexDepth: parse(x.flexDepth),
+          flexWidth: parse(x.flexWidth),
+          dash: parseControl(x.dash)!,
+          seg: x.seg || false,
+        })
       })
     : []
 }
+
+// function parseVerticalBoxes(
+//   boxes?: (styleTypes.box | styleTypes.flexVertical)[]
+// ): (styleParsed.box | styleParsed.flexVertical)[] {
+//   return boxes
+//     ? boxes.map((x) => {
+//         if ('widthX' in x) {
+//           return parseBox(x)
+//         } else {
+//           return parseStatus(x, {
+//             unitHeight: parse(x.unitHeight),
+//             totalHeight: parse(x.totalHeight),
+//             flexDepth: parse(x.flexDepth),
+//             flexwidth: parse(x.flexwidth),
+//             dash: parseControl(x.dash)!,
+//           })
+//         }
+//       })
+//     : []
+// }
 
 function parseControl(
   params?: styleTypes.indexController

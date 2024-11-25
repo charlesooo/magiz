@@ -30,6 +30,7 @@ export {
   sRotateLinesAlong,
   getClampedRects,
   getLoopNext,
+  getValidIndexes,
 }
 
 /** 生成一个100以内原始的随机整数 */
@@ -287,9 +288,9 @@ function matchRatioAndCount(
   spaces: number[],
   /** 用于拟合的总长度 */
   distance: number,
-  /** 生成时从端点偏移的距离 */
+  /** 生成时从端点偏移的距离，用于尽端元素对齐线段一端 */
   endWidth: number,
-  /** 默认不在终点生成元素。将终点纳入考虑时将在计算终点时添加起点元素firstWidth让阵列对齐两端 */
+  /** 在终点生成与首位相同的元素。如无endWidth表示按端点为中心生成元素，sandwich无效果。 */
   sandwich: boolean
 ) {
   const totalSpace = spaces.reduce((v, s) => v + s, 0)
@@ -297,6 +298,8 @@ function matchRatioAndCount(
     const count = Math.round(distance / totalSpace)
     const total = totalSpace * count + (sandwich ? endWidth : endWidth / 2)
     if (count > 0) return { ratio: distance / total, count }
+  } else {
+    console.error('total space for matching is 0')
   }
   return undefined
 }
@@ -436,4 +439,64 @@ function getLoopNext<T>(a: T[], i: number) {
   let nextID = i + 1
   if (nextID >= a.length) nextID = 0
   return a[nextID]!
+}
+
+/** 基于种子和控制器，计算需生成元素的序号 */
+function getValidIndexes(count: number, control: styleParsed.indexController | undefined) {
+  let result: number[] = []
+  if (control) {
+    const { total, indent, filter, chance } = control
+    if (total > 0) count = total
+    if (indent) {
+      indentIndexes(count, indent, result)
+    } else {
+      for (let i = 0; i < count; i++) result.push(i)
+    }
+
+    const filterSteps = filter.reduce((v, f) => v + ('keep' in f ? f.keep : f.skip), 0)
+    if (filterSteps > 0) {
+      result = result.filter((_, i) => {
+        let fid = i % filterSteps
+        const found = filter.find((f) => {
+          const step = 'keep' in f ? f.keep : f.skip
+          if (fid < step) {
+            return true
+          } else {
+            fid -= step
+            return false
+          }
+        })
+        return !found || 'keep' in found
+      })
+    }
+
+    if (chance > 0) {
+      result = result.filter(() => sRand() < chance)
+    }
+  } else {
+    for (let i = 0; i < count; i++) result.push(i)
+  }
+  return result
+}
+
+function indentIndexes(total: number, indent: styleParsed.indentType, result: number[]) {
+  let startID = 0
+  let endID = total - 1
+  const { central, asRatio, reverse, start, end } = indent
+
+  if (start) {
+    const dStart = asRatio ? Math.round(total * start) : start
+    startID = central ? Math.round((total - 1) / 2.0 - dStart) : dStart
+  }
+  if (end) {
+    const dEnd = asRatio ? Math.round(total * end) : end
+    endID = central ? Math.round((total - 1) / 2.0 + dEnd) : total - 1 - dEnd
+  }
+
+  if (reverse) {
+    for (let i = 0; i < startID; i++) result.push(i)
+    for (let i = endID + 1; i < total; i++) result.push(i)
+  } else {
+    for (let i = startID; i <= endID; i++) result.push(i)
+  }
 }

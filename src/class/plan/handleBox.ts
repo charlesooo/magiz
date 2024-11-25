@@ -1,6 +1,12 @@
 import { Matrix4, Vector2 } from 'three'
 import { degToRad } from 'three/src/math/MathUtils.js'
-import { matchRatioAndCount, getBounds, sweepPolygonX, sSample, sRand } from './handleMath'
+import {
+  matchRatioAndCount,
+  getBounds,
+  sweepPolygonX,
+  sSample,
+  getValidIndexes,
+} from './handleMath'
 
 import type { temp } from '../../types/temp'
 import type { styleParsed } from '../../types/stylesParsed'
@@ -11,7 +17,6 @@ export {
   applyBasicTransform,
   handleBoxes,
   pushBoxData,
-  getValidIndexes,
   edgeUnitToTempBoxes,
   edgeFlexToTempBoxes,
   matchUnitsToTempBoxRows,
@@ -21,75 +26,75 @@ export {
 const TEMP = new Matrix4()
 
 function edgeUnitToTempBoxes(
-  params: (styleParsed.box | styleParsed.flexVertical)[],
+  params: { boxes: styleParsed.box[]; flexes: styleParsed.flexVertical[] },
   xRatio: number
 ): temp.box[] {
   const result: temp.box[] = []
-  params.forEach((element) => {
-    'widthX' in element
-      ? handleBoxParams(result, element, xRatio)
-      : handleFlexVerticalParams(result, element, xRatio)
-  })
+  boxesToTempBoxes(result, params.boxes, xRatio)
+  flexVerticalsToTempBoxes(result, params.flexes, xRatio)
   return result
 }
 
-function handleBoxParams(result: temp.box[], params: styleParsed.box, xRatio: number) {
-  let { widthX, depthY, heightZ } = params
-  if (widthX || depthY || heightZ) {
-    const matrix = new Matrix4().makeTranslation(0, 0, 0.5)
-    if (widthX < 0) widthX = -widthX
-    if (depthY < 0) depthY = -depthY
-    if (heightZ < 0) {
-      matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
-      heightZ = -heightZ
+function boxesToTempBoxes(result: temp.box[], params: styleParsed.box[], xRatio: number) {
+  params.forEach((boxParams) => {
+    let { widthX, depthY, heightZ } = boxParams
+    if (widthX || depthY || heightZ) {
+      const matrix = new Matrix4().makeTranslation(0, 0, 0.5)
+      if (widthX < 0) widthX = -widthX
+      if (depthY < 0) depthY = -depthY
+      if (heightZ < 0) {
+        matrix.premultiply(TEMP.makeTranslation(0, 0, -1))
+        heightZ = -heightZ
+      }
+      matrix.premultiply(TEMP.makeScale(widthX * xRatio, depthY, heightZ))
+      applyBasicTransform(boxParams, matrix)
+      result.push({ matrix, color: boxParams.color })
     }
-    matrix.premultiply(TEMP.makeScale(widthX * xRatio, depthY, heightZ))
-    applyBasicTransform(params, matrix)
-    result.push({ matrix, color: params.color })
-  }
+  })
 }
 
-function handleFlexVerticalParams(
+function flexVerticalsToTempBoxes(
   result: temp.box[],
-  params: styleParsed.flexVertical,
+  params: styleParsed.flexVertical[],
   xRatio: number
 ) {
-  const { unitHeight, totalHeight, flexDepth, flexwidth, dash } = params
-  const vrc = matchRatioAndCount([unitHeight], totalHeight, unitHeight, false)
-  if (vrc) {
-    /** 根据参数合并未被替换的连续竖向box，计算最终的长度和标高 */
-    const flexUnits: { moveZ: number; height: number }[] = []
-    const validIndexes = getValidIndexes(vrc.count, dash)
-    const height = unitHeight * vrc.ratio
+  params.forEach((flexParams) => {
+    const { unitHeight, flexHeight, flexDepth, flexWidth, dash, seg } = flexParams
 
-    // 将参数转为垂直线段的全部标高和高度
-    validIndexes.forEach((thisIndex, n) => {
-      if (n === 0) {
-        flexUnits.push({ moveZ: thisIndex * height, height })
-      } else {
-        const thisUnit = flexUnits[flexUnits.length - 1]!
-        if (n > 0 && validIndexes[n - 1] === thisIndex - 1) {
-          thisUnit.height += height
-        } else {
-          flexUnits.push({ moveZ: thisIndex * height, height })
-        }
-      }
-    })
+    const flexResult = getFlexResult(flexHeight, [unitHeight], seg, false, dash)
 
-    // 将flexUnits转为矩阵和颜色数据
-    flexUnits.forEach((u) => {
+    // 将flexResult转为矩阵和颜色数据
+    flexResult.forEach((u) => {
       const matrix = new Matrix4()
         .makeTranslation(0, 0, 0.5)
-        .premultiply(TEMP.makeScale(flexwidth * xRatio, flexDepth, u.height))
-      applyBasicTransform(params, matrix)
-      matrix.premultiply(TEMP.makeTranslation(0, 0, u.moveZ))
-      result.push({ matrix, color: params.color })
+        .premultiply(TEMP.makeScale(flexWidth * xRatio, flexDepth, u.space))
+      applyBasicTransform(flexParams, matrix)
+      matrix.premultiply(TEMP.makeTranslation(0, 0, u.move))
+      result.push({ matrix, color: flexParams.color })
     })
-  }
+  })
+}
+
+function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
+  const result: temp.box[] = []
+  const { flexDepth, flexHeight, extend, array, control, sandwich, seg } = params
+  const flexResult = getFlexResult(distance, array, seg, sandwich, control)
+
+  // 将flexResult转为矩阵和颜色数据
+  flexResult.forEach((u) => {
+    const matrix = new Matrix4()
+      .makeTranslation(0.5, 0, flexHeight > 0 ? 0.5 : -0.5)
+      .premultiply(TEMP.makeScale(u.space + extend, Math.abs(flexDepth), Math.abs(flexHeight)))
+    applyBasicTransform(params, matrix)
+    matrix.premultiply(TEMP.makeTranslation(u.move - extend / 2.0, 0, 0))
+    result.push({ matrix, color: params.color })
+  })
+
+  return result
 }
 
 function matchUnitsToTempBoxRows(
-  params: styleParsed.matchUnit[],
+  params: styleParsed.flexMatchUnit[],
   lines: temp.line[],
   sandwich: boolean,
   simplify: boolean
@@ -99,7 +104,7 @@ function matchUnitsToTempBoxRows(
     y: number,
     saveAs: temp.lineSweepX[][],
     lines: temp.line[],
-    data: { depth: number; matchUnit: styleParsed.matchUnit }
+    data: { depth: number; matchUnit: styleParsed.flexMatchUnit }
   ) {
     const { depth, matchUnit } = data
     y += data.depth / 2
@@ -128,7 +133,7 @@ function matchUnitsToTempBoxRows(
     const rc = matchRatioAndCount(depths, bounds.max.y - bounds.min.y, depths[0]!, sandwich)
 
     if (rc) {
-      const depthData: { depth: number; matchUnit: styleParsed.matchUnit }[] = []
+      const depthData: { depth: number; matchUnit: styleParsed.flexMatchUnit }[] = []
       params.forEach((matchUnit) => {
         for (let i = 0; i < matchUnit.count; i++) {
           depthData.push({ matchUnit, depth: matchUnit.unitDepth * rc.ratio })
@@ -209,57 +214,6 @@ function simplifySweepX(rowsSweepX: temp.lineSweepX[][]) {
   return result
 }
 
-function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
-  const result: temp.box[] = []
-  const { flexDepth, flexHeight, extend, array, control, sandwich, seg } = params
-  const rc = matchRatioAndCount(array, distance, array[0]!, sandwich)
-  if (rc) {
-    const flexUnits: { move: number; width: number }[] = []
-    const totalCount = rc.count * array.length
-    const validIndexes = getValidIndexes(totalCount, control)
-    const widthsScaled = array.map((w) => w * rc.ratio)
-
-    let move = 0
-    let lastValidIndex = -1
-    for (let i = 0; i < totalCount; i++) {
-      const width = widthsScaled[i % array.length]!
-
-      if (validIndexes.find((vi) => vi === i) !== undefined) {
-        if (flexUnits.length === 0) {
-          flexUnits.push({ move, width })
-        } else {
-          const thisUnit = flexUnits[flexUnits.length - 1]!
-          if (!seg && lastValidIndex === i - 1) {
-            thisUnit.width += width
-          } else {
-            flexUnits.push({ move, width })
-          }
-        }
-        lastValidIndex = i
-      }
-
-      move += width
-    }
-
-    const firstFilter = control?.filter[0]
-    if (sandwich && (!firstFilter || 'keep' in firstFilter)) {
-      flexUnits.push({ move, width: widthsScaled[0]! })
-    }
-
-    // 将flexUnits转为矩阵和颜色数据
-    flexUnits.forEach((u) => {
-      const matrix = new Matrix4()
-        .makeTranslation(0.5, 0, flexHeight > 0 ? 0.5 : -0.5)
-        .premultiply(TEMP.makeScale(u.width + extend, Math.abs(flexDepth), Math.abs(flexHeight)))
-      applyBasicTransform(params, matrix)
-      matrix.premultiply(TEMP.makeTranslation(u.move - extend / 2.0, 0, 0))
-      result.push({ matrix, color: params.color })
-    })
-  }
-
-  return result
-}
-
 function handleBoxes(
   /** 推送可序列化数据到结果 */
   result: magizTypes.rawBuilding,
@@ -296,68 +250,6 @@ function pushBoxData(
   const target: magizTypes.instancedData = saveAs.instanced[glass ? 'boxGlass' : 'box']
   target.colors.push(index)
   target.matrices.push(matrix.toArray())
-}
-
-/** 基于种子和控制器，计算需生成元素的序号 */
-function getValidIndexes(count: number, control: styleParsed.indexController | undefined) {
-  let result: number[] = []
-  if (control) {
-    const { total, indent, filter, chance } = control
-    if (total > 0) count = total
-    if (indent) {
-      indentIndexes(count, indent, result)
-    } else {
-      for (let i = 0; i < count; i++) result.push(i)
-    }
-
-    const filterSteps = filter.reduce((v, f) => v + ('keep' in f ? f.keep : f.skip), 0)
-    if (filterSteps > 0) {
-      result = result.filter((_, i) => {
-        let fid = i % filterSteps
-        const found = filter.find((f) => {
-          const step = 'keep' in f ? f.keep : f.skip
-          if (fid < step) {
-            return true
-          } else {
-            fid -= step
-            return false
-          }
-        })
-        return !found || 'keep' in found
-      })
-    }
-
-    if (chance > 0) {
-      result = result.filter(() => sRand() < chance)
-    }
-
-    console.log(result)
-  } else {
-    for (let i = 0; i < count; i++) result.push(i)
-  }
-  return result
-}
-
-function indentIndexes(total: number, indent: styleParsed.indentType, result: number[]) {
-  let startID = 0
-  let endID = total - 1
-  const { central, asRatio, reverse, start, end } = indent
-
-  if (start) {
-    const dStart = asRatio ? Math.round(total * start) : start
-    startID = central ? Math.round((total - 1) / 2.0 - dStart) : dStart
-  }
-  if (end) {
-    const dEnd = asRatio ? Math.round(total * end) : end
-    endID = central ? Math.round((total - 1) / 2.0 + dEnd) : total - 1 - dEnd
-  }
-
-  if (reverse) {
-    for (let i = 0; i < startID; i++) result.push(i)
-    for (let i = endID + 1; i < total; i++) result.push(i)
-  } else {
-    for (let i = startID; i <= endID; i++) result.push(i)
-  }
 }
 
 /** 按生成的flexWidth偏移boxFlex，因indent可能生成两段 */
@@ -416,4 +308,77 @@ function applyBasicTransform(status: styleParsed.status, matrix: Matrix4): void 
       matrix.premultiply(TEMP.makeTranslation(transform.moveX, transform.moveY, transform.moveZ))
     }
   })
+}
+
+/** 计算横向和竖向的拟合结果 */
+function getFlexResult(
+  distance: number,
+  spaceArray: number[],
+  asSegments: boolean,
+  sandwich: boolean,
+  control?: styleParsed.indexController
+) {
+  const result: { move: number; space: number }[] = []
+  // 竖向计算时为楼层生成方式，一般按层高，sandwich和endWidth可以忽略。水平计算时为立面生成方式，这两个参数才有用。考虑matchRatioAndCount的计算逻辑，可以完全通过sandwich控制
+  const rc = matchRatioAndCount(spaceArray, distance, sandwich ? spaceArray[0]! : 0, sandwich)
+  if (rc) {
+    const validIndexes = getValidIndexes(rc.count * spaceArray.length, control)
+    const totalCount = rc.count * spaceArray.length
+    const spacesScaled = spaceArray.map((s) => s * rc.ratio)
+
+    let move = 0
+    let lastValidIndex = -1
+    for (let i = 0; i < totalCount; i++) {
+      const space = spacesScaled[i % spaceArray.length]!
+      lastValidIndex = handleEdgeFlex(
+        lastValidIndex,
+        i,
+        move,
+        space,
+        asSegments,
+        validIndexes,
+        result
+      )
+      move += space
+    }
+
+    if (sandwich && validIndexes[0] === 0) {
+      handleEdgeFlex(
+        lastValidIndex,
+        totalCount,
+        move,
+        spacesScaled[0]!,
+        asSegments,
+        [totalCount],
+        result
+      )
+    }
+  }
+
+  return result
+}
+
+function handleEdgeFlex(
+  lastValidIndex: number,
+  i: number,
+  move: number,
+  space: number,
+  asSegments: boolean,
+  validIndexes: number[],
+  flexUnits: { move: number; space: number }[]
+) {
+  if (validIndexes.find((vi) => vi === i) !== undefined) {
+    if (flexUnits.length === 0) {
+      flexUnits.push({ move, space })
+    } else {
+      const thisUnit = flexUnits[flexUnits.length - 1]!
+      if (!asSegments && lastValidIndex === i - 1) {
+        thisUnit.space += space
+      } else {
+        flexUnits.push({ move, space })
+      }
+    }
+    lastValidIndex = i
+  }
+  return lastValidIndex
 }

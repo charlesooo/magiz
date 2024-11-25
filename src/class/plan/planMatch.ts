@@ -1,5 +1,5 @@
-import { sRotateLinesAlong } from './handleMath'
-import { TEMP, getValidIndexes, pushBoxData, matchUnitsToTempBoxRows } from './handleBox'
+import { sRotateLinesAlong, getValidIndexes } from './handleMath'
+import { TEMP, pushBoxData, matchUnitsToTempBoxRows } from './handleBox'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleParsed } from '../../types/stylesParsed'
