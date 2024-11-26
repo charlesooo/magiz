@@ -59,9 +59,9 @@ function flexVerticalsToTempBoxes(
   xRatio: number
 ) {
   params.forEach((flexParams) => {
-    const { unitHeight, flexHeight, flexDepth, flexWidth, dash, seg } = flexParams
+    const { unitHeight, flexHeight, flexDepth, flexWidth, dash, shrink, seg } = flexParams
 
-    const flexResult = getFlexResult(flexHeight, [unitHeight], seg, false, dash)
+    const flexResult = getFlexResult(flexHeight, [unitHeight], seg, false, dash, shrink)
 
     // 将flexResult转为矩阵和颜色数据
     flexResult.forEach((u) => {
@@ -77,16 +77,16 @@ function flexVerticalsToTempBoxes(
 
 function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
   const result: temp.box[] = []
-  const { flexDepth, flexHeight, extend, array, control, sandwich, seg } = params
-  const flexResult = getFlexResult(distance, array, seg, sandwich, control)
+  const { flexDepth, flexHeight, array, seg, sandwich, control, shrink } = params
+  const flexResult = getFlexResult(distance, array, seg, sandwich, control, shrink)
 
   // 将flexResult转为矩阵和颜色数据
   flexResult.forEach((u) => {
     const matrix = new Matrix4()
       .makeTranslation(0.5, 0, flexHeight > 0 ? 0.5 : -0.5)
-      .premultiply(TEMP.makeScale(u.space + extend, Math.abs(flexDepth), Math.abs(flexHeight)))
+      .premultiply(TEMP.makeScale(u.space, Math.abs(flexDepth), Math.abs(flexHeight)))
     applyBasicTransform(params, matrix)
-    matrix.premultiply(TEMP.makeTranslation(u.move - extend / 2.0, 0, 0))
+    matrix.premultiply(TEMP.makeTranslation(u.move, 0, 0))
     result.push({ matrix, color: params.color })
   })
 
@@ -158,11 +158,11 @@ function matchUnitsToTempBoxRows(
         const newRow: temp.box[] = []
         row.map((line) => {
           const { depth, start, end } = line
-          const { flexHeight, color, indentWidth } = line.matchUnit
+          const { flexHeight, color, shrink } = line.matchUnit
           const mtx = new Matrix4()
             .makeTranslation(0.5, 0, flexHeight > 0 ? 0.5 : -0.5)
             .premultiply(TEMP.makeScale(1, depth, Math.abs(flexHeight)))
-          indentBoxFlexWidth(indentWidth, Math.abs(start.x - end.x), mtx).forEach((matrix) => {
+          indentBoxFlexWidth(shrink, Math.abs(start.x - end.x), mtx).forEach((matrix) => {
             applyBasicTransform(line.matchUnit, matrix)
             matrix.premultiply(TEMP.makeTranslation(start.x, start.y, 0))
             newRow.push({ matrix, color })
@@ -316,9 +316,10 @@ function getFlexResult(
   spaceArray: number[],
   asSegments: boolean,
   sandwich: boolean,
-  control?: styleParsed.indexController
+  control?: styleParsed.indexController,
+  shrink?: styleParsed.indentType
 ) {
-  const result: { move: number; space: number }[] = []
+  const flexUnits: { move: number; space: number }[] = []
   // 竖向计算时为楼层生成方式，一般按层高，sandwich和endWidth可以忽略。水平计算时为立面生成方式，这两个参数才有用。考虑matchRatioAndCount的计算逻辑，可以完全通过sandwich控制
   const rc = matchRatioAndCount(spaceArray, distance, sandwich ? spaceArray[0]! : 0, sandwich)
   if (rc) {
@@ -326,6 +327,7 @@ function getFlexResult(
     const totalCount = rc.count * spaceArray.length
     const spacesScaled = spaceArray.map((s) => s * rc.ratio)
 
+    // 计算每段的相对起点和长度
     let move = 0
     let lastValidIndex = -1
     for (let i = 0; i < totalCount; i++) {
@@ -337,7 +339,7 @@ function getFlexResult(
         space,
         asSegments,
         validIndexes,
-        result
+        flexUnits
       )
       move += space
     }
@@ -350,12 +352,81 @@ function getFlexResult(
         spacesScaled[0]!,
         asSegments,
         [totalCount],
-        result
+        flexUnits
       )
     }
   }
 
-  return result
+  // 处理shrink，reverse和central可能产生新的段落
+  if (shrink) {
+    const result: { move: number; space: number }[] = []
+    const { start, end, asRatio, central, reverse } = shrink
+    flexUnits.forEach((u) => {
+      if (reverse) {
+        // start, end 表示保留
+        if (central) {
+          // 反向时保留中部
+          if (start) {
+            const startD = u.space / 2 - (asRatio ? u.space * start : start)
+            u.move += startD
+            u.space -= startD
+          }
+          if (end) {
+            const endD = u.space / 2 - (asRatio ? u.space * end : end)
+            u.space -= endD
+          }
+          result.push(u)
+        } else {
+          // 反向时保留两端为两段
+          if (start) {
+            result.push({
+              move: u.move,
+              space: asRatio ? u.space * start : start,
+            })
+          }
+          if (end) {
+            const space = asRatio ? u.space * end : end
+            result.push({ move: u.move + u.space - space, space })
+          }
+        }
+      } else {
+        // start, end 表示剔除
+        if (central) {
+          // 从中间向两端剔除为两段
+          const half = u.space / 2
+          const startPart = { move: u.move, space: half }
+          const endPart = { move: u.move + half, space: half }
+          if (start) {
+            startPart.space -= asRatio ? u.space * start : start
+          }
+          if (end) {
+            const endD = asRatio ? u.space * end : end
+            endPart.space -= endD
+            endPart.move += endD
+          }
+          result.push(startPart)
+          result.push(endPart)
+        } else {
+          // 剔除两端
+          if (start) {
+            const startD = asRatio ? u.space * start : start
+            u.move += startD
+            u.space -= startD
+          }
+          if (end) {
+            const endD = asRatio ? u.space * end : end
+            u.space -= endD
+          }
+          result.push(u)
+        }
+      }
+    })
+
+    // 排除可能产生的非正向段落
+    return result.filter((r) => r.space > 0)
+  } else {
+    return flexUnits
+  }
 }
 
 function handleEdgeFlex(

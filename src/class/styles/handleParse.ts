@@ -152,6 +152,7 @@ function parseFlexes(params?: styleTypes.flexVertical[]): styleParsed.flexVertic
           flexDepth: parse(x.flexDepth),
           flexWidth: parse(x.flexWidth),
           dash: parseControl(x.dash)!,
+          shrink: parseIndent(x.shrink),
           seg: x.seg || false,
         })
       })
@@ -185,11 +186,7 @@ function parseControl(
     ? {
         total: parse(params.total),
         indent: parseIndent(params.indent),
-        filter: params.filter
-          ? params.filter.map((f) =>
-              'keep' in f ? { keep: parse(f.keep) } : { skip: parse(f.skip) }
-            )
-          : [],
+        filter: params.filter?.map(parse),
         chance: parse(params.chance),
       }
     : undefined

@@ -39,8 +39,8 @@ export namespace styleParsed {
 
   type indexController = {
     total: number
-    filter: ({ keep: number } | { skip: number })[]
     chance: number
+    filter: undefined | number[]
     indent: undefined | indentType
   }
 
@@ -61,6 +61,7 @@ export namespace styleParsed {
     flexDepth: number
     flexWidth: number
     dash: indexController
+    shrink: undefined | indentType
     seg: boolean
   }
 
@@ -81,7 +82,7 @@ export namespace styleParsed {
   type flexMatchUnit = status & {
     unitDepth: number
     flexHeight: number
-    indentWidth?: indentType
+    shrink: undefined | indentType
     count: number
   }
 
@@ -108,13 +109,14 @@ export namespace styleParsed {
   }
 
   type edgeFlex = status & {
+    array: number[]
     flexDepth: number
     flexHeight: number
-    extend: number
-    array: number[]
-    control: indexController | undefined
-    sandwich: boolean
+
     seg: boolean
+    sandwich: boolean
+    shrink: undefined | indentType
+    control: undefined | indexController
   }
 
   type slopingRoof = status & {

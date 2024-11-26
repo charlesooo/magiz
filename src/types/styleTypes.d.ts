@@ -66,8 +66,8 @@ export namespace styleTypes {
     total?: ns
     /** 按序号整体缩进序号 */
     indent?: indentType
-    /** 按跳过或保留数量的组合筛选序号 */
-    filter?: ({ keep: ns } | { skip: ns })[]
+    /** 按组合筛选序号，正数表示保留，负数表示跳过  */
+    filter?: ns[]
     /** 按概率筛选序号 */
     chance?: ns
   }
@@ -102,6 +102,8 @@ export namespace styleTypes {
     flexWidth: ns
     /** 按序号控制生成 */
     dash: indexController
+    /** 最终长度从两端或中间缩进 */
+    shrink?: indentType
     /** 不合并相邻的段落 */
     seg?: boolean
   }
@@ -132,7 +134,7 @@ export namespace styleTypes {
     flexHeight: ns
 
     /** 最终长度从两端缩进，用于拟合平面时的立面效果 */
-    indentWidth?: indentType
+    shrink?: indentType
     /** 该单元的数量，默认为1，用于减少重复输入 */
     count?: ns
   }
@@ -176,23 +178,23 @@ export namespace styleTypes {
     sandwich?: boolean
   }
 
-  /** 灵活边线元素，根据 unitWidth 拟合分段，合并未被replace的段落 */
+  /** 按边线生成的灵活线段元素 */
   type edgeFlex = status & {
+    /** 基准开间组合 */
+    array: ns[]
     /** 进深 */
     flexDepth: ns
     /** 高度 */
     flexHeight: ns
-    /** 延长生成元素的实际宽度 */
-    extend?: ns
 
-    /** 基准开间组合 */
-    array: ns[]
-    /** 按序号控制生成 */
-    control?: indexController
-    /** 将array的第一段添加到末尾 */
-    sandwich?: boolean
     /** 不合并相邻的段落 */
     seg?: boolean
+    /** 将array的第一段添加到末尾 */
+    sandwich?: boolean
+    /** 按序号控制生成 */
+    control?: indexController
+    /** 最终长度从两端或中间缩进 */
+    shrink?: indentType
   }
 
   /** 根据 boundingBox 生成坡屋顶 */

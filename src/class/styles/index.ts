@@ -285,7 +285,7 @@ function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floorParams
           count: parse(u.count, 1),
           unitDepth: parse(u.unitDepth),
           flexHeight: parse(u.flexHeight),
-          indentWidth: parseIndent(u.indentWidth),
+          shrink: parseIndent(u.shrink),
         })
       }),
       along: p.along || 'WIDTH',
@@ -326,13 +326,14 @@ function parseHorizontal(to: styleParsed.floorResult, params?: styleTypes.floorP
   params?.horizontal?.forEach((p) => {
     to.horizontal.push(
       parseStatus(p, {
+        array: p.array.map(parse),
         flexDepth: parse(p.flexDepth),
         flexHeight: parse(p.flexHeight),
-        extend: parse(p.extend),
-        array: p.array.map(parse),
-        control: parseControl(p.control),
-        sandwich: p.sandwich || false,
+
         seg: p.seg || false,
+        sandwich: p.sandwich || false,
+        control: parseControl(p.control),
+        shrink: parseIndent(p.shrink),
       })
     )
   })

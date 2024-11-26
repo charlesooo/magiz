@@ -60,7 +60,7 @@ function handleExtrude(
             flexHeight: params.height,
             color,
             trans,
-            indentWidth: undefined,
+            shrink: undefined,
           },
         ],
       }

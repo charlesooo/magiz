@@ -453,12 +453,12 @@ function getValidIndexes(count: number, control: styleParsed.indexController | u
       for (let i = 0; i < count; i++) result.push(i)
     }
 
-    const filterSteps = filter.reduce((v, f) => v + ('keep' in f ? f.keep : f.skip), 0)
-    if (filterSteps > 0) {
+    const filterSteps = filter?.reduce((v, f) => v + Math.abs(f), 0) || 0
+    if (filter && filterSteps > 0) {
       result = result.filter((_, i) => {
         let fid = i % filterSteps
         const found = filter.find((f) => {
-          const step = 'keep' in f ? f.keep : f.skip
+          const step = Math.abs(f)
           if (fid < step) {
             return true
           } else {
@@ -466,7 +466,7 @@ function getValidIndexes(count: number, control: styleParsed.indexController | u
             return false
           }
         })
-        return !found || 'keep' in found
+        return !found || found > 0
       })
     }
 
