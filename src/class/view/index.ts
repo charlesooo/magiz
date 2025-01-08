@@ -14,9 +14,8 @@ import {
   Fog,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { presetOtherMaterials } from './materials'
-import { presetLight } from '../styles/color'
-import { generateModel } from './raw'
+import { presetOtherMaterials } from '../plan/model/materials'
+import { generate } from '../plan/model/generate'
 
 import type { temp } from '../../types/temp'
 import type { magizTypes } from '../../types/magizTypes'
@@ -40,7 +39,16 @@ const viewOptions: magizTypes.viewOptions = {
   groundSize: 5000,
   cameraPosition: [200, 10, -200],
   sunDistance: 10000,
-  lightColor: presetLight,
+  lightColor: [
+    { hour: 5, color: '#116', directional: 0, ambient: 0 },
+    { hour: 6, color: '#f60', directional: 0.6, ambient: 0.2 },
+    { hour: 9, color: '#fff', directional: 2, ambient: 0.6 },
+    { hour: 12, color: '#fff', directional: 2, ambient: 0.6 },
+    { hour: 16, color: '#fff', directional: 2, ambient: 0.6 },
+    { hour: 18, color: '#d33', directional: 0.6, ambient: 0.2 },
+    { hour: 19, color: '#116', directional: 0.1, ambient: 0.1 },
+    { hour: 24, color: '#000', directional: 0, ambient: 0 },
+  ],
   time: 10,
   shadow: true,
 }
@@ -51,7 +59,7 @@ const orbitControlsOptions = {
   /** 缩放距离小于 moveNear 会持续向前移动 */
   moveNear: 0,
   zoomToCursor: false,
-  enableDamping: false,
+  enableDamping: true,
   enablePan: true,
 }
 
@@ -252,7 +260,7 @@ class View {
     let maxHeight = 0
 
     // 生成建筑
-    generateModel(data, this.scene, options)
+    this.scene.add(generate(data, options))
 
     // 计算指标
     data.models.forEach((rawBuilding) => {
@@ -286,8 +294,15 @@ class View {
 }
 
 function animate(v: View) {
+  v.controls.update()
   v.renderer.render(v.scene, v.camera)
-  for (const f in v.animations) v.animations[f]!()
+  for (const f in v.animations) {
+    try {
+      v.animations[f]!()
+    } catch (error) {
+      console.error(`animation "${f}" error !!!`, error)
+    }
+  }
   // 开发时的HMR导致多个渲染循环，须通过检查dom元素自动终止
   if (document.body.contains(v.renderer.domElement)) requestAnimationFrame(() => animate(v))
 }
@@ -302,29 +317,28 @@ function disposeAll(x: temp.disposableType) {
 /** 添加镜头控制 */
 function initOrbitControls(view: View, params?: Partial<typeof orbitControlsOptions>) {
   const options: typeof orbitControlsOptions = Object.assign(orbitControlsOptions, params)
-  const ctrl = new OrbitControls(view.camera, view.renderer.domElement)
+  const ctrls = new OrbitControls(view.camera, view.renderer.domElement)
 
   // OrbitControls 可以 saveState() 然后 reset()
-  ctrl.zoomToCursor = options.zoomToCursor
-  ctrl.enableDamping = options.enableDamping
-  ctrl.enablePan = options.enablePan
-  ctrl.maxDistance = 10000
+  ctrls.zoomToCursor = options.zoomToCursor
+  ctrls.enableDamping = options.enableDamping
+  ctrls.enablePan = options.enablePan
+  ctrls.maxDistance = 10000
 
   const { autoRotate, moveNear } = options
   if (autoRotate > 0) {
-    ctrl.autoRotateSpeed = autoRotate
-    ctrl.autoRotate = true
+    ctrls.autoRotateSpeed = autoRotate
+    ctrls.autoRotate = true
   }
   if (moveNear > 0) {
-    ctrl.addEventListener('change', () => {
-      if (ctrl.getDistance() < moveNear) {
+    ctrls.addEventListener('change', () => {
+      if (ctrls.getDistance() < moveNear) {
         const v = new Vector3()
-        ctrl.object.getWorldDirection(v)
-        ctrl.target.add(v.setLength(9))
+        ctrls.object.getWorldDirection(v)
+        ctrls.target.add(v.setLength(9))
       }
     })
   }
 
-  view.animations.updateControls = ctrl.update
-  return ctrl
+  return ctrls
 }

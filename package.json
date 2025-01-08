@@ -3,28 +3,29 @@
   "version": "1.0.0",
   "license": "GPL-3.0-or-later",
   "author": "周曦",
-  "description": "a light weight building 3D model generator",
-  "homepage": "http://architech.fun",
+  "description": "a light weight 3D building generator",
+  "homepage": "http://www.architech.fun",
   "keywords": [
     "architecture",
-    "cityPlanning"
+    "city planning",
+    "urban design",
+    "3D building",
+    "three.js"
   ],
   "main": "index.ts",
-  "dependencies": {
-    "math-expression-evaluator": "^2.0.5",
-    "three": "^0.164.0"
-  },
   "devDependencies": {
-    "@eslint/js": "^9.8.0",
-    "@types/node": "^20.14.11",
-    "@types/three": "^0.164.0",
-    "esbuild": "0.21.3",
-    "eslint": "^9.8.0",
-    "globals": "^15.8.0"
+    "@types/three": "^0.172.0",
+    "esbuild": "^0.24.2"
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "dev": "echo 打包开发文件为 dist/magizAndView.js && esbuild bundle/build_magizAndView.ts --outfile=dist/magizAndView.module.js --format=esm --sourcemap --bundle --watch",
-    "build": "echo 包大小分析: https://www.esbuild.cn/api/#metafile && esbuild bundle/build_magizAndView.ts --outfile=dist/magizAndView.module.min.js --metafile=dist/meta.min.json --format=esm --bundle --minify"
+    "dev": "esbuild bundle/esbuild_magiz.ts --outfile=dist/magiz.module.min.js --external:three --format=esm --sourcemap --bundle --watch \n >>> dist/magiz.module.min.js",
+    "build": "esbuild bundle/esbuild_magiz.ts --outfile=dist/magiz.module.min.js --external:three --format=esm --bundle --minify --analyze \n >>> dist/magiz.module.min.js",
+    "dev_": "esbuild bundle/esbuild_magiz_and_view.ts --outfile=dist/magiz.view.module.min.js --format=esm --sourcemap  --bundle --watch \n >>> dist/magiz.view.module.min.js",
+    "build_": "esbuild bundle/esbuild_magiz_and_view.ts --outfile=dist/magiz.view.module.min.js --metafile=dist/magiz.view.meta.json --format=esm --bundle --minify --analyze \n >>> dist/magiz.view.module.min.js"
+  },
+  "dependencies": {
+    "math-expression-evaluator": "^2.0.6",
+    "three": "^0.172.0"
   }
 }

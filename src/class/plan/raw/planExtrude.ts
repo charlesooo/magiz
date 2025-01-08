@@ -1,12 +1,9 @@
-import { Matrix4, Vector2 } from 'three'
 import { sSample } from './handleMath'
 import { TEMP, applyBasicTransform } from './handleBox'
 import { handleMatch } from './planMatch'
 import { crossLines } from './handleMath'
-
-import type { temp } from '../../types/temp'
-import type { magizTypes } from '../../types/magizTypes'
-import type { styleParsed } from '../../types/stylesParsed'
+import { Matrix4, Vector2 } from './_imports'
+import type { magizTypes, styleParsed, temp } from './_imports'
 
 export { handleExtrude }
 

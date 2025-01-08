@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Magiz Demo</title>
+    <title>Magiz</title>
     <style>
       html,
       body {
@@ -19,23 +19,14 @@
   </body>
 
   <script type="module">
-    // to bundle magizAndView.module.js --- npm run build
-    import { View, Plan, styles } from '../dist/magizAndView.module.js'
-
-    const style = 'SV0'
-    const height = 50
-    const floorHeight = 3
-    const match = 0
-
-    console.log(`${style} h=${height}m (m:${match})`)
+    import { View, Plan, styles } from '../dist/magiz.view.module.min.js' // npm run build_
 
     // 1. init a preset ThreeJS scene
     const view = new View('#magiz')
     view.camera.position.set(100, 50, 100)
-
-    // 2. create a plan instance
-    const params = { style, height, match, floorHeight, elevation: 0, seed: 0 }
-    let loops = [
+    // 2. create a plan
+    const params = { style: 'SV0', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
+    const loops = [
       [
         [0, 0],
         [40, 0],
@@ -45,25 +36,11 @@
         [0, 30],
       ],
     ]
-    // loops = [
-    //   [
-    //     [0, 0],
-    //     [60, 0],
-    //     [60, 20],
-    //     [0, 20],
-    //   ],
-    // ]
     const plan = new Plan({ params, loops })
-
-    // a global variable to store data. easier to handle multiple generations
+    // 3. create a global variable and push data
     const data = { colorMap: [], models: [] }
-    // 3. create data
-    plan.toRawModel(data, styles)
-
-    // 4. create model
+    plan.toRaw(data, styles)
+    // 4. create model from raw data
     view.refresh(data, { basicMaterial: false, greyScale: false, edge: true })
-
-    // import { createAll } from './dev.js'
-    // createAll(view)
   </script>
 </html>

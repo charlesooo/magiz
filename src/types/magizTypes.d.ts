@@ -48,6 +48,8 @@ export namespace magizTypes {
     edge: boolean
     /** 是否使用无光照效果的基本材质 */
     basicMaterial: boolean
+    /** 在原位或中心对齐原点生成 */
+    inplace: boolean
     /** 颜色重映射 */
     remap: remapType
   }

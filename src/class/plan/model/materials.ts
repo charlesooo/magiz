@@ -4,7 +4,7 @@ import {
   MeshStandardMaterial,
   LineBasicMaterial,
 } from 'three'
-import { _COLOR } from '../../color'
+import { _COLOR } from '../../../color'
 
 export { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials }
 
@@ -38,16 +38,11 @@ const presetOtherMaterials = {
 
 // 通过shader渲染instancedMesh的边线
 presetOtherMaterials.edge.onBeforeCompile = (shader) => {
-  shader.vertexShader = shader.vertexShader
-    .replace(
-      'void main() {',
-      `
+  shader.vertexShader = `
 attribute mat4 matrix;
-void main() {`
-    )
-    .replace(
-      '#include <project_vertex>',
-      `vec4 mvPosition = matrix * vec4( transformed, 1.0 );
-      gl_Position = projectionMatrix * modelViewMatrix * mvPosition;`
-    )
+void main() {
+  vec4 mvPosition = matrix * vec4( position, 1.0 );
+  gl_Position = projectionMatrix * modelViewMatrix * mvPosition;
+}
+`
 }

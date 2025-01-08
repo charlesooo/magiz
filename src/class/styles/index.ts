@@ -9,7 +9,7 @@ import {
   parseBoxes,
   parseFlexes,
 } from './handleParse'
-import { getValidIndexes } from '../plan/handleMath'
+import { getValidIndexes } from '../plan/raw/handleMath'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleTypes } from '../../types/styleTypes'

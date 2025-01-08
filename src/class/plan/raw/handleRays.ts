@@ -1,8 +1,5 @@
-import { Vector2 } from 'three'
 import { lineInsideRect, offsetRay, rayIntersectRay, matchRatioAndCount } from './handleMath'
-
-import type { styleParsed } from '../../types/stylesParsed'
-import type { temp } from '../../types/temp'
+import { Vector2, type styleParsed, type temp } from './_imports'
 
 export { offsetRayLoops, rectClampRayLoops, indentRayLoops, splitRayloops }
 

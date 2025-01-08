@@ -1,11 +1,7 @@
 // 基础的几何算法
 
-import { Vector2, Matrix3 } from 'three'
-import { seededRandom } from 'three/src/math/MathUtils.js'
-
-import type { temp } from '../../types/temp'
-import type { styleParsed } from '../../types/stylesParsed'
-import type { styleTypes } from '../../types/styleTypes'
+import { Vector2, Matrix3, seededRandom } from './_imports'
+import type { styleTypes, styleParsed, temp } from './_imports'
 
 export {
   seed,

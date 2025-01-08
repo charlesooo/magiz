@@ -1,10 +1,7 @@
-import { Vector2, Matrix4 } from 'three'
 import { TEMP, applyBasicTransform, pushBoxData } from './handleBox'
 import { getClampedRects, sRand, sSample, sweepPolygonX } from './handleMath'
-
-import type { styleParsed } from '../../types/stylesParsed'
-import type { magizTypes } from '../../types/magizTypes'
-import type { temp } from '../../types/temp'
+import { Vector2, Matrix4 } from './_imports'
+import type { magizTypes, styleParsed, temp } from './_imports'
 
 export { handleBoundingBox, handleSlopingRoof, handleAppendent }
 

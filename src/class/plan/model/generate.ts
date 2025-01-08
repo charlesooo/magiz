@@ -12,30 +12,18 @@ import {
   BufferGeometry,
   BoxGeometry,
   InstancedMesh,
-  Scene,
   InstancedBufferGeometry,
   InstancedBufferAttribute,
   BufferAttribute,
 } from 'three'
+
 import { basicFaceMaterials, presetFaceMaterials, presetOtherMaterials } from './materials'
-import { COLOR } from '../../color'
+import { COLOR } from '../../../color'
 
-import type { temp } from '../../types/temp'
-import type { magizTypes } from '../../types/magizTypes'
+import type { temp } from '../../../types/temp'
+import type { magizTypes } from '../../../types/magizTypes'
 
-export { generateModel }
-
-const boxGeom = new BoxGeometry()
-const slopeGeom: { '2'?: BufferGeometry; '4'?: BufferGeometry } = {}
-/** 坡屋顶的原型仅在使用时才缓存并加载 */
-function getSlopeGeom(type: '2' | '4') {
-  let g = slopeGeom[type]
-  if (!g) {
-    g = type === '2' ? getSlope2() : getSlope4()
-    slopeGeom[type] = g
-  }
-  return g
-}
+export { generate }
 
 type SharedRawToInstancedType = {
   /** 计算时公用的临时矩阵 */
@@ -48,17 +36,26 @@ type SharedRawToInstancedType = {
   greyScale: boolean
 }
 
-/** 将 Magiz 解析的 magizTypes.rawBuilding 转为 Three.js 对象 */
-function generateModel(
-  rawModels: magizTypes.rawData,
-  scene: Scene,
-  params?: Partial<magizTypes.generateOptions>
-) {
+const boxGeom = new BoxGeometry()
+const slopeGeom: { '2'?: BufferGeometry; '4'?: BufferGeometry } = {}
+
+/** 坡屋顶的原型仅在使用时才缓存并加载 */
+function getSlopeGeom(type: '2' | '4') {
+  let g = slopeGeom[type]
+  if (!g) {
+    g = type === '2' ? getSlope2() : getSlope4()
+    slopeGeom[type] = g
+  }
+  return g
+}
+
+/** 将 magizTypes.rawBuilding 数据转为 Three.js 模型 */
+function generate(raw: magizTypes.rawData, params?: Partial<magizTypes.generateOptions>) {
   // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
   const buildings = new Group().rotateX(-Math.PI / 2)
   const rawToInstancedParams: SharedRawToInstancedType = {
     tempMatrix: new Matrix4(),
-    finalColorMap: getFinalColorMap(rawModels.colorMap, params?.remap),
+    finalColorMap: getFinalColorMap(raw.colorMap, params?.remap),
     finalColors: {},
     greyScale: params?.greyScale || false,
   }
@@ -77,10 +74,8 @@ function generateModel(
   }
 
   // STEP.1.将可序列化的rawModels转为生成所需threeJS数据到 tempResult
-  const inplace = rawModels.models.length > 1
-
-  rawModels.models.forEach((rawBuilding) => {
-    const tr = inplace
+  raw.models.forEach((rawBuilding) => {
+    const tr = params?.inplace
       ? { center: rawBuilding.centerRelative, rotate: rawBuilding.rotate }
       : undefined
     rawToInstancedTemp(rawBuilding.instanced, tempResult, tr, rawToInstancedParams)
@@ -138,8 +133,8 @@ function generateModel(
   }
 
   // 添加模型到场景
-  buildings.userData.magizType = 'buildings'
-  scene.add(buildings)
+  buildings.userData.magizType = 'building'
+  return buildings
 }
 
 /** 一次生成多个的时候，通过restoreParams还原位置和旋转 */
@@ -286,15 +281,17 @@ function addInstance(
   geom: BufferGeometry,
   mat: Material
 ) {
-  const iMesh = new InstancedMesh(geom, mat, data.matrix.length)
-  data.matrix.forEach((m, n) => {
-    iMesh.setMatrixAt(n, m)
-    const c = data.color[n]
-    if (c) iMesh.setColorAt(n, c)
-  })
-  iMesh.castShadow = iMesh.receiveShadow = true
-  iMesh.userData.magizType = type
-  buildings.add(iMesh)
+  if (data.matrix.length > 0) {
+    const iMesh = new InstancedMesh(geom, mat, data.matrix.length)
+    data.matrix.forEach((m, n) => {
+      iMesh.setMatrixAt(n, m)
+      const c = data.color[n]
+      if (c) iMesh.setColorAt(n, c)
+    })
+    iMesh.castShadow = iMesh.receiveShadow = true
+    iMesh.userData.magizType = type
+    buildings.add(iMesh)
+  }
 }
 
 /** 生成尺寸为 1x1x1，最小点为原点，顶部缩进 indentRatio 的四坡顶 */

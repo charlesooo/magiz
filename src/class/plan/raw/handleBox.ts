@@ -1,5 +1,4 @@
-import { Matrix4, Vector2 } from 'three'
-import { degToRad } from 'three/src/math/MathUtils.js'
+import { Matrix4, Vector2, degToRad } from './_imports'
 import {
   matchRatioAndCount,
   getBounds,
@@ -8,9 +7,7 @@ import {
   getValidIndexes,
 } from './handleMath'
 
-import type { temp } from '../../types/temp'
-import type { styleParsed } from '../../types/stylesParsed'
-import type { magizTypes } from '../../types/magizTypes'
+import type { magizTypes, styleParsed, temp } from './_imports'
 
 export {
   TEMP,

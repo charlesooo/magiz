@@ -1,17 +1,14 @@
-import { Vector2 } from 'three'
-import { ShapeUtils } from 'three/src/extras/ShapeUtils.js'
-import { sRand, getBounds, isAlongAxis, getClampedRects } from './handleMath'
-import { handleBoundingBox, handleSlopingRoof, handleAppendent } from './others'
-import { handleVertical } from './arrayVertical'
-import { handleHorizontal } from './arrayHorizontal'
-import { handleMatch } from './planMatch'
-import { handleExtrude } from './planExtrude'
-import { offsetRayLoops, rectClampRayLoops, indentRayLoops, splitRayloops } from './handleRays'
+import { sRand, getBounds, isAlongAxis, getClampedRects } from './raw/handleMath'
+import { handleBoundingBox, handleSlopingRoof, handleAppendent } from './raw/others'
+import { handleVertical } from './raw/arrayVertical'
+import { handleHorizontal } from './raw/arrayHorizontal'
+import { handleMatch } from './raw/planMatch'
+import { handleExtrude } from './raw/planExtrude'
+import { offsetRayLoops, rectClampRayLoops, indentRayLoops, splitRayloops } from './raw/handleRays'
+import { generate } from './model/generate'
 import { StyleHandler } from '../styles'
-
-import type { magizTypes } from '../../types/magizTypes'
-import type { styleParsed } from '../../types/stylesParsed'
-import type { temp } from '../../types/temp'
+import { Vector2, ShapeUtils } from './raw/_imports'
+import type { magizTypes, styleParsed, temp } from './raw/_imports'
 
 export { Plan }
 
@@ -179,17 +176,17 @@ class Plan {
 
     return rayLoops
   }
-  /** 按平面和样式生成可序列化的建筑模型数据 */
-  toRawModel(
-    /** 批量生成时统一缓存到 result */
-    result: magizTypes.rawData,
+  /** 按平面和样式生成可序列化的建筑模型数据，数据推送到saveAs */
+  toRaw(
+    /** 批量生成时统一缓存到 saveAs */
+    saveAs: magizTypes.rawData,
     styles: StyleHandler,
     centerOfAll?: { x: number; y: number }
   ): magizTypes.rawBuilding {
     const centerX = centerOfAll?.x || 0
     const centerY = centerOfAll?.y || 0
     // 将结果保存到公共变量，以便同时处理多个plan生成，以及每个平面都正确映射colorMap
-    const styleParsed = styles.parseStyle(this.styleParams, result.colorMap)
+    const styleParsed = styles.parseStyle(this.styleParams, saveAs.colorMap)
 
     // 按相对坐标还是源坐标生成
     const building: magizTypes.rawBuilding = {
@@ -232,8 +229,17 @@ class Plan {
       })
     }
 
-    result.models.push(building)
+    saveAs.models.push(building)
     return building
+  }
+  toModel(
+    styles: StyleHandler,
+    generateParams?: Partial<magizTypes.generateOptions>,
+    centerOfAll?: { x: number; y: number }
+  ) {
+    const saveAs = { colorMap: [], models: [] }
+    this.toRaw(saveAs, styles, centerOfAll)
+    return generate(saveAs, generateParams)
   }
 }
 

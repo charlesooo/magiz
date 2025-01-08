@@ -1,9 +1,6 @@
 import { sRotateLinesAlong, getValidIndexes } from './handleMath'
 import { TEMP, pushBoxData, matchUnitsToTempBoxRows } from './handleBox'
-
-import type { magizTypes } from '../../types/magizTypes'
-import type { styleParsed } from '../../types/stylesParsed'
-import type { temp } from '../../types/temp'
+import type { magizTypes, styleParsed, temp } from './_imports'
 
 export { handleMatch }
 

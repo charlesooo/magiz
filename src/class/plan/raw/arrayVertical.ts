@@ -1,10 +1,7 @@
-import { Matrix4 } from 'three'
 import { matchRatioAndCount, getLoopNext, sRand, getValidIndexes } from './handleMath'
 import { TEMP, edgeUnitToTempBoxes, pushBoxData } from './handleBox'
-
-import type { magizTypes } from '../../types/magizTypes'
-import type { styleParsed } from '../../types/stylesParsed'
-import type { temp } from '../../types/temp'
+import { Matrix4 } from './_imports'
+import type { magizTypes, styleParsed, temp } from './_imports'
 
 export { handleVertical }
 
