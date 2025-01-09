@@ -54,7 +54,7 @@ function parse(ns: styleTypes.ns | undefined, defaultValue = 0): number {
 
     try {
       n = evaluator.eval(ns)
-      // n = eval(ns)
+      // n = eval(ns) 或使用子线程沙盒
     } catch (error) {
       console.error('ns parsing:', ns, error)
       n = defaultValue
