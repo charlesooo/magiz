@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Magiz</title>
+    <title>Magiz | WebGL</title>
     <style>
       html,
       body {
@@ -12,6 +12,14 @@
         overflow: hidden;
       }
     </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.min.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
+        }
+      }
+    </script>
   </head>
 
   <body>
@@ -19,28 +27,34 @@
   </body>
 
   <script type="module">
-    import { View, Plan, styles } from '../dist/magiz.view.module.min.js' // npm run build_
+    import { Plan, styles } from '../dist/magiz.module.min.js' // npm run build
+    import { THREE, init } from './webGL.mjs'
+    import { showAll } from './showAll.mjs'
 
-    // 1. init a preset ThreeJS scene
-    const view = new View('#magiz')
-    view.camera.position.set(100, 50, 100)
-    // 2. create a plan
-    const params = { style: 'SV0', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
-    const loops = [
-      [
-        [0, 0],
-        [40, 0],
-        [60, -20],
-        [80, -20],
-        [80, 30],
-        [0, 30],
-      ],
-    ]
-    const plan = new Plan({ params, loops })
-    // 3. create a global variable and push data
-    const data = { colorMap: [], models: [] }
-    plan.toRaw(data, styles)
-    // 4. create model from raw data
-    view.refresh(data, { basicMaterial: false, greyScale: false, edge: true })
+    const handler = init()
+
+    if (1) {
+      showAll(handler)
+    } else {
+      const params = { style: 'SV0', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
+      const loops = [
+        [
+          [0, 0],
+          [40, 0],
+          [60, -20],
+          [80, -20],
+          [80, 30],
+          [0, 30],
+        ],
+      ]
+
+      const model = new Plan({ params, loops }).toModel(styles, {
+        basicMaterial: true,
+        greyScale: false,
+        edge: false,
+      })
+
+      handler.scene.add(model)
+    }
   </script>
 </html>

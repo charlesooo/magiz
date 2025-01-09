@@ -74,8 +74,8 @@ function flexVerticalsToTempBoxes(
 
 function edgeFlexToTempBoxes(params: styleParsed.edgeFlex, distance: number) {
   const result: temp.box[] = []
-  const { flexDepth, flexHeight, array, seg, sandwich, control, shrink } = params
-  const flexResult = getFlexResult(distance, array, seg, sandwich, control, shrink)
+  const { flexDepth, flexHeight, array, seg, sandwich, ctrlFlex, shrink } = params
+  const flexResult = getFlexResult(distance, array, seg, sandwich, ctrlFlex, shrink)
 
   // 将flexResult转为矩阵和颜色数据
   flexResult.forEach((u) => {

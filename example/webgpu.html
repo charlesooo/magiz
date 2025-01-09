@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Magiz | CDN + WebGPU</title>
+    <title>Magiz | WebGPU</title>
     <style>
       html,
       body {
@@ -26,6 +26,7 @@
   </head>
 
   <body>
+    <p style="position: fixed; right: 12px; color: red">Bug to be fixed !!!</p>
     <div id="magiz"></div>
   </body>
 
@@ -37,7 +38,7 @@
     const handler = init()
 
     if (1) {
-      showAll(handler, 33)
+      showAll(handler)
     } else {
       const params = { style: 'SV0', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
       const loops = [

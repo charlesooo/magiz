@@ -292,7 +292,7 @@ function matchRatioAndCount(
   const totalSpace = spaces.reduce((v, s) => v + s, 0)
   if (totalSpace > 0) {
     const count = Math.round(distance / totalSpace)
-    const total = totalSpace * count + (sandwich ? endWidth : endWidth / 2)
+    const total = totalSpace * count + (sandwich ? endWidth * 2 : endWidth)
     if (count > 0) return { ratio: distance / total, count }
   } else {
     console.error('total space for matching is 0')

@@ -4,8 +4,8 @@ export { showAll }
 const height = 50
 const match = 0
 const countX = 5
-const spacing = { x: 100, y: 100 }
-const loops = [[[0, 0], [60, 0], [60, 20], [0, 20]]]
+const spacing = { x: 60, y: 50 }
+const loops = [[[0, 0], [40, 0], [40, 20], [0, 20]]]
 // const loops = [[[0, 0], [40, 0], [50, -10], [60, -10], [60, 20], [0, 20]]]
 
 const planParams = { style: '', height, match, floorHeight: 3, elevation: 0, seed: 0 }

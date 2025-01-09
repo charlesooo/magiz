@@ -9,6 +9,7 @@ export {
   PRESET,
   RESULT,
   parse,
+  parseBool,
   parseStatus,
   parseIndent,
   parseControl,
@@ -30,9 +31,17 @@ const PRESET: {
 
 /** 全局缓存的解析结果，以便拆分函数 */
 const RESULT: styleParsed.result = {
-  colorMapPTR: [],
+  colors: [],
   floorCount: 0,
   classified: {},
+}
+
+function parseBool(b: styleTypes.bool | undefined): styleParsed.bool {
+  if (typeof b === 'boolean') {
+    return b ? 1 : 0
+  } else {
+    return parse(b) ? 1 : 0
+  }
 }
 
 /** 解析带单位的公式。 */
@@ -47,7 +56,7 @@ function parse(ns: styleTypes.ns | undefined, defaultValue = 0): number {
       n = evaluator.eval(ns)
       // n = eval(ns)
     } catch (error) {
-      console.error('parsing:', ns, error)
+      console.error('ns parsing:', ns, error)
       n = defaultValue
     }
   } else {
@@ -57,15 +66,16 @@ function parse(ns: styleTypes.ns | undefined, defaultValue = 0): number {
   return n
 }
 
-/** 替换单位值，单位必以数字开头字母结尾 */
+/** 替换单位值，如单位前数字省略则默认为1 */
 function replaceUnit(input: string, units?: styleParsed.unitType) {
   if (units) {
     // 优先解析长字符的变量，防止"变量A"先于"变量AB"解析导致后者错误
     const keys = Object.keys(units).sort((a, b) => b.length - a.length)
     keys.forEach((k) => {
-      input = input.replace(new RegExp(`\\d+(\\.\\d+)?${k}`, 'g'), (m) => {
+      input = input.replace(new RegExp(`(\\d+(\\.\\d+)?)?${k}`, 'g'), (m) => {
         const u = Number(units[k])
-        return (Number(m.replace(k, '')) * u).toString()
+        const n = Number(m.replace(k, '')) || 1
+        return (n * u).toString()
       })
     })
   }
@@ -77,14 +87,17 @@ function parseIndent(params?: styleTypes.indentType): styleParsed.indentType | u
     ? {
         start: parse(params.start),
         end: parse(params.end),
-        central: params.central || false,
-        asRatio: params.asRatio || false,
-        reverse: params.reverse || false,
+        central: parseBool(params.central),
+        asRatio: parseBool(params.asRatio),
+        reverse: parseBool(params.reverse),
       }
     : undefined
 }
 
-function formatColor(color?: string | string[]): { index: number; glass: boolean }[] {
+function formatColor(
+  colorMap: string[],
+  color?: string | string[]
+): { index: number; glass: styleParsed.bool }[] {
   const a = Array.isArray(color) ? color : [color]
   return a.map((x) => {
     let c = x ? x.trim() : COLOR.CONCRETE
@@ -92,12 +105,12 @@ function formatColor(color?: string | string[]): { index: number; glass: boolean
     const cv = c.replace(/ *G$/, '')
 
     // 颜色先加入 colorMap 再从中索引
-    let index = RESULT.colorMapPTR.indexOf(cv)
+    let index = colorMap.indexOf(cv)
     if (index < 0) {
-      index = RESULT.colorMapPTR.length
-      RESULT.colorMapPTR.push(cv)
+      index = colorMap.length
+      colorMap.push(cv)
     }
-    return { index, glass: /G$/.test(c) }
+    return { index, glass: /G$/.test(c) ? 1 : 0 }
   })
 }
 
@@ -125,7 +138,7 @@ function parseStatus<MORE>(status: styleTypes.status, data: MORE): styleParsed.s
             }
           })
         : [],
-      color: formatColor(c),
+      color: formatColor(RESULT.colors, c),
     },
     data
   )
@@ -153,7 +166,7 @@ function parseFlexes(params?: styleTypes.flexVertical[]): styleParsed.flexVertic
           flexWidth: parse(x.flexWidth),
           dash: parseControl(x.dash)!,
           shrink: parseIndent(x.shrink),
-          seg: x.seg || false,
+          seg: parseBool(x.seg),
         })
       })
     : []

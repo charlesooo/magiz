@@ -16,6 +16,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { presetOtherMaterials } from '../plan/model/materials'
 import { generate } from '../plan/model/generate'
+import { Plan } from '../plan'
 
 import type { temp } from '../../types/temp'
 import type { magizTypes } from '../../types/magizTypes'
@@ -95,6 +96,8 @@ class View {
     ground: string
     lightFogSky: string
   }
+  /** 场景中用到的颜色 */
+  colors: { [name: string]: Color }
 
   /** 创建管理工具实例 */
   constructor(
@@ -107,6 +110,7 @@ class View {
     if (!dom) throw 'ERROR: invalid parentCSSID'
     const canvas = document.createElement('canvas')
     dom.appendChild(canvas)
+    this.colors = {}
     this.parent = dom
     this.scene = new Scene()
     this.ignored = new Group()
@@ -250,26 +254,29 @@ class View {
     })
   }
 
-  /** 清理场景并生成模型，返回总指标 */
+  /** 清理场景并生成模型，维护全局的颜色列表，返回总指标 */
   async refresh(
-    data: magizTypes.rawData,
+    raws: magizTypes.rawBuilding[],
     options?: Partial<magizTypes.generateOptions>
   ): Promise<{ floorArea: number; maxFloors: number }> {
     this.clean()
+    this.colors = {}
+
     const info = { floorArea: 0, maxFloors: 0 }
     let maxHeight = 0
 
-    // 生成建筑
-    this.scene.add(generate(data, options))
+    // 从解析数据生成建筑
+    raws.forEach((raw) => {
+      this.scene.add(generate(raw, options))
 
-    // 计算指标
-    data.models.forEach((rawBuilding) => {
-      const h = rawBuilding.params.height
-      const { floors, floorArea } = rawBuilding.info
+      // 计算指标
+      const h = raw.params.height
+      const { floors, floorArea } = raw.info
       info.floorArea += floorArea * floors
       if (info.maxFloors < floors) info.maxFloors = floors
       if (maxHeight < h) maxHeight = h
     })
+
     return info
   }
 

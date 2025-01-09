@@ -1,5 +1,5 @@
 import { Vector2, Vector3, Raycaster, Quaternion } from 'three'
-import { View } from '../src/class/view'
+import { View } from '../src/class/viewClass'
 
 export { showMousePointed }
 

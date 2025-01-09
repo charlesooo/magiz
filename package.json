@@ -21,7 +21,7 @@
     "check": "tsc --noEmit",
     "dev": "esbuild bundle/esbuild_magiz.ts --outfile=dist/magiz.module.min.js --external:three --format=esm --sourcemap --bundle --watch \n >>> dist/magiz.module.min.js",
     "build": "esbuild bundle/esbuild_magiz.ts --outfile=dist/magiz.module.min.js --external:three --format=esm --bundle --minify --analyze \n >>> dist/magiz.module.min.js",
-    "dev_": "esbuild bundle/esbuild_magiz_and_view.ts --outfile=dist/magiz.view.module.min.js --format=esm --sourcemap  --bundle --watch \n >>> dist/magiz.view.module.min.js",
+    "dev_": "esbuild bundle/esbuild_magiz_and_view.ts --outfile=dist/magiz.view.module.min.js --format=esm --sourcemap --bundle --watch \n >>> dist/magiz.view.module.min.js",
     "build_": "esbuild bundle/esbuild_magiz_and_view.ts --outfile=dist/magiz.view.module.min.js --metafile=dist/magiz.view.meta.json --format=esm --bundle --minify --analyze \n >>> dist/magiz.view.module.min.js"
   },
   "dependencies": {

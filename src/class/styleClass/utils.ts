@@ -1,7 +1,7 @@
 import type { styleTypes } from '../../types/styleTypes'
 import { COLOR } from '../../color'
 
-export { COLOR, check, preset }
+export { styleTypes, COLOR, check, preset }
 
 /** 为preset参数提供类型检查和提示 */
 function check<

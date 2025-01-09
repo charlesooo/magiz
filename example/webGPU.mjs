@@ -11,7 +11,7 @@ function init() {
   const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 10000)
   camera.position.set(120, 20, 200)
 
-  const renderer = new THREE.WebGPURenderer({ antialias: true })
+  const renderer = new THREE.WebGPURenderer({ antialias: true, logarithmicDepthBuffer: true })
   renderer.setPixelRatio(window.devicePixelRatio < 1.5 ? window.devicePixelRatio : 2.0)
   renderer.setSize(innerWidth, innerHeight)
   renderer.setClearColor('#333')

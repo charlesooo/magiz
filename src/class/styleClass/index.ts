@@ -3,22 +3,23 @@ import {
   PRESET,
   RESULT,
   parse,
+  parseBool,
   parseStatus,
   parseControl,
   parseIndent,
   parseBoxes,
   parseFlexes,
 } from './handleParse'
-import { getValidIndexes } from '../plan/raw/handleMath'
+import { getValidIndexes } from '../planClass/raw/handleMath'
 
 import type { magizTypes } from '../../types/magizTypes'
 import type { styleTypes } from '../../types/styleTypes'
 import type { styleParsed } from '../../types/stylesParsed'
 
-export { StyleHandler }
+export { MagizStyles }
 
 /** 用于管理多个样式文件的样式库类 */
-class StyleHandler {
+class MagizStyles {
   /** 默认样式 Blocks */
   Blocks: styleTypes.buildingStyle
   /** 整合后的样式参数 */
@@ -35,7 +36,7 @@ class StyleHandler {
       section: {
         bottom: {
           height: '1H',
-          floor: [{ control: { total: 1 }, extrude: [{ height: '1H' }] }],
+          floor: [{ ctrlFloor: { total: 1 }, extrude: [{ height: '1H' }] }],
         },
       },
     }
@@ -72,21 +73,16 @@ class StyleHandler {
   }
 
   /** 根据输入参数和随机种子解析样式。优先按custom解析 */
-  parseStyle(
-    /** 控制解析的参数 */
-    styleParams: magizTypes.styleParams,
-    /** 全局缓存 colorMap 以便生成多个时正确索引 */
-    globalColorMap: string[]
-  ): styleParsed.result {
-    RESULT.colorMapPTR = globalColorMap
+  parseStyle(styleParams: magizTypes.styleParams): styleParsed.result {
+    // 重置全局缓存的解析结果
+    RESULT.colors = []
     RESULT.floorCount = 0
     RESULT.classified = {}
 
-    // 确保输入的参数为数字
+    // 确保输入的参数为数字和有效的值
     const height = Number(styleParams.height)
-    // 部分参数具有默认值
-    const floorHeight = Number(styleParams.floorHeight || 3)
-    const elevation = Number(styleParams.elevation || 0)
+    const floorHeight = Number(styleParams.floorHeight) || 3
+    const elevation = Number(styleParams.elevation)
 
     const styleSelected =
       !styleParams.style || styleParams.style === 'Blocks'
@@ -175,7 +171,7 @@ function parseSection(
             // 创建预设的深拷贝
             const presetClone = { ...params }
             // 父级层数控制参数覆盖预设控制参数
-            if (floorParams.control) presetClone.control = floorParams.control
+            if (floorParams.ctrlFloor) presetClone.ctrlFloor = floorParams.ctrlFloor
             // 父级边线控制参数与预设叠加
             presetClone.edge = [...(floorParams.edge || []), ...(presetClone.edge || [])]
 
@@ -201,7 +197,7 @@ function parseFloor(
   floorParams: styleTypes.floorParams
 ) {
   // 获取将生成元素的标高
-  const elevations = getValidIndexes(totalFloors, parseControl(floorParams.control)).map(
+  const elevations = getValidIndexes(totalFloors, parseControl(floorParams.ctrlFloor)).map(
     (i) => sectionElevation + i * floorHeight
   )
 
@@ -224,7 +220,7 @@ function parseFloor(
 
   const edgeParamsJSON = JSON.stringify(edgeParams)
   const saveAs: styleParsed.floorResult = {
-    diverse: floorParams.diverse || false,
+    diverse: parseBool(floorParams.diverse),
     elevations,
     edgeParams,
     extrude: [],
@@ -258,11 +254,11 @@ function parseOffsetEdge(
     return {
       x: parse(params.x),
       y: parse(params.y),
-      asRatio: params.asRatio || false,
+      asRatio: parseBool(params.asRatio),
     }
   } else {
     const x = parse(params)
-    return { x, y: x, asRatio: false }
+    return { x, y: x, asRatio: 0 }
   }
 }
 
@@ -289,9 +285,9 @@ function parseMatch(to: styleParsed.floorResult, params?: styleTypes.floorParams
         })
       }),
       along: p.along || 'WIDTH',
-      control: parseControl(p.control),
-      sandwich: p.sandwich || false,
-      simplify: p.simplify || false,
+      ctrlMatch: parseControl(p.ctrlMatch),
+      sandwich: parseBool(p.sandwich),
+      simplify: parseBool(p.simplify),
     })
   })
 }
@@ -315,8 +311,8 @@ function parseVertical(to: styleParsed.floorResult, params?: styleTypes.floorPar
           count: parse(unit.count, 1),
         }
       }),
-      control: parseControl(p.control),
-      sandwich: p.sandwich || false,
+      ctrlArray: parseControl(p.ctrlArray),
+      sandwich: parseBool(p.sandwich),
       endWidth: parse(p.endWidth),
     })
   })
@@ -329,10 +325,9 @@ function parseHorizontal(to: styleParsed.floorResult, params?: styleTypes.floorP
         array: p.array.map(parse),
         flexDepth: parse(p.flexDepth),
         flexHeight: parse(p.flexHeight),
-
-        seg: p.seg || false,
-        sandwich: p.sandwich || false,
-        control: parseControl(p.control),
+        seg: parseBool(p.seg),
+        sandwich: parseBool(p.sandwich),
+        ctrlFlex: parseControl(p.ctrlFlex),
         shrink: parseIndent(p.shrink),
       })
     )
@@ -378,12 +373,12 @@ function parseClamp(params?: styleTypes.clampType): styleParsed.clampType | unde
     ? {
         startX: parse(params.startX),
         startY: parse(params.startY),
-        centralX: params.centralX || false,
+        centralX: parseBool(params.centralX),
         endX: parse(params.endX),
         endY: parse(params.endY),
-        centralY: params.centralY || false,
-        asRatio: params.asRatio || false,
-        reverse: params.reverse || false,
+        centralY: parseBool(params.centralY),
+        asRatio: parseBool(params.asRatio),
+        reverse: parseBool(params.reverse),
       }
     : undefined
 }
@@ -394,6 +389,6 @@ function parseSplit(
   return {
     array: params.array.map(parse),
     select: params.select,
-    sandwich: params.sandwich || false,
+    sandwich: parseBool(params.sandwich),
   }
 }

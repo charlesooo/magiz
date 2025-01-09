@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Magiz | View</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="magiz"></div>
+  </body>
+
+  <script type="module">
+    import { View, Plan, styles } from '../dist/magiz.view.module.min.js' // npm run build_
+
+    // 1. init a preset ThreeJS scene
+    const view = new View('#magiz')
+    view.camera.position.set(100, 50, 100)
+    // 2. create a plan
+    const params = { style: 'SV0', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
+    const loops = [
+      [
+        [0, 0],
+        [40, 0],
+        [60, -20],
+        [80, -20],
+        [80, 30],
+        [0, 30],
+      ],
+    ]
+    const plan = new Plan({ params, loops })
+    // 3. create raw data (or to JSON)
+    const data = plan.toRaw(styles)
+    // 4. create model from raw data
+    view.refresh([data], { basicMaterial: false, greyScale: false, edge: true })
+  </script>
+</html>

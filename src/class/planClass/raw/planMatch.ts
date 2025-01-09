@@ -13,10 +13,10 @@ function handleMatch(
   const { match, elevations } = parsedStyle
   match.forEach((params) => {
     // 根据参数旋转平面再进行拟合
-    const { control, sandwich, array, along, simplify } = params
+    const { ctrlMatch, sandwich, array, along, simplify } = params
     const { newRays, radian } = sRotateLinesAlong(rayLoops.flat(), along)
     const tempBoxRows = matchUnitsToTempBoxRows(array, newRays, sandwich, simplify)
-    getValidIndexes(tempBoxRows.length, control).forEach((i) => {
+    getValidIndexes(tempBoxRows.length, ctrlMatch).forEach((i) => {
       tempBoxRows[i]!.forEach((data) => {
         elevations.forEach((elevation) => {
           pushBoxData(

@@ -48,7 +48,7 @@ function handleExtrude(
       const matchParam: styleParsed.match = {
         simplify: true,
         along: 'WIDTH',
-        control: undefined,
+        ctrlMatch: undefined,
         sandwich: false,
         array: [
           {

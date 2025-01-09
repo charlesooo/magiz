@@ -1,7 +1,9 @@
 import type { styleTypes } from './styleTypes'
 
 export namespace styleParsed {
-  type colorDataType = { index: number; glass: boolean }
+  /** 考虑preset，通过使用 handleParse.replaceUnit 解析参数，最终结果为数字 */
+  type bool = 1 | 0
+  type colorDataType = { index: number; glass: bool }
   type unitType = { [key: string]: number }
 
   type transformType =
@@ -13,28 +15,28 @@ export namespace styleParsed {
   type indentType = {
     start: number
     end: number
-    central: boolean
-    asRatio: boolean
-    reverse: boolean
+    central: bool
+    asRatio: bool
+    reverse: bool
   }
 
   type clampType = {
     startX: number
     endX: number
-    centralX: boolean
+    centralX: bool
     startY: number
     endY: number
-    centralY: boolean
-    asRatio: boolean
-    reverse: boolean
+    centralY: bool
+    asRatio: bool
+    reverse: bool
   }
 
   type handleEdge = {
-    offset?: { x: number; y: number; asRatio: boolean }
+    offset?: { x: number; y: number; asRatio: bool }
     along?: styleTypes.alongType
     clamp?: clampType
     indent?: indentType
-    split?: { array: number[]; select: number; sandwich: boolean }
+    split?: { array: number[]; select: number; sandwich: bool }
   }
 
   type indexController = {
@@ -62,7 +64,7 @@ export namespace styleParsed {
     flexWidth: number
     dash: indexController
     shrink: undefined | indentType
-    seg: boolean
+    seg: bool
   }
 
   type edgeUnit = {
@@ -96,16 +98,16 @@ export namespace styleParsed {
   type match = {
     array: flexMatchUnit[]
     along: styleTypes.alongType
-    control: indexController | undefined
-    sandwich: boolean
-    simplify: boolean
+    ctrlMatch: indexController | undefined
+    sandwich: bool
+    simplify: bool
   }
 
   type edgeArray = {
     array: edgeUnit[]
-    control: indexController | undefined
+    ctrlArray: indexController | undefined
     endWidth: number
-    sandwich: boolean
+    sandwich: bool
   }
 
   type edgeFlex = status & {
@@ -113,10 +115,10 @@ export namespace styleParsed {
     flexDepth: number
     flexHeight: number
 
-    seg: boolean
-    sandwich: boolean
+    seg: bool
+    sandwich: bool
     shrink: undefined | indentType
-    control: undefined | indexController
+    ctrlFlex: undefined | indexController
   }
 
   type slopingRoof = status & {
@@ -137,7 +139,7 @@ export namespace styleParsed {
   }
 
   type floorResult = {
-    diverse: boolean
+    diverse: bool
     elevations: number[]
     edgeParams: handleEdge[]
 
@@ -154,7 +156,7 @@ export namespace styleParsed {
   /** 解析样式的结果 */
   type result = {
     /** 全局缓存的colorMap指针，颜色映射尽量前置，以方便索引和重复利用颜色 */
-    colorMapPTR: string[]
+    colors: string[]
     /** 生成的层数 */
     floorCount: number
     /** 参数按边线参数分类保存 */

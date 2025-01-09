@@ -1,7 +1,7 @@
 import { PMREMGenerator, DataTexture, EquirectangularReflectionMapping } from 'three'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'
 import { presetFaceMaterials } from './materials'
-import { View } from '../../view'
+import { View } from '../../viewClass'
 
 export { addGlassEnvMap }
 

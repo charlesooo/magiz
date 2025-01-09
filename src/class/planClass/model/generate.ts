@@ -28,10 +28,8 @@ export { generate }
 type SharedRawToInstancedType = {
   /** 计算时公用的临时矩阵 */
   tempMatrix: Matrix4
-  /** 公用的经重映射后的最终颜色映射表 */
-  finalColorMap: string[]
-  /** 根据finalColorMap生成的公用颜色对象 */
-  finalColors: { [name: string]: Color }
+  /** 经重映射后的最终颜色映射表 */
+  finalColors: string[]
   /** 模型材质风格参数 */
   greyScale: boolean
 }
@@ -50,16 +48,8 @@ function getSlopeGeom(type: '2' | '4') {
 }
 
 /** 将 magizTypes.rawBuilding 数据转为 Three.js 模型 */
-function generate(raw: magizTypes.rawData, params?: Partial<magizTypes.generateOptions>) {
-  // Group内以Z轴朝上生成，在JS中须切换到Y轴朝上
-  const buildings = new Group().rotateX(-Math.PI / 2)
-  const rawToInstancedParams: SharedRawToInstancedType = {
-    tempMatrix: new Matrix4(),
-    finalColorMap: getFinalColorMap(raw.colorMap, params?.remap),
-    finalColors: {},
-    greyScale: params?.greyScale || false,
-  }
-
+function generate(raw: magizTypes.rawBuilding, params?: Partial<magizTypes.generateOptions>) {
+  /** 缓存生成的过程数据 */
   const tempResult: temp.rawInstanceDataResult = {
     instanced: {
       box: { color: [], matrix: [] },
@@ -73,14 +63,18 @@ function generate(raw: magizTypes.rawData, params?: Partial<magizTypes.generateO
     extruded: { solid: [], glass: [] },
   }
 
+  // Group内以Z轴朝上生成，在世界中须切换到Y轴朝上
+  const model = new Group().rotateX(-Math.PI / 2)
+
   // STEP.1.将可序列化的rawModels转为生成所需threeJS数据到 tempResult
-  raw.models.forEach((rawBuilding) => {
-    const tr = params?.inplace
-      ? { center: rawBuilding.centerRelative, rotate: rawBuilding.rotate }
-      : undefined
-    rawToInstancedTemp(rawBuilding.instanced, tempResult, tr, rawToInstancedParams)
-    rawToExtrudedTemp(rawBuilding.extruded, tempResult, tr, rawToInstancedParams)
-  })
+  const rawToInstancedParams: SharedRawToInstancedType = {
+    tempMatrix: new Matrix4(),
+    finalColors: getRemappedColors(raw.colors, params?.remap),
+    greyScale: params?.greyScale || false,
+  }
+  const tr = params?.inplace ? { center: raw.centerRelative, rotate: raw.rotate } : undefined
+  rawToInstancedTemp(raw.instanced, tempResult, tr, rawToInstancedParams)
+  rawToExtrudedTemp(raw.extruded, tempResult, tr, rawToInstancedParams)
 
   // STEP.2.根据 tempResult 生成proto体块
   function addInstanceByKey(
@@ -88,7 +82,7 @@ function generate(raw: magizTypes.rawData, params?: Partial<magizTypes.generateO
     geom: BufferGeometry,
     mat: Material
   ) {
-    addInstance(key, tempResult.instanced[key], buildings, geom, mat)
+    addInstance(key, tempResult.instanced[key], model, geom, mat)
   }
 
   const useMaterials = params?.basicMaterial ? basicFaceMaterials : presetFaceMaterials
@@ -101,40 +95,30 @@ function generate(raw: magizTypes.rawData, params?: Partial<magizTypes.generateO
 
   // STEP.3.根据 tempResult 生成extruded体块
   tempResult.extruded.solid.forEach((data) => {
-    addInstance('extrudedSolid', data, buildings, data.geom, useMaterials.solid)
+    addInstance('extrudedSolid', data, model, data.geom, useMaterials.solid)
   })
   tempResult.extruded.glass.forEach((data) => {
-    addInstance('extrudedGlass', data, buildings, data.geom, useMaterials.glass)
+    addInstance('extrudedGlass', data, model, data.geom, useMaterials.glass)
   })
 
   // STEP.4.根据 tempResult 生成边线
   if (params?.edge) {
     const edgeMat = presetOtherMaterials.edge
-    addInstancedEdges(tempResult.instancedEdge.boxAttribute, buildings, boxGeom, edgeMat)
-    addInstancedEdges(
-      tempResult.instancedEdge.slope2Attribute,
-      buildings,
-      getSlopeGeom('2'),
-      edgeMat
-    )
-    addInstancedEdges(
-      tempResult.instancedEdge.slope4Attribute,
-      buildings,
-      getSlopeGeom('4'),
-      edgeMat
-    )
+    addInstancedEdges(tempResult.instancedEdge.boxAttribute, model, boxGeom, edgeMat)
+    addInstancedEdges(tempResult.instancedEdge.slope2Attribute, model, getSlopeGeom('2'), edgeMat)
+    addInstancedEdges(tempResult.instancedEdge.slope4Attribute, model, getSlopeGeom('4'), edgeMat)
 
     tempResult.extruded.solid.forEach((data) => {
-      addInstancedEdges(data.edgeAttr, buildings, data.geom, edgeMat)
+      addInstancedEdges(data.edgeAttr, model, data.geom, edgeMat)
     })
     tempResult.extruded.glass.forEach((data) => {
-      addInstancedEdges(data.edgeAttr, buildings, data.geom, edgeMat)
+      addInstancedEdges(data.edgeAttr, model, data.geom, edgeMat)
     })
   }
 
   // 添加模型到场景
-  buildings.userData.magizType = 'building'
-  return buildings
+  model.userData.magizType = 'building'
+  return model
 }
 
 /** 一次生成多个的时候，通过restoreParams还原位置和旋转 */
@@ -160,7 +144,7 @@ function rawToInstancedTemp(
   params: SharedRawToInstancedType
 ) {
   let instanceType: keyof magizTypes.rawBuilding['instanced']
-  const { tempMatrix, finalColorMap, finalColors, greyScale } = params
+  const { tempMatrix, finalColors, greyScale } = params
   for (instanceType in raw) {
     const instancedData = raw[instanceType]
     const resultRawData = result.instanced[instanceType]
@@ -179,15 +163,8 @@ function rawToInstancedTemp(
       resultRawData.matrix.push(matrix)
       // 保存颜色数据
       if (!greyScale) {
-        const c = finalColorMap[instancedData.colors[i] || 0]
-        if (c) {
-          let color = finalColors[c]
-          if (!color) {
-            color = new Color(c)
-            finalColors[c] = color
-          }
-          resultRawData.color.push(color)
-        }
+        const c = finalColors[instancedData.colors[i] || 0]
+        if (c) resultRawData.color.push(new Color(c))
       }
     })
   }
@@ -201,7 +178,7 @@ function rawToExtrudedTemp(
   restoreParams: { center: [x: number, y: number]; rotate: number } | undefined,
   params: SharedRawToInstancedType
 ) {
-  const { tempMatrix, finalColorMap, finalColors, greyScale } = params
+  const { tempMatrix, finalColors, greyScale } = params
   let key: keyof typeof raw
   for (key in raw) {
     raw[key].forEach((extrudedInstancedData) => {
@@ -216,15 +193,8 @@ function rawToExtrudedTemp(
         resultRawData.matrix.push(matrix)
         // 保存颜色数据
         if (!greyScale) {
-          const c = finalColorMap[extrudedInstancedData.colors[i] || 0]
-          if (c) {
-            let color = finalColors[c]
-            if (!color) {
-              color = new Color(c)
-              finalColors[c] = color
-            }
-            resultRawData.color.push(color)
-          }
+          const c = finalColors[extrudedInstancedData.colors[i] || 0]
+          if (c) resultRawData.color.push(new Color(c))
         }
       })
       result.extruded[key].push(resultRawData)
@@ -232,9 +202,9 @@ function rawToExtrudedTemp(
   }
 }
 
-function getFinalColorMap(
-  colorMap: magizTypes.rawData['colorMap'],
-  remap: magizTypes.remapType | undefined
+function getRemappedColors(
+  colors: magizTypes.rawData['colorMap'],
+  remap: magizTypes.remapColorType | undefined
 ) {
   // 获取 finalRemap
   const finalRemap: { from: string; to: string }[] = []
@@ -248,7 +218,7 @@ function getFinalColorMap(
     }
     if (remap.custom) remap.custom.forEach((r) => finalRemap.push(r))
   }
-  return colorMap.map((x) => finalRemap.find((r) => r.from === x)?.to || x)
+  return colors.map((x) => finalRemap.find((r) => r.from === x)?.to || x)
 }
 
 function addInstancedEdges(
@@ -269,6 +239,7 @@ function addInstancedEdges(
     eibg.instanceCount = matrixAttribute.length / 16
     eg.dispose()
     ls.frustumCulled = false
+    ls.renderOrder = 9
     building.add(ls)
   }
 }
@@ -277,7 +248,7 @@ function addInstancedEdges(
 function addInstance(
   type: string,
   data: temp.rawInstanceData,
-  buildings: Group,
+  group: Group,
   geom: BufferGeometry,
   mat: Material
 ) {
@@ -290,7 +261,8 @@ function addInstance(
     })
     iMesh.castShadow = iMesh.receiveShadow = true
     iMesh.userData.magizType = type
-    buildings.add(iMesh)
+
+    group.add(iMesh)
   }
 }
 

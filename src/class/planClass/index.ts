@@ -6,7 +6,7 @@ import { handleMatch } from './raw/planMatch'
 import { handleExtrude } from './raw/planExtrude'
 import { offsetRayLoops, rectClampRayLoops, indentRayLoops, splitRayloops } from './raw/handleRays'
 import { generate } from './model/generate'
-import { StyleHandler } from '../styles'
+import { MagizStyles } from '../styleClass'
 import { Vector2, ShapeUtils } from './raw/_imports'
 import type { magizTypes, styleParsed, temp } from './raw/_imports'
 
@@ -176,24 +176,25 @@ class Plan {
 
     return rayLoops
   }
-  /** 按平面和样式生成可序列化的建筑模型数据，数据推送到saveAs */
+  /** 按平面和样式生成可序列化的建筑模型数据 */
   toRaw(
-    /** 批量生成时统一缓存到 saveAs */
-    saveAs: magizTypes.rawData,
-    styles: StyleHandler,
-    centerOfAll?: { x: number; y: number }
+    styles: MagizStyles,
+    /** 设置新原点，生成的模型将以此为中心 */
+    origin?: { x: number; y: number }
   ): magizTypes.rawBuilding {
-    const centerX = centerOfAll?.x || 0
-    const centerY = centerOfAll?.y || 0
+    // 计算生成的原点
+    const centerRelative: [x: number, y: number] = [
+      this.center.x - (origin?.x || 0),
+      this.center.y - (origin?.y || 0),
+    ]
     // 将结果保存到公共变量，以便同时处理多个plan生成，以及每个平面都正确映射colorMap
-    const styleParsed = styles.parseStyle(this.styleParams, saveAs.colorMap)
+    const { colors, floorCount, classified } = styles.parseStyle(this.styleParams)
 
-    // 按相对坐标还是源坐标生成
-    const building: magizTypes.rawBuilding = {
-      info: { floorArea: this.area, floors: styleParsed.floorCount },
+    const raw: magizTypes.rawBuilding = {
+      info: { floorArea: this.area, floors: floorCount },
       points: this.relative.rayLoops.map((loop) => loop.map((ray) => ray.start.toArray())),
       center: this.center.toArray(),
-      centerRelative: [this.center.x - centerX, this.center.y - centerY],
+      centerRelative,
       rotate: this.relative.radian,
       params: this.styleParams,
 
@@ -206,40 +207,40 @@ class Plan {
         slope4Glass: { matrices: [], colors: [] },
       },
       extruded: { solid: [], glass: [] },
+
+      colors,
     }
 
-    // 解析样式参数时按edgeParams进行了分类，以让相同的仅计算一次
-    const { classified } = styleParsed
+    // 解析样式时按参数的JSON进行分类，相同的仅计算一次
     for (const edgeParamsJSON in classified) {
       const { params, parsed } = classified[edgeParamsJSON]!
       const rayLoops = this.getEdges(params)
       parsed.forEach((dataParsed) => {
-        handleExtrude(building, dataParsed, rayLoops, this.styleParams.match)
-        handleMatch(building, dataParsed, rayLoops)
-        handleVertical(building, dataParsed, rayLoops)
-        handleHorizontal(building, dataParsed, rayLoops)
-        handleAppendent(building, dataParsed, rayLoops)
+        handleExtrude(raw, dataParsed, rayLoops, this.styleParams.match)
+        handleMatch(raw, dataParsed, rayLoops)
+        handleVertical(raw, dataParsed, rayLoops)
+        handleHorizontal(raw, dataParsed, rayLoops)
+        handleAppendent(raw, dataParsed, rayLoops)
 
         const outterLoop = rayLoops[0]
         const bounds = getBounds(outterLoop?.map((r) => r.start))
         if (outterLoop && bounds) {
-          handleBoundingBox(building, dataParsed, bounds)
-          handleSlopingRoof(building, dataParsed, bounds)
+          handleBoundingBox(raw, dataParsed, bounds)
+          handleSlopingRoof(raw, dataParsed, bounds)
         }
       })
     }
 
-    saveAs.models.push(building)
-    return building
+    return raw
   }
   toModel(
-    styles: StyleHandler,
+    styles: MagizStyles,
     generateParams?: Partial<magizTypes.generateOptions>,
-    centerOfAll?: { x: number; y: number }
+    /** 设置新原点，生成的模型将以此为中心 */
+    origin?: { x: number; y: number }
   ) {
-    const saveAs = { colorMap: [], models: [] }
-    this.toRaw(saveAs, styles, centerOfAll)
-    return generate(saveAs, generateParams)
+    const raw = this.toRaw(styles, origin)
+    return generate(raw, generateParams)
   }
 }
 

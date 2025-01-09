@@ -33,7 +33,7 @@ function raySpacing(
   ray: temp.ray,
   params: styleParsed.edgeArray
 ) {
-  const { control, sandwich, endWidth, array } = params
+  const { ctrlArray, sandwich, endWidth, array } = params
 
   // 计算参数在该段上生成时的批数和缩放系数
   const distance = ray.direction.length()
@@ -60,9 +60,9 @@ function raySpacing(
     })
 
     /** 缩放后整个组合的长度 */
-    const arrayD = arrayUnits.reduce((a, b) => a + b.spaceScaled, 0)
+    const arrayDistance = arrayUnits.reduce((a, b) => a + b.spaceScaled, 0)
     /** 可以生成元素的序号列表 */
-    const validIndexes = getValidIndexes(rc.count, control)
+    const validIndexes = getValidIndexes(rc.count, ctrlArray)
     // 按标高推送阵列数据到结果
     elevations.forEach((elevation) => {
       if (arrayUnits.length > 0) {
@@ -70,7 +70,7 @@ function raySpacing(
         const start = ray.start.clone()
         if (endWidth) {
           const d = ray.direction.clone()
-          start.add(d.setLength((endWidth * rc.ratio) / 2))
+          start.add(d.setLength(endWidth * rc.ratio))
         }
         /** 先将元素在原点处缩放、旋转+移动，再用这个矩阵移动到边线上的起点 */
         const placeMatrix = new Matrix4()
@@ -80,7 +80,7 @@ function raySpacing(
         // 按序号推送数据
         validIndexes.forEach((i) => {
           /** 该序号的起点位置 */
-          let startD = i * arrayD
+          let startD = i * arrayDistance
           arrayUnits.forEach((tempArrayUnit, n) => {
             pushArraygDataToResult(tempArrayUnit, startD, placeMatrix, result)
             startD += (tempArrayUnit.spaceScaled + getLoopNext(arrayUnits, n).spaceScaled) / 2
@@ -89,7 +89,7 @@ function raySpacing(
 
         // 默认在线段终点不生成元素以按环状阵列，sandwich反之
         if (sandwich)
-          pushArraygDataToResult(arrayUnits[0]!, arrayD * rc.count, placeMatrix, result)
+          pushArraygDataToResult(arrayUnits[0]!, arrayDistance * rc.count, placeMatrix, result)
       }
     })
   }

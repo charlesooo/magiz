@@ -2,7 +2,7 @@ import type { styleTypes } from './styleTypes'
 import { COLOR, _COLOR } from '../color'
 
 export namespace magizTypes {
-  type remapType = {
+  type remapColorType = {
     face?: { [prop in keyof typeof COLOR]?: string }
     others?: { [prop in keyof typeof _COLOR]?: string }
     custom?: { from: string; to: string }[]
@@ -10,7 +10,7 @@ export namespace magizTypes {
 
   type displayParams = {
     freeze: boolean
-    remap: remapType
+    remap: remapColorType
     time: number
     materialCN: boolean
     greyScale: boolean
@@ -51,7 +51,7 @@ export namespace magizTypes {
     /** 在原位或中心对齐原点生成 */
     inplace: boolean
     /** 颜色重映射 */
-    remap: remapType
+    remap: remapColorType
   }
 
   type tagsDataType = {
@@ -107,6 +107,9 @@ export namespace magizTypes {
       solid: extrudedInstancedData[]
       glass: extrudedInstancedData[]
     }
+
+    /** 使用的颜色 */
+    colors: string[]
   }
 
   /** 从平面生成模型的全部数据 */

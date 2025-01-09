@@ -8,10 +8,10 @@
   GPL Version 3 license
 */
 
-import { Plan } from '../src/class/plan'
-import { StyleHandler } from '../src/class/styles'
-import { styles as simple } from '../src/defaultStyles/simple'
+import { Plan } from '../src/class/planClass'
+import { MagizStyles } from '../src/class/styleClass'
+import { styles as simple } from '../src/styles/simple'
 
-const styles = new StyleHandler([simple])
+const styles = new MagizStyles([simple])
 
 export { Plan, styles }
