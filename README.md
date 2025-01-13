@@ -14,13 +14,7 @@ Magiz's unique block generation logic can render all models in Three.js with a s
 
 ## Demo
 
-<https://charlesooo.github.io/magiz-demo/>
-
-- Convert the Marseille apartment designed by architect Corbusier into a parametric style
-
-- Urban scene with 1917 parameterized buildings
-
-- college summer camp 2024 (武汉工业大学建筑编码课程)
+play with [example](./examples/index.html) or [demo](https://charlesooo.github.io/magiz-demo/)
 
 ## Basic Usage
 

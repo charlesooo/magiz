@@ -1,3 +1,4 @@
-dist
+dist/*.map
+dist/magiz.view*
 node_modules
 unfinished
