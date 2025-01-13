@@ -63,13 +63,8 @@ class MagizStyles {
     }
   }
 
-  /** @ignore 按是否免费返回分类后的样式名称 */
-  getOptions(): magizTypes.styleOptions {
-    const result: magizTypes.styleOptions = { paid: [], free: ['Blocks'] }
-    for (const n in this.data) {
-      this.data[n]!.type === 'FREE' ? result.free.push(n) : result.paid.push(n)
-    }
-    return result
+  getNames() {
+    return Object.keys(this.data)
   }
 
   /** 根据输入参数和随机种子解析样式。优先按custom解析 */

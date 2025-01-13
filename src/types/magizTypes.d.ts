@@ -60,14 +60,6 @@ export namespace magizTypes {
     position: [x: number, y: number, z: number]
   }
 
-  /** 经过分类后的样式名称 */
-  type styleOptions = {
-    /** 付费样式，须订阅 */
-    paid: string[]
-    /** 免费样式，始终可用 */
-    free: string[]
-  }
-
   /** 基于Three.js中 instancedMesh 相同的数据结构，一种颜色对应多个实例的矩阵 */
   type instancedData = {
     /** 由16位矩阵构成的数组 */

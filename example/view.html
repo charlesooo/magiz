@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Magiz | View</title>
+    <title>Magiz View Demo</title>
     <style>
       html,
       body {
@@ -21,11 +21,11 @@
   <script type="module">
     import { View, Plan, styles } from '../dist/magiz.view.module.min.js' // npm run build_
 
-    // 1. init a preset ThreeJS scene
+    // 1. init a ThreeJS View
     const view = new View('#magiz')
     view.camera.position.set(100, 50, 100)
     // 2. create a plan
-    const params = { style: 'SV0', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
+    const params = { style: 'SV1', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
     const loops = [
       [
         [0, 0],

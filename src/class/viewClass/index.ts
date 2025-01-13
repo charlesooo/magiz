@@ -14,9 +14,8 @@ import {
   Fog,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { presetOtherMaterials } from '../plan/model/materials'
-import { generate } from '../plan/model/generate'
-import { Plan } from '../plan'
+import { presetOtherMaterials } from '../planClass/model/materials'
+import { generate } from '../planClass/model/generate'
 
 import type { temp } from '../../types/temp'
 import type { magizTypes } from '../../types/magizTypes'

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Magiz | WebGL</title>
+    <title>Magiz Demo</title>
     <style>
       html,
       body {
@@ -27,33 +27,23 @@
   </body>
 
   <script type="module">
-    import { Plan, styles } from '../dist/magiz.module.min.js' // npm run build
-    import { THREE, init } from './webGL.mjs'
+    // if error: npm run build
+    import { Plan, styles } from '../dist/magiz.module.min.js'
+    import { THREE, init, planParams, modelParams } from './webGL.mjs'
     import { showAll } from './showAll.mjs'
 
     const handler = init()
 
-    if (1) {
+    if (0) {
+      // to show all the styles
       showAll(handler)
     } else {
-      const params = { style: 'SV0', height: 50, match: 0, floorHeight: 3, elevation: 0, seed: 0 }
-      const loops = [
-        [
-          [0, 0],
-          [40, 0],
-          [60, -20],
-          [80, -20],
-          [80, 30],
-          [0, 30],
-        ],
-      ]
-
-      const model = new Plan({ params, loops }).toModel(styles, {
-        basicMaterial: true,
-        greyScale: false,
-        edge: false,
-      })
-
+      // to generate a building
+      // 1. create a plan
+      const plan = new Plan(planParams)
+      // 2. generate model from plan
+      const model = plan.toModel(styles, modelParams)
+      // 3. add model to three.js scene
       handler.scene.add(model)
     }
   </script>
