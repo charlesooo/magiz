@@ -92,7 +92,8 @@ If someone creates a new style and is interested in contributing, please PR to e
 
 Any opinions and suggestions are welcomed !
 
-Author: 周 曦
-website: <http://www.architech.fun/>
-E-mail: <453154007@qq.com>
+周 曦 <453154007@qq.com>
+
+<http://www.architech.fun/>
+
 Wechat: Ketchup
