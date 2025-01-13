@@ -4,7 +4,10 @@
     "./styles/**/*",
     "bundle/bundleMagizAndView.ts",
     "bundle/bundleMagiz.ts",
-    "others"
+    "others",
+    "example_unfinished/helper.ts",
+    "example_unfinished/movingMaterials.ts",
+    "example_unfinished/viewTag.ts"
   ],
   "compilerOptions": {
     "target": "ESNext",
